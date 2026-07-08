@@ -1,0 +1,20 @@
+[
+  {
+    "crossSection": "16mm2",
+    "material": "CU",
+    "resistancePerKm": 1.15,
+    "reactancePerKm": 0.08
+  },
+  {
+    "crossSection": "35mm2",
+    "material": "CU",
+    "resistancePerKm": 0.63,
+    "reactancePerKm": 0.08
+  },
+  {
+    "crossSection": "35mm2",
+    "material": "AL",
+    "resistancePerKm": 1.04,
+    "reactancePerKm": 0.08
+  }
+]
