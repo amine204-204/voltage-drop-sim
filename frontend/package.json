@@ -29,6 +29,10 @@
     "@angular/forms": "^21.0.0",
     "@angular/platform-browser": "^21.0.0",
     "@angular/router": "^21.0.0",
+    "@types/cytoscape": "^3.21.9",
+    "chart.js": "^4.5.1",
+    "chartjs-plugin-dragdata": "^2.3.1",
+    "cytoscape": "^3.34.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

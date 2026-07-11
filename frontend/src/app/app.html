@@ -1,14 +1,14 @@
-<div style="padding: 50px; font-family: Arial, sans-serif;">
-  <h1>Voltage Drop Simulator - API Test</h1>
-  <p>Click the button below to send a hardcoded grid to the backend and verify the math.</p>
+<div>
+  <app-simulation-top-bar 
+    [maxSteps]="maxSimulationSteps"
+    [currentStep]="currentSimulationStep"
+    [isSimulationLoaded]="isSimulationLoaded"
+    (runClicked)="onRunClicked($event)"
+    (stepChanged)="onStepChanged($event)"
+    (maxStepsChanged)="onMaxStepsChanged($event)">
+  </app-simulation-top-bar>
   
-  <button 
-    (click)="runDummyTest()" 
-    style="padding: 12px 24px; font-size: 16px; cursor: pointer; background-color: #3f51b5; color: white; border: none; border-radius: 6px;">
-    Run Dummy Simulation
-  </button>
-  
-  <p style="color: #666; margin-top: 20px; font-size: 14px;">
-    <strong>Instructions:</strong> Open your Browser's Developer Tools (F12) -> Console tab to see the backend response.
-  </p>
+   <app-grid-canvas 
+    [maxSimulationSteps]="maxSimulationSteps">
+  </app-grid-canvas>
 </div>

@@ -1,0 +1,58 @@
+<div class="workspace">
+  
+  <div class="toolbar">
+    <button (click)="selectTool('pointer')" [class.active-tool]="currentTool === 'pointer'">
+      ↖ Pointer
+    </button>
+    
+    <hr class="toolbar-divider">
+
+    <button (click)="selectTool('place-SOURCE')" [class.active-tool]="currentTool === 'place-SOURCE'">
+      Substation
+    </button>
+    <button (click)="selectTool('place-JUNCTION')" [class.active-tool]="currentTool === 'place-JUNCTION'">
+      Busbar
+    </button>
+    <button (click)="selectTool('place-CONSUMER')" [class.active-tool]="currentTool === 'place-CONSUMER'">
+      Load
+    </button>
+    
+    <hr class="toolbar-divider">
+
+    <button (click)="selectTool('draw-cable')" [class.active-tool]="currentTool === 'draw-cable'">
+      Draw Cable
+    </button>
+  </div>
+
+  <div class="canvas-container">
+    <div #cyContainer class="cy-container"></div>
+  </div>
+
+  <app-property-panel 
+    [elementData]="selectedElementData" 
+    [elementType]="selectedElementType"
+    [simulationStep]="currentSimulationStep"
+    (propertyChanged)="onPropertyUpdated($event)"
+    (openChart)="showChartModal = true"
+    (openProfileEditor)="showProfileEditor = true">
+  </app-property-panel>
+
+  <app-voltage-chart-modal 
+    *ngIf="showChartModal && selectedElementData"
+    [nodeName]="selectedElementData.label"
+    [voltageTimeSeries]="selectedElementData.simulationData?.potentialTimeSeries"
+    [nominalVoltage]="chartNominalVoltage"
+    [deltaTimeSeconds]="currentDeltaTimeSeconds"
+    (onClose)="showChartModal = false">
+  </app-voltage-chart-modal>
+
+    <app-load-profile-editor 
+    *ngIf="showProfileEditor && selectedElementData"
+    [initialProfile]="selectedElementData.loadProfile || [0,0,0,0,0]"
+    [totalSteps]="maxSimulationSteps" 
+    [profileUnit]="selectedElementData.loadType === 'CONSTANT_POWER' ? 'W' : 'A'"
+    (onSave)="onProfileSaved($event)"
+    (onClose)="showProfileEditor = false">
+  </app-load-profile-editor>
+
+</div>

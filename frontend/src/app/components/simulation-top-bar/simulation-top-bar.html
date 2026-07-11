@@ -1,0 +1,47 @@
+<div class="top-bar">
+  <div class="settings-group">
+    <label>Steps:</label>
+    <input type="number" [(ngModel)]="maxSteps" min="1" (ngModelChange)="maxStepsChanged.emit($event)">
+  </div>
+ 
+  <div class="settings-group">
+    <label>Δt (sec):</label>
+    <input type="number" [(ngModel)]="deltaTimeSeconds" step="0.01" min="0.01">
+  </div>
+
+  <div class="settings-group">
+    <label>Norm:</label>
+    <select [(ngModel)]="selectedNormType">
+      <option value="en50160">EN 50160</option>
+      <option value="custom">Custom Limit</option>
+    </select>
+  </div>
+
+  <div class="playback-group" *ngIf="isSimulationLoaded">
+    <label>Step:</label>
+    <input 
+      type="range" 
+      [min]="0" 
+      [max]="maxSteps - 1" 
+      [value]="currentStep" 
+      (input)="onSliderChange($event)"
+      class="slider"
+    >
+    <span class="step-display">{{ currentStep }} / {{ maxSteps - 1 }}</span>
+  </div>
+  
+  <div class="settings-group" *ngIf="selectedNormType === 'custom'">
+    <label>Min Pu:</label>
+    <input type="number" [(ngModel)]="customMinPu" step="0.01" style="width: 60px;">
+    <label>Max Pu:</label>
+    <input type="number" [(ngModel)]="customMaxPu" step="0.01" style="width: 60px;">
+  </div>
+
+  <button class="run-btn" (click)="onRun()">
+    ▶ RUN
+  </button>
+
+  
+</div>
+
+
