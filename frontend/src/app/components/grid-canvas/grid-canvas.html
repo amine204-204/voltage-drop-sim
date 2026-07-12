@@ -46,11 +46,13 @@
     (onClose)="showChartModal = false">
   </app-voltage-chart-modal>
 
-    <app-load-profile-editor 
+   <app-load-profile-editor 
     *ngIf="showProfileEditor && selectedElementData"
-    [initialProfile]="selectedElementData.loadProfile || [0,0,0,0,0]"
-    [totalSteps]="maxSimulationSteps" 
-    [profileUnit]="selectedElementData.loadType === 'CONSTANT_POWER' ? 'W' : 'A'"
+    [initialProfile]="selectedElementData.loadProfile || []"
+    [initialControlPoints]="selectedElementData.loadProfileControlPoints || null"
+    [totalSteps]="maxSimulationSteps"
+    [maxLoadValue]="100" 
+    [loadUnit]="selectedElementData.loadType === 'CONSTANT_POWER' ? 'W' : 'A'"
     (onSave)="onProfileSaved($event)"
     (onClose)="showProfileEditor = false">
   </app-load-profile-editor>

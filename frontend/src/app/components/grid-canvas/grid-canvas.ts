@@ -4,6 +4,7 @@ import { PropertyPanel } from '../property-panel/property-panel';
 import { VoltageChartModal } from '../voltage-chart-modal/voltage-chart-modal';
 import { NgIf } from '@angular/common';
 import { LoadProfileEditor } from '../load-profile-editor/load-profile-editor';
+import { SplinePoint } from '../load-profile-editor/load-profile-editor';
 
 @Component({
   selector: 'app-grid-canvas',
@@ -456,12 +457,14 @@ export class GridCanvas implements AfterViewInit {
     this.updateSelectionState();
   }
 
-  public onProfileSaved(newProfile: number[]) {
-    this.selectedElementData.loadProfile = newProfile;
-    
+  public onProfileSaved(result: { profile: number[]; controlPoints: SplinePoint[] }) {
+    this.selectedElementData.loadProfile = result.profile;
+    this.selectedElementData.loadProfileControlPoints = result.controlPoints;
+
     const cyElement = this.cy?.$('#' + this.selectedElementData.id);
     if (cyElement) {
-      cyElement.data('loadProfile', newProfile);
+      cyElement.data('loadProfile', result.profile);
+      cyElement.data('loadProfileControlPoints', result.controlPoints);
     }
     
     this.showProfileEditor = false;

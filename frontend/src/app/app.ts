@@ -17,7 +17,7 @@ export class App {
   
   @ViewChild(GridCanvas) gridCanvas!: GridCanvas;
   
-  public maxSimulationSteps: number = 0;
+  public maxSimulationSteps: number = 10;
   public currentSimulationStep: number = 0;
   public isSimulationLoaded: boolean = false;
   
