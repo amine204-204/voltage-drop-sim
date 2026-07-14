@@ -2,7 +2,7 @@ import { Component, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { GridCanvas } from './components/grid-canvas/grid-canvas';
 import { SimulationTopBar, SimulationSettings } from './components/simulation-top-bar/simulation-top-bar';
 import { SimulationService } from './services/simulation.service';
-import { MockSimulationService } from './mocks/mock-simulation-service';
+import { MockSimulationService } from './mocks/mock-simulation.service';
 import { SimulationRequestDto } from './models/simulation.model';
 import { forkJoin, Observable } from 'rxjs';
 
@@ -18,10 +18,11 @@ export class App {
   @ViewChild(GridCanvas) gridCanvas!: GridCanvas;
   
   public maxSimulationSteps: number = 10;
-  public currentSimulationStep: number = 0;
+  public deltaTime: number = 1;
+  public currentStep: number = 0;
   public isSimulationLoaded: boolean = false;
   
-  private USE_MOCKS: boolean = true; 
+  private USE_MOCKS: boolean = false; 
 
   constructor(
     private realService: SimulationService,
@@ -55,9 +56,7 @@ export class App {
       });
 
       forkJoin(payloads).subscribe({
-        next: (responses: any[]) => {
-          console.log(`${responses.length} Island(s) simulated successfully!`, responses);
-          
+        next: (responses: any[]) => {          
           const mergedResponse = {
             nodes: responses.flatMap(r => r.nodes),
             branches: responses.flatMap(r => r.branches)
@@ -66,7 +65,7 @@ export class App {
           this.gridCanvas.applySimulationResults(mergedResponse, settings.deltaTimeSeconds);
           
           this.maxSimulationSteps = settings.totalTimeSteps;
-          this.currentSimulationStep = 0;
+          this.currentStep = 0;
           this.isSimulationLoaded = true; 
           this.cdr.detectChanges(); 
         },
@@ -81,8 +80,12 @@ export class App {
     }
   }
 
-  public onStepChanged(step: number) {
-    this.currentSimulationStep = step;
+  public onDeltaTimeChanged(deltaTime: number) {
+    this.deltaTime = deltaTime;
+  }
+
+  public onCurrentStepChanged(step: number) {
+    this.currentStep = step;
     this.gridCanvas.updateTimeStep(step);
   }
 

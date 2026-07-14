@@ -42,7 +42,7 @@
     [nodeName]="selectedElementData.label"
     [voltageTimeSeries]="selectedElementData.simulationData?.potentialTimeSeries"
     [nominalVoltage]="chartNominalVoltage"
-    [deltaTimeSeconds]="currentDeltaTimeSeconds"
+    [deltaTime]="deltaTime"
     (onClose)="showChartModal = false">
   </app-voltage-chart-modal>
 
@@ -51,6 +51,7 @@
     [initialProfile]="selectedElementData.loadProfile || []"
     [initialControlPoints]="selectedElementData.loadProfileControlPoints || null"
     [totalSteps]="maxSimulationSteps"
+    [deltaTime]="deltaTime"
     [maxLoadValue]="100" 
     [loadUnit]="selectedElementData.loadType === 'CONSTANT_POWER' ? 'W' : 'A'"
     (onSave)="onProfileSaved($event)"

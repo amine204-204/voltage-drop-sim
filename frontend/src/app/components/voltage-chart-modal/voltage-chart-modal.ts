@@ -2,7 +2,6 @@ import { Component, Input, AfterViewInit, ViewChild, OnDestroy, Output, EventEmi
 import { CommonModule } from '@angular/common';
 import { Chart, registerables } from 'chart.js';
 
-// Required to register all chart modules in Chart.js v4
 Chart.register(...registerables);
 
 @Component({
@@ -18,7 +17,7 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
   @Input() nodeName: string = '';
   @Input() voltageTimeSeries: number[] = [];
   @Input() nominalVoltage: number = 230;
-  @Input() deltaTimeSeconds: number = 1.0;
+  @Input() deltaTime: number = 1.0;
   @Input() minLimitPu: number = 0.90;
   @Input() maxLimitPu: number = 1.10;
 
@@ -34,11 +33,8 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
 
     const ctx = this.chartCanvas.nativeElement.getContext('2d');
     
-    // Generate X-axis labels (0s, 1s, 2s, etc.)
-    console.log('Delta Time Seconds:', this.deltaTimeSeconds);
-    const labels = this.voltageTimeSeries.map((_, i) => `${i * this.deltaTimeSeconds}s`);
+    const labels = this.voltageTimeSeries.map((_, i) => `${i * this.deltaTime}s`);
 
-    // Calculate actual voltage limits for the visual dashed lines
     const minVoltage = this.nominalVoltage * this.minLimitPu;
     const maxVoltage = this.nominalVoltage * this.maxLimitPu;
 
@@ -50,13 +46,13 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
           {
             label: 'Node Voltage (V)',
             data: this.voltageTimeSeries,
-            borderColor: '#3498db', // Blue line
+            borderColor: '#3498db',
             backgroundColor: 'rgba(52, 152, 219, 0.1)',
             borderWidth: 2,
             pointRadius: 3,
             pointBackgroundColor: '#3498db',
             fill: true,
-            tension: 0.1 // Slight curve to the line
+            tension: 0.1
           }
         ]
       },
@@ -74,7 +70,7 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
         scales: {
           y: {
             title: { display: true, text: 'Voltage (V)' },
-            suggestedMin: minVoltage - 20, // Give some padding below the limit
+            suggestedMin: minVoltage - 20,
             suggestedMax: maxVoltage + 20,
             grid: { color: '#ecf0f1' }
           },
@@ -85,20 +81,18 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
         }
       },
       plugins: [{
-        // Custom plugin to draw the EN 50160 limit lines!
         id: 'normLimits',
         afterDraw: (chart) => {
           const yAxis = chart.scales['y'];
           const ctx = chart.ctx;
           
           ctx.save();
-          ctx.setLineDash([5, 5]); // Dashed lines
+          ctx.setLineDash([5, 5]);
           ctx.lineWidth = 2;
           ctx.font = '12px Arial';
           
-          // Draw Min Limit (e.g., 207V)
           const yMin = yAxis.getPixelForValue(minVoltage);
-          ctx.strokeStyle = '#e74c3c'; // Red
+          ctx.strokeStyle = '#e74c3c';
           ctx.beginPath();
           ctx.moveTo(chart.chartArea.left, yMin);
           ctx.lineTo(chart.chartArea.right, yMin);
@@ -106,9 +100,8 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
           ctx.fillStyle = '#e74c3c';
           ctx.fillText(`Min Limit (${minVoltage}V)`, chart.chartArea.right - 120, yMin - 5);
 
-          // Draw Max Limit (e.g., 253V)
           const yMax = yAxis.getPixelForValue(maxVoltage);
-          ctx.strokeStyle = '#f39c12'; // Orange
+          ctx.strokeStyle = '#f39c12';
           ctx.beginPath();
           ctx.moveTo(chart.chartArea.left, yMax);
           ctx.lineTo(chart.chartArea.right, yMax);
@@ -124,7 +117,7 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.chart) {
-      this.chart.destroy(); // Prevent memory leaks
+      this.chart.destroy();
     }
   }
 }

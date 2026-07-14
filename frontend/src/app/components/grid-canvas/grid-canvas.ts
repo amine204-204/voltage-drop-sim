@@ -4,7 +4,9 @@ import { PropertyPanel } from '../property-panel/property-panel';
 import { VoltageChartModal } from '../voltage-chart-modal/voltage-chart-modal';
 import { NgIf } from '@angular/common';
 import { LoadProfileEditor } from '../load-profile-editor/load-profile-editor';
-import { SplinePoint } from '../load-profile-editor/load-profile-editor';
+import { ControlPoint } from '../load-profile-editor/load-profile-editor';
+import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
+import { CATALOG_ITEMS } from '../../mocks/equipement-catalog.mock';
 
 @Component({
   selector: 'app-grid-canvas',
@@ -16,6 +18,9 @@ import { SplinePoint } from '../load-profile-editor/load-profile-editor';
 export class GridCanvas implements AfterViewInit {
 
   @ViewChild('cyContainer', { static: true }) cyContainer!: ElementRef;
+  @Input() deltaTime: number = 2.0;
+  @Input() maxSimulationSteps: number = 10; 
+
   private cy: Core | undefined;
   
   public currentTool: string = 'pointer'; 
@@ -28,13 +33,13 @@ export class GridCanvas implements AfterViewInit {
   private isSpacePressed: boolean = false;
 
   public currentSimulationStep: number = 0;
-  public currentDeltaTimeSeconds: number = 1.0;
   private simulationResult: any = null; 
 
   public showChartModal: boolean = false;
   public chartNominalVoltage: number = 230;
-  @Input() maxSimulationSteps: number = 10; 
   public showProfileEditor: boolean = false;
+
+  public selectedPresetId: string = '';
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -209,12 +214,57 @@ export class GridCanvas implements AfterViewInit {
 
    public onPropertyUpdated(event: {property: string, value: any}) {
     if (!this.selectedElementData || !this.cy) return;
-    this.selectedElementData[event.property] = event.value;
+
+    this.updateSelectedElementProperty(event.property, event.value);
+    
+    if (event.property === 'selectedPresetId' && event.value) {
+      const preset = LOAD_PRESETS.find(p => p.id === event.value);
+      if (preset) {
+        this.updateSelectedElementProperty('loadType', preset.loadType);
+        this.updateSelectedElementProperty('cosPhi', preset.cosPhi);
+        this.updateSelectedElementProperty('loadProfileControlPoints', [...preset.defaultProfile]);
+        this.updateSelectedElementProperty('loadProfile', LoadProfileEditor.getProfileFromControlPoints(
+          preset.defaultProfile, 
+          this.maxSimulationSteps, 
+          this.deltaTime, 
+          Math.max(...preset.defaultProfile.map(p => p.value), 1)
+        ));
+      }
+    }
+
+    if (event.property === 'catalogId' && event.value) {
+      const catalogItem = CATALOG_ITEMS.find(item => item.id === event.value);
+      
+      if (catalogItem) {
+        if (catalogItem['type'] === 'CableSpec') {
+          this.updateSelectedElementProperty('componentCrossSection', catalogItem['crossSection']);
+          this.updateSelectedElementProperty('componentMaterial', catalogItem['material']);
+          // Lock the R/X fields (we don't want the user overriding IEEE/EN 50160 specs)
+          this.updateSelectedElementProperty('resistancePerKm', catalogItem['resistancePerKm']);
+          this.updateSelectedElementProperty('reactancePerKm', catalogItem['reactancePerKm']);
+        } 
+        else if (catalogItem['type'] === 'TransformerSpec') {
+          this.updateSelectedElementProperty('nominalPrimaryVoltage', catalogItem['nominalPrimaryVoltage']);
+          this.updateSelectedElementProperty('nominalSecondaryVoltage', catalogItem['nominalSecondaryVoltage']);
+          this.updateSelectedElementProperty('impedancePercent', catalogItem['impedancePercent']);
+        }
+      }
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  private updateSelectedElementProperty(property: string, value: any) {
+    if (!this.selectedElementData || !this.cy) return;
+
+    this.selectedElementData[property] = value;
     const cyElement = this.cy.$(':selected').first();
+
     if (cyElement && cyElement.id() === this.selectedElementData.id) {
-      cyElement.data(event.property, event.value);
+      cyElement.data(property, value);
     }
   }
+
 
   private placeNode(position: { x: number, y: number }, type: string) {
     this.nodeCounter++;
@@ -391,7 +441,7 @@ export class GridCanvas implements AfterViewInit {
     
     this.simulationResult = response;
     this.currentSimulationStep = 0;
-    this.currentDeltaTimeSeconds = deltaTimeSeconds;
+    this.deltaTime = deltaTimeSeconds;
 
     response.branches.forEach((branch: any) => {
       const cyEdge = this.cy!.$('#' + branch.id);
@@ -457,7 +507,7 @@ export class GridCanvas implements AfterViewInit {
     this.updateSelectionState();
   }
 
-  public onProfileSaved(result: { profile: number[]; controlPoints: SplinePoint[] }) {
+  public onProfileSaved(result: { profile: number[]; controlPoints: ControlPoint[] }) {
     this.selectedElementData.loadProfile = result.profile;
     this.selectedElementData.loadProfileControlPoints = result.controlPoints;
 

@@ -1,14 +1,16 @@
 <div>
   <app-simulation-top-bar 
     [maxSteps]="maxSimulationSteps"
-    [currentStep]="currentSimulationStep"
+    [deltaTime]="deltaTime"
     [isSimulationLoaded]="isSimulationLoaded"
     (runClicked)="onRunClicked($event)"
-    (stepChanged)="onStepChanged($event)"
-    (maxStepsChanged)="onMaxStepsChanged($event)">
+    (deltaTimeChanged)="onDeltaTimeChanged($event)"
+    (maxStepsChanged)="onMaxStepsChanged($event)"
+    (currentStepChanged)="onCurrentStepChanged($event)">
   </app-simulation-top-bar>
   
    <app-grid-canvas 
-    [maxSimulationSteps]="maxSimulationSteps">
+    [maxSimulationSteps]="maxSimulationSteps"
+    [deltaTime]="deltaTime">
   </app-grid-canvas>
 </div>

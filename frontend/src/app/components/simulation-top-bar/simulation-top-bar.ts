@@ -19,14 +19,15 @@ export interface SimulationSettings {
 })
 export class SimulationTopBar {
   @Output() runClicked = new EventEmitter<SimulationSettings>();
-  @Output() stepChanged = new EventEmitter<number>();
+  @Output() deltaTimeChanged = new EventEmitter<number>();
+  @Output() currentStepChanged = new EventEmitter<number>();
   @Output() maxStepsChanged = new EventEmitter<number>();
 
   @Input() maxSteps: number = 0;
-  @Input() currentStep: number = 0;
+  @Input() deltaTime: number = 0;
   @Input() isSimulationLoaded: boolean = false;
 
-  public deltaTimeSeconds: number = 1.0;
+  public currentStep: number = 1.0;
   public selectedNormType: string = 'en50160';
   public customMinPu: number = 0.90;
   public customMaxPu: number = 1.10;
@@ -34,7 +35,7 @@ export class SimulationTopBar {
   public onRun() {
     this.runClicked.emit({
       totalTimeSteps: this.maxSteps,
-      deltaTimeSeconds: this.deltaTimeSeconds,
+      deltaTimeSeconds: this.deltaTime,
       selectedNormType: this.selectedNormType,
       customMinPu: this.selectedNormType === 'custom' ? this.customMinPu : undefined,
       customMaxPu: this.selectedNormType === 'custom' ? this.customMaxPu : undefined
@@ -42,7 +43,8 @@ export class SimulationTopBar {
   }
 
   public onSliderChange(event: any) {
-    this.stepChanged.emit(parseInt(event.target.value, 10));
+    this.currentStepChanged.emit(parseInt(event.target.value, 10));
+    this.currentStep = parseInt(event.target.value, 10);
   }
 
 }

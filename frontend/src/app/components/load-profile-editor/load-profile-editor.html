@@ -1,19 +1,19 @@
 <div class="modal-overlay" (click)="onClose.emit()">
   <div class="modal-card" (click)="$event.stopPropagation()">
-    
+
     <div class="modal-header">
-      <h3>✏️ Shape the Load Curve</h3>
+      <h3>Edit Load Curve</h3>
       <button class="close-btn" (click)="onClose.emit()">✕</button>
     </div>
 
     <div class="instructions">
-      <span>🖱️ Click to add points</span>
-      <span>↕️ Drag points to shape</span>
-      <span>Right-click to delete</span>
+      <span>Click to add a point</span>
+      <span>Drag a point to reshape the curve</span>
+      <span>Right-click a point to delete it</span>
     </div>
 
     <div class="svg-wrapper" (click)="addPoint($event)">
-    
+
         <div class="y-axis-labels">
         <span *ngFor="let grid of yGridData" class="axis-label" [style.bottom.%]="grid.percent">
           {{grid.label}}
@@ -21,25 +21,25 @@
       </div>
         <div class="graph-area">
             <svg #svgCanvas style="overflow: hidden;" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-            
-            <line *ngFor="let grid of yGridData" x1="0" [attr.y1]="grid.percent" x2="100" [attr.y2]="grid.percent" stroke="#ecf0f1" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
 
-            <line *ngFor="let grid of xGridData" [attr.x1]="grid.percent" y1="0" [attr.x2]="grid.percent" y2="100" stroke="#dcdde1" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
-            
-            <polyline [attr.points]="svgPath" fill="none" stroke="#3498db" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
-        
-            <polygon *ngIf="svgPath" [attr.points]="svgPath + ' 100,100 0,100'" fill="rgba(52, 152, 219, 0.1)" stroke="none"/>
-            
+            <line *ngFor="let grid of yGridData" x1="0" [attr.y1]="grid.percent" x2="100" [attr.y2]="grid.percent" stroke="var(--grid-line-strong)" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
+
+            <line *ngFor="let grid of xGridData" [attr.x1]="grid.percent" y1="0" [attr.x2]="grid.percent" y2="100" stroke="var(--grid-line)" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
+
+            <polyline [attr.points]="svgPath" fill="none" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+
+            <polygon *ngIf="svgPath" [attr.points]="svgPath + ' 100,100 0,100'" fill="rgba(232, 163, 61, 0.12)" stroke="none"/>
+
             <g *ngFor="let point of points; let i = index">
-            <rect 
-                [attr.x]="point.x - pointRadiusX" 
-                [attr.y]="100 - (getScreenY(point) + pointRadiusY)" 
-                [attr.width]="pointRadiusX * 2" 
-                [attr.height]="pointRadiusY * 2" 
-                [attr.rx]="pointRadiusX" 
-                [attr.ry]="pointRadiusY" 
-                fill="#2980b9" 
-                stroke="white" 
+            <rect
+                [attr.x]="getScreenX(point) - pointRadiusX"
+                [attr.y]="100 - (getScreenY(point) + pointRadiusY)"
+                [attr.width]="pointRadiusX * 2"
+                [attr.height]="pointRadiusY * 2"
+                [attr.rx]="pointRadiusX"
+                [attr.ry]="pointRadiusY"
+                fill="var(--accent)"
+                stroke="var(--bg-panel)"
                 stroke-width="0.8"
                 vector-effect="non-scaling-stroke"
                 (mousedown)="onPointMouseDown($event, i)"
@@ -50,18 +50,18 @@
             </svg>
         </div>
 
-        
+
         <div class="x-axis-spacer"></div>
         <div class="x-axis-labels">
             <span *ngFor="let grid of xGridData" class="axis-label" [style.left.%]="grid.percent">
-            T={{grid.step}}
+            {{grid.instant | number:'1.0-2'}}s
             </span>
         </div>
     </div>
 
     <div class="modal-footer">
       <button class="cancel-btn" (click)="onClose.emit()">Cancel</button>
-      <button class="save-btn" (click)="applyAndClose()">Sample & Apply Curve</button>
+      <button class="save-btn" (click)="applyAndClose()">Sample &amp; Apply Curve</button>
     </div>
 
   </div>

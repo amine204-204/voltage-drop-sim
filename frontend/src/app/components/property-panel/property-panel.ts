@@ -1,6 +1,8 @@
 import { NgFor, NgIf } from '@angular/common';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
+import { CATALOG_ITEMS } from '../../mocks/equipement-catalog.mock';
 
 @Component({
   selector: 'app-property-panel',
@@ -17,6 +19,18 @@ export class PropertyPanel {
   @Output() propertyChanged = new EventEmitter<{property: string, value: any}>();
   @Output() openChart = new EventEmitter<void>();
   @Output() openProfileEditor = new EventEmitter<void>();
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  get loadPresets() {
+    const result = LOAD_PRESETS.filter(preset => preset.loadType === this.elementData?.loadType);
+    return result;
+  }
+
+  get catalogItems() {
+    const result = CATALOG_ITEMS.filter(i => i['type'] === 'CableSpec');
+    return result;
+  }
 
   get displayProfile(): string {
     if (this.elementData?.loadProfile && Array.isArray(this.elementData.loadProfile)) {
