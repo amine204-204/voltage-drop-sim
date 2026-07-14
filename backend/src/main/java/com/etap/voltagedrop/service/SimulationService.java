@@ -110,13 +110,27 @@ public class SimulationService {
         double x = branch.getComponent().getReactancePerKm() * branch.getLengthInKm();
 
         double cosPhi = props.getMath().getDefaultPowerFactor();
-        double sinPhi = Math.sqrt(1 - (cosPhi * cosPhi));
+        double phi = Math.acos(cosPhi); // Load angle
+        double z = Math.sqrt(r * r + x * x); // Impedance magnitude
+        double theta = Math.atan2(x, r); // Impedance angle
 
-        double voltageDrop = current * ((r * cosPhi) + (x * sinPhi));
-        double parentVoltage = node.getWorkingVoltage();
+        double vs = node.getWorkingVoltage();
+        double iz = current * z;
+        double angleDiff = theta - phi;
 
-        double newChildVoltage = parentVoltage - voltageDrop;
-        return newChildVoltage;
+        double realPartVr = vs - (iz * Math.cos(angleDiff));
+
+        if (realPartVr <= 0) {
+            return vs * 0.01;
+        }
+
+        double vrSquared = (vs * vs) - (2 * vs * iz * Math.cos(angleDiff)) + (iz * iz);
+
+        if (vrSquared <= 0) {
+            return vs * 0.01;
+        }
+
+        return Math.sqrt(vrSquared);
     }
 
     private void commitTimeStepAndEvaluateNorms(NetworkGraph graph, int t, double nominalVoltage, NormEvaluator activeNorm) {

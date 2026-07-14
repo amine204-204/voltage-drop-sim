@@ -24,7 +24,7 @@ class SimulationServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 1. Setup properties and the service (Norm is NO LONGER in the constructor)
+        // 1. Setup properties and the service
         SimulationProperties props = new SimulationProperties();
         simulationService = new SimulationService(props);
 
@@ -49,7 +49,7 @@ class SimulationServiceTest {
         branch.setToNodeId("LOAD");
         branch.setLengthInKm(1.0); // 1 km
         // Cable: 1 Ohm/km resistance, 0 reactance
-        branch.setComponent(new CableSpec("16mm2", 1.0, 0.0));
+        branch.setComponent(new CableSpec("16mm2", "CU", 1.0, 0.0));
 
         testGraph.addNode(sourceNode);
         testGraph.addNode(loadNode);
@@ -58,22 +58,28 @@ class SimulationServiceTest {
 
     @Test
     void testForwardBackwardSweepMath_andBranchDropPercentage() {
-        // Arrange: Create the norm to pass into the method
+        // Arrange
         En50160NormEvaluator norm = new En50160NormEvaluator(new SimulationProperties());
 
-        // Act: Run simulation for 2 steps, delta-time = 1 second
+        // Act
         simulationService.runChronologicalSimulation(testGraph, 2, 1.0, norm);
 
-        // Assert: Physics Math
-        // Expected Drop = I * (R * cosPhi + X * sinPhi)
-        // Drop = 10A * (1 Ohm * 0.95 + 0) = 9.5 Volts
-        double expectedVoltage = 230.0 - 9.5; // 220.5V
+        // Assert: Physics Math (Using exact quadratic formula)
+        // Vr = sqrt(Vs² - 2*Vs*I*Z*cos(phi) + (I*Z)²)
+        double vs = 230.0;
+        double i = 10.0;
+        double z = 1.0; // sqrt(R² + X²) = sqrt(1² + 0²)
+        double cosPhi = 0.95;
+
+        double expectedVoltage = Math.sqrt((vs * vs) - (2 * vs * i * z * cosPhi) + Math.pow(i * z, 2));
 
         assertEquals(expectedVoltage, loadNode.getPotentialTimeSeries().get(0), 0.001);
         assertEquals(expectedVoltage, loadNode.getPotentialTimeSeries().get(1), 0.001);
 
         // Assert: Branch Historical Data (What the UI uses to color the line)
-        double expectedDropPercent = (9.5 / 230.0) * 100.0; // 4.1304%
+        double actualDrop = vs - expectedVoltage;
+        double expectedDropPercent = (actualDrop / vs) * 100.0;
+
         assertEquals(expectedDropPercent, branch.getDropPercentTimeSeries().get(0), 0.001);
         assertEquals(10.0, branch.getCurrentTimeSeries().get(0), 0.001);
     }
@@ -87,7 +93,7 @@ class SimulationServiceTest {
         simulationService.runChronologicalSimulation(testGraph, 1, 1.0, norm);
 
         // Assert: EN 50160 Status
-        // Voltage is 220.5V. Pu = 220.5 / 230 = 0.958 Pu (Strictly > 0.90 limit)
+        // Voltage will be ~220.52V. Pu = 220.52 / 230 ≈ 0.958 Pu (Strictly > 0.90 limit)
         assertEquals(SimulationStatus.OK, branch.getStatusTimeSeries().get(0));
 
         // Assert: IEEE 1159 Post-Processor should create NO events
@@ -96,12 +102,21 @@ class SimulationServiceTest {
 
     @Test
     void testNormViolation_TriggersIeee1159Event() {
-        branch.setComponent(new CableSpec("TerribleCable", 10.0, 0.0)); // 10 Ohms!
+        branch.setComponent(new CableSpec("TerribleCable", "AL", 10.0, 0.0)); // 10 Ohms!
         En50160NormEvaluator norm = new En50160NormEvaluator(new SimulationProperties());
 
         simulationService.runChronologicalSimulation(testGraph, 1, 1.0, norm);
 
-        assertEquals(135.0, loadNode.getPotentialTimeSeries().get(0), 0.001);
+        // Assert: Using exact quadratic formula with Z = 10
+        double vs = 230.0;
+        double i = 10.0;
+        double z = 10.0; // sqrt(10² + 0²)
+        double cosPhi = 0.95;
+
+        double expectedVoltage = Math.sqrt((vs * vs) - (2 * vs * i * z * cosPhi) + Math.pow(i * z, 2));
+        double expectedPu = expectedVoltage / vs;
+
+        assertEquals(expectedVoltage, loadNode.getPotentialTimeSeries().get(0), 0.001);
 
         assertEquals(SimulationStatus.VIOLATION, branch.getStatusTimeSeries().get(0));
 
@@ -110,8 +125,7 @@ class SimulationServiceTest {
         var event = branch.getPowerQualityEvents().get(0);
         assertEquals(0, event.getStartTimeStep());
         assertEquals(0, event.getEndTimeStep());
-        assertEquals(0.586, event.getWorstMagnitudePu(), 0.001);
-
+        assertEquals(expectedPu, event.getWorstMagnitudePu(), 0.001);
 
         assertEquals(DisturbanceType.MOMENTARY_SAG, event.getClassification());
     }

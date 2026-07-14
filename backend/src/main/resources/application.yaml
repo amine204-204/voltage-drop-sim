@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: voltage-drop-sim
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+simulation:
+  grid:
+    nominal-frequency-hz: 50
+  math:
+    default-power-factor: 0.95
+  convergence:
+    voltage-tolerance-pu: 0.0001
+    max-iterations: 50
+  norms:
+    active-norm: en50160
+    en50160:
+      min-voltage-pu: 0.9
+      max-voltage-pu: 1.1
+  ieee1159:
+    instantaneous-sag-max-seconds: 0.5
+    momentary-sag-max-seconds: 3
+    temporary-sag-max-seconds: 60
+  catalog:
+    file: classpath:cables.json

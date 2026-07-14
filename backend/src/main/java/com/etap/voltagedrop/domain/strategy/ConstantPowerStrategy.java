@@ -12,10 +12,12 @@ public class ConstantPowerStrategy implements LoadBehaviorStrategy {
 
     @Override
     public double calculateCurrent(double voltageAtNodePu, int timeStep) {
-        if (powerProfileWatts == null || timeStep >= powerProfileWatts.size() || voltageAtNodePu == 0.0) return 0.0;
+        if (powerProfileWatts == null || timeStep >= powerProfileWatts.size()) return 0.0;
+
+        double safeVoltagePu = Math.max(voltageAtNodePu, 0.05);
 
         double power = powerProfileWatts.get(timeStep);
-        double actualVoltage = nominalVoltage * voltageAtNodePu;
+        double actualVoltage = nominalVoltage * safeVoltagePu;
         return power / (actualVoltage * cosPhi);
     }
 }

@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,7 +21,9 @@ public class NetworkNode {
     // Working Memory for FBS Algorithm (not serialized to frontend ideally)
     private double workingVoltage;
 
+    @JsonIgnore
     private PowerSource sourceBehavior;
+    @JsonIgnore
     private PowerConsumer consumerBehavior;
 
     public boolean isSource() { return sourceBehavior != null; }
