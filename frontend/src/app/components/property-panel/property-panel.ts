@@ -27,8 +27,6 @@ export class PropertyPanel {
   @Output() openChart = new EventEmitter<void>();
   @Output() openProfileEditor = new EventEmitter<void>();
 
-  public selectedBranch? : CableCatalog;
-
   constructor(private cdr: ChangeDetectorRef) {}
 
   get displayProfile(): string {
@@ -63,7 +61,6 @@ export class PropertyPanel {
       this.propertyChanged.emit({ property: 'resistancePerKm', value: cable.electrical.resistancePerKm });
       this.propertyChanged.emit({ property: 'reactancePerKm', value: cable.electrical.reactancePerKm });
     }
-    this.selectedBranch = cable;
   }
 
   onLoadPresetSelect(presetId: string) {

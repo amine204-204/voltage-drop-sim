@@ -2,65 +2,55 @@ import { LoadPreset } from '../models/load-preset.model';
 
 export const LOAD_PRESETS: LoadPreset[] = [
   {
-    id: 'ev-fast-charge',
-    name: 'EV Fast Charge (Level 2)',
-    loadType: 'CONSTANT_POWER',
-    cosPhi: 0.99,
+    id: "residential-constant-current",
+    name: "Residential Load (CC)",
+    description: "Typical residential current profile with morning and evening peaks",
+    loadType: "CONSTANT_CURRENT",
+    cosPhi: 0.9,
+    unit: "A",
     defaultProfile: [
-      { time: 0, value: 0 },
-      { time: 1, value: 0 },
-      { time: 2, value: 0 },
-      { time: 3, value: 100 },
-      { time: 4, value: 100 },
-      { time: 5, value: 100 },
-      { time: 6, value: 100 },
-      { time: 7, value: 100 },
-      { time: 8, value: 100 },
-      { time: 9, value: 0 },
-      { time: 10, value: 0 },
-      { time: 11, value: 0 }
-    ]
+      { time: 0, value: 5 },
+      { time: 3, value: 8 },
+      { time: 6, value: 25 },
+      { time: 9, value: 15 },
+      { time: 12, value: 10 },
+      { time: 18, value: 30 },
+      { time: 22, value: 12 },
+      { time: 24, value: 5 }
+    ],
   },
   {
-    id: 'induction-motor-15kw',
-    name: '15kW Induction Motor',
-    loadType: 'CONSTANT_CURRENT',
-    // Standard inrush: motor starts at 600% load for 2 steps, settles to 100%
+    id: "industrial-constant-power",
+    name: "Industrial Motor (CP)",
+    description: "Constant power load with startup inrush",
+    loadType: "CONSTANT_POWER",
     cosPhi: 0.85,
+    unit: "W",
     defaultProfile: [
       { time: 0, value: 0 },
-      { time: 1, value: 0 },
-      { time: 2, value: 600 },
-      { time: 3, value: 600 },
-      { time: 4, value: 100 },
-      { time: 5, value: 100 },
-      { time: 6, value: 100 },
-      { time: 7, value: 100 },
-      { time: 8, value: 100 },
-      { time: 9, value: 100 },
-      { time: 10, value: 100 },
-      { time: 11, value: 100 }
-    ]
+      { time: 1, value: 5000 },
+      { time: 2, value: 8000 },
+      { time: 3, value: 10000 },
+      { time: 20, value: 10000 },
+      { time: 21, value: 5000 },
+      { time: 22, value: 0 },
+      { time: 24, value: 0 }
+    ],
   },
   {
-    id: 'commercial-office',
-    name: 'Commercial Office Lighting',
-    loadType: 'CONSTANT_POWER',
+    id: "street-lighting",
+    name: "Street Lighting",
+    description: "On at dusk, off at dawn",
+    loadType: "CONSTANT_CURRENT",
     cosPhi: 0.95,
+    unit: "A",
     defaultProfile: [
       { time: 0, value: 20 },
-      { time: 1, value: 30 },
-      { time: 2, value: 40 },
-      { time: 3, value: 60 },
-      { time: 4, value: 80 },
-      { time: 5, value: 90 },
-      { time: 6, value: 95 },
-      { time: 7, value: 100 },
-      { time: 8, value: 95 },
-      { time: 9, value: 80 },
-      { time: 10, value: 60 },
-      { time: 11, value: 40 },
-      { time: 12, value: 20 }
-    ]
+      { time: 5, value: 20 },
+      { time: 6, value: 0 },
+      { time: 18, value: 0 },
+      { time: 19, value: 20 },
+      { time: 24, value: 20 }
+    ],
   }
 ];

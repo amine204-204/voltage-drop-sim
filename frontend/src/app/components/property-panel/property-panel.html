@@ -98,11 +98,11 @@
         </select>
     </div>
 
-    <div class="form-group" *ngIf="selectedBranch">
+    <div class="form-group" *ngIf="elementData.catalogId">
       <label>Cross Section</label>
       <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentCrossSection" (change)="onPropertyChange('componentCrossSection', $any($event.target).value)">
     </div>
-    <div class="form-group" *ngIf="selectedBranch">
+    <div class="form-group" *ngIf="elementData.catalogId">
       <label>Material</label>
       <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentMaterial" (change)="onPropertyChange('componentMaterial', $any($event.target).value)">
     </div>
