@@ -1,17 +1,5 @@
 version: "3.8"
 services:
-  backend:
-    build: backend/
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-    depends_on:
-        db:
-          condition: service_healthy
   db:
     image: postgres:17-alpine
     restart: always
@@ -28,11 +16,56 @@ services:
       retries: 5
       interval: 5s
       timeout: 5s
+  mongodb:
+    image: mongo:7-jammy
+    environment:
+      MONGO_INITDB_DATABASE: grid_catalogs
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-seed.js:/docker-entrypoint-initdb.d/mongo-seed.js:ro
+    ports:
+      - "27017:27017"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${DB_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${DB_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq
+
+  backend:
+    build: backend/
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/grid_catalogs
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${DB_USERNAME}
+      SPRING_RABBITMQ_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+
   frontend:
     build: frontend/
     ports:
       - "80:80"
     depends_on:
       - backend
+
 volumes:
   pgdata:
+  mongo_data:
+  rabbit_data:

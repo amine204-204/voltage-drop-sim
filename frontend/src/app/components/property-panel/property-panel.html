@@ -40,7 +40,6 @@
     <button class="chart-btn" *ngIf="elementType === 'node' && elementData.simulationData.potentialTimeSeries !== undefined" (click)="openChart.emit()">
       View Voltage Profile
     </button>
-    <hr class="toolbar-divider">
   </div>
 
   <div class="form-group">
@@ -67,10 +66,10 @@
     <label>Load Preset</label>
         <select 
         [(ngModel)]="elementData.selectedPresetId" 
-        (ngModelChange)="onPropertyChange('selectedPresetId', $event)"
+        (ngModelChange)="onLoadPresetSelect($event)"
         >
         <option value="">Custom</option>
-        <option *ngFor="let preset of loadPresets" [value]="preset.id">{{ preset.name }}</option>
+        <option *ngFor="let preset of filteredLoadPresets" [value]="preset.id">{{ preset.name }}</option>
         </select>
     </div>
     <div class="form-group">
@@ -94,26 +93,18 @@
         <label>Equipment Catalog</label>
         <select 
         [(ngModel)]="elementData.catalogId" 
-        (ngModelChange)="onPropertyChange('catalogId', $event)">
-            <option [ngValue]="''">Custom</option>
-            <option *ngFor="let item of catalogItems" [ngValue]="item.id">{{ item.name }}</option>
+        (ngModelChange)="onCatalogSelect($event)">
+            <option *ngFor="let item of cableCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
         </select>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" *ngIf="selectedBranch">
       <label>Cross Section</label>
-      <select [disabled]="!!elementData.catalogId" [value]="elementData.componentCrossSection" (change)="onPropertyChange('componentCrossSection', $any($event.target).value)">
-        <option value="16mm2">16 mm²</option>
-        <option value="35mm2">35 mm²</option>
-        <option value="70mm2">70 mm²</option>
-      </select>
+      <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentCrossSection" (change)="onPropertyChange('componentCrossSection', $any($event.target).value)">
     </div>
-    <div class="form-group">
+    <div class="form-group" *ngIf="selectedBranch">
       <label>Material</label>
-      <select [disabled]="!!elementData.catalogId" [value]="elementData.componentMaterial" (change)="onPropertyChange('componentMaterial', $any($event.target).value)">
-        <option value="CU">Copper (CU)</option>
-        <option value="AL">Aluminum (AL)</option>
-      </select>
+      <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentMaterial" (change)="onPropertyChange('componentMaterial', $any($event.target).value)">
     </div>
   </div>
 </div>

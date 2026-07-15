@@ -1,15 +1,14 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.catalog.CatalogService;
 import com.etap.voltagedrop.domain.*;
 import com.etap.voltagedrop.domain.catalog.BranchComponent;
-import com.etap.voltagedrop.domain.catalog.CableSpec;
 import com.etap.voltagedrop.domain.norms.CustomNormEvaluator;
 import com.etap.voltagedrop.domain.norms.NormEvaluator;
 import com.etap.voltagedrop.domain.strategy.ConstantCurrentStrategy;
 import com.etap.voltagedrop.domain.strategy.ConstantPowerStrategy;
 import com.etap.voltagedrop.domain.strategy.LoadBehaviorStrategy;
 import com.etap.voltagedrop.dto.SimulationRequestDto;
-import com.etap.voltagedrop.service.CatalogService;
 import com.etap.voltagedrop.service.GraphValidationService;
 import com.etap.voltagedrop.service.SimulationService;
 import jakarta.validation.Valid;
@@ -121,7 +120,7 @@ public class SimulationController {
             branch.setToNodeId(branchDto.getToNodeId());
             branch.setLengthInKm(branchDto.getLengthInKm());
 
-            BranchComponent component = catalogService.getCableSpec(
+            BranchComponent component = catalogService.getBranchComponent(
                     branchDto.getComponentCrossSection(),
                     branchDto.getComponentMaterial()
             );

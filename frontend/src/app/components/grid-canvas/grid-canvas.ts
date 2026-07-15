@@ -6,7 +6,9 @@ import { NgIf } from '@angular/common';
 import { LoadProfileEditor } from '../load-profile-editor/load-profile-editor';
 import { ControlPoint } from '../load-profile-editor/load-profile-editor';
 import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
-import { CATALOG_ITEMS } from '../../mocks/equipement-catalog.mock';
+import { MOCK_CABLES } from '../../mocks/equipement-catalog.mock';
+import { CableCatalog } from '../../models/catalog.model';
+import { LoadPreset } from '../../models/load-preset.model';
 
 @Component({
   selector: 'app-grid-canvas',
@@ -20,6 +22,8 @@ export class GridCanvas implements AfterViewInit {
   @ViewChild('cyContainer', { static: true }) cyContainer!: ElementRef;
   @Input() deltaTime: number = 2.0;
   @Input() maxSimulationSteps: number = 10; 
+  @Input() cableCatalogItems: CableCatalog[] = MOCK_CABLES;
+  @Input() loadPresets: LoadPreset[] = LOAD_PRESETS;
 
   private cy: Core | undefined;
   
@@ -43,87 +47,195 @@ export class GridCanvas implements AfterViewInit {
 
   constructor(private cdr: ChangeDetectorRef) {}
 
+
   ngAfterViewInit(): void {
     this.initCanvas();
   }
 
   private initCanvas() {
-    this.cy = cytoscape({
-      container: this.cyContainer.nativeElement,
-      boxSelectionEnabled: true, 
-      userPanningEnabled: false, 
-      style: [
-        {
-          selector: 'node[type="SOURCE"]',
-          style: {
-            'label': 'data(label)',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'background-color': '#e74c3c',
-            'color': '#fff',
-            'width': 50,
-            'height': 50,
-            'shape': 'rectangle',
-            'font-size': '10px'
-          }
-        },
-        {
-          selector: 'node[type="CONSUMER"]',
-          style: {
-            'label': 'data(label)',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'background-color': '#3498db',
-            'color': '#fff',
-            'width': 40,
-            'height': 40,
-            'font-size': '10px'
-          }
-        },
-        {
-          selector: 'node[type="JUNCTION"]',
-          style: {
-            'label': 'data(label)',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'background-color': '#95a5a6',
-            'color': '#fff',
-            'width': 30,
-            'height': 30,
-            'shape': 'diamond',
-            'font-size': '9px'
-          }
-        },
-        {
-          selector: 'edge',
-          style: {
-            'width': 4,
-            'line-color': '#7f8c8d',
-            'target-arrow-color': '#7f8c8d',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier'
-          }
-        },
-        {
+  this.cy = cytoscape({
+    container: this.cyContainer.nativeElement,
+    boxSelectionEnabled: true,
+    userPanningEnabled: false,
+    style: [
+      // === NODES: SOURCE (Substation) ===
+      {
+        selector: 'node[type="SOURCE"]',
+        style: {
+          'label': 'data(label)',
+          'text-valign': 'bottom',
+          'text-halign': 'center',
+          'text-margin-y': 6,
+          'color': '#8891A0', // var(--text-secondary)
+          'font-size': '10px',
+          'font-family': 'Inter, system-ui, sans-serif',
+          'font-weight': 500,
+          
+          'shape': 'round-rectangle',
+          'width': 44,
+          'height': 44,
+          'background-color': 'rgba(232, 97, 93, 0.14)', // var(--status-danger-bg)
+          'background-opacity': 1,
+          'border-width': 2,
+          'border-color': '#E8615D', // var(--status-danger)
+          'border-opacity': 0.8,
+          
+          'background-image': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23E8615D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+          'background-width': '60%',
+          'background-height': '60%',
+          'background-position-x': '50%',
+          'background-position-y': '50%',
+          'background-fit': 'none',
+          'background-clip': 'none',
+        } as any
+      },
+
+      // === NODES: CONSUMER (Load) ===
+      {
+        selector: 'node[type="CONSUMER"]',
+        style: {
+          'label': 'data(label)',
+          'text-valign': 'bottom',
+          'text-halign': 'center',
+          'text-margin-y': 6,
+          'color': '#8891A0',
+          'font-size': '10px',
+          'font-family': 'Inter, system-ui, sans-serif',
+          'font-weight': 500,
+          
+          'shape': 'ellipse',
+          'width': 36,
+          'height': 36,
+          'background-color': 'rgba(232, 163, 61, 0.14)', // var(--accent-dim)
+          'background-opacity': 1,
+          'border-width': 2,
+          'border-color': '#E8A33D', // var(--accent)
+          'border-opacity': 0.7,
+          
+          'background-image': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23E8A33D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
+          'background-width': '55%',
+          'background-height': '55%',
+          'background-position-x': '50%',
+          'background-position-y': '50%',
+          'background-fit': 'none',
+        } as any
+      },
+
+      // === NODES: JUNCTION (Busbar) ===
+      {
+        selector: 'node[type="JUNCTION"]',
+        style: {
+          'label': 'data(label)',
+          'text-valign': 'bottom',
+          'text-halign': 'center',
+          'text-margin-y': 6,
+          'color': '#8891A0',
+          'font-size': '9px',
+          'font-family': 'Inter, system-ui, sans-serif',
+          'font-weight': 500,
+          
+          'shape': 'diamond',
+          'width': 28,
+          'height': 28,
+          'background-color': 'rgba(79, 184, 208, 0.12)',
+          'background-opacity': 1,
+          'border-width': 2,
+          'border-color': '#4FB8D0', // var(--data-cyan)
+          'border-opacity': 0.6,
+          
+          'background-image': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%234FB8D0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v7M12 15v7M2 12h7M15 12h7"/></svg>',
+          'background-width': '55%',
+          'background-height': '55%',
+          'background-position-x': '50%',
+          'background-position-y': '50%',
+          'background-fit': 'none',
+        } as any
+      },
+
+      // === EDGES: Default ===
+      {
+        selector: 'edge',
+        style: {
+          'width': 3,
+          'line-color': '#2A323C', // var(--border-hairline)
+          'line-opacity': 0.8,
+          'curve-style': 'bezier',
+          'control-point-step-size': 40,
+          
+          'target-arrow-shape': 'triangle',
+          'target-arrow-color': '#2A323C',
+          'target-arrow-width': 8,
+          'arrow-scale': 0.8,
+          
+          'label': 'data(lengthLabel)',
+          'font-size': '8px',
+          'color': '#545C68', // var(--text-tertiary)
+          'text-background-color': '#12161C', // var(--bg-canvas)
+          'text-background-opacity': 0.9,
+          'text-background-padding': '2px',
+          'text-background-shape': 'roundrectangle',
+        } as any
+      },
+
+      // === SELECTION ===
+      {
         selector: 'node:selected',
         style: {
           'border-width': 3,
-          'border-color': '#2c3e50',
-          'background-blacken': 0.2
-        }
+          'border-color': '#E8A33D', // var(--accent)
+          'border-opacity': 1,
+          'background-blacken': -0.1,
+        } as any
       },
       {
         selector: 'edge:selected',
         style: {
-          'line-color': '#34495e',
-          'target-arrow-color': '#34495e',
-          'width': 6
-        }
-      }
-      ],
-      elements: [],
-      layout: { name: 'preset' }
-    });
+          'line-color': '#E8A33D',
+          'target-arrow-color': '#E8A33D',
+          'width': 4,
+          'line-opacity': 1,
+        } as any
+      },
+
+      // === HOVER ===
+      {
+        selector: 'node:active',
+        style: {
+          'border-width': 3,
+          'border-color': '#F4B75A', // var(--accent-strong)
+          'border-opacity': 0.8,
+        } as any
+      },
+      {
+        selector: 'edge:active',
+        style: {
+          'line-color': 'rgba(232, 163, 61, 0.14)',
+          'width': 4,
+        } as any
+      },
+
+      // === SIMULATION STATES ===
+      {
+        selector: 'edge.sim-ok',
+        style: {
+          'line-color': '#3FBF7F', // var(--status-ok)
+          'target-arrow-color': '#3FBF7F',
+          'line-opacity': 0.9,
+        } as any
+      },
+      {
+        selector: 'edge.sim-violation',
+        style: {
+          'line-color': '#E8615D', // var(--status-danger)
+          'target-arrow-color': '#E8615D',
+          'width': 5,
+          'line-opacity': 1,
+        } as any
+      },
+    ] as any,
+    elements: [],
+    layout: { name: 'preset' }
+  });
 
     this.cy.on('select unselect', () => {
       this.updateSelectionState();
@@ -134,7 +246,32 @@ export class GridCanvas implements AfterViewInit {
         this.cdr.detectChanges();
         this.cy?.resize();
     });
+
+    this.cyContainer.nativeElement.addEventListener('wheel', (e: WheelEvent) => {
+        e.preventDefault();
+        
+        const zoomFactor = 1.1;
+        const currentZoom = this.cy!.zoom();
+        
+        if (e.deltaY < 0) {
+            this.cy!.zoom({
+                level: currentZoom * zoomFactor,
+                renderedPosition: { x: e.offsetX, y: e.offsetY }
+            });
+        } else {
+            this.cy!.zoom({
+                level: currentZoom / zoomFactor,
+                renderedPosition: { x: e.offsetX, y: e.offsetY }
+            });
+        }
+    }, { passive: false });
+
+    this.cy.on('dbltap', () => {
+        this.cy!.fit(undefined, 50);
+    });
   }
+
+  
 
   private updateSelectionState() {
     if (!this.cy) return;
@@ -217,39 +354,40 @@ export class GridCanvas implements AfterViewInit {
 
     this.updateSelectedElementProperty(event.property, event.value);
     
-    if (event.property === 'selectedPresetId' && event.value) {
-      const preset = LOAD_PRESETS.find(p => p.id === event.value);
-      if (preset) {
-        this.updateSelectedElementProperty('loadType', preset.loadType);
-        this.updateSelectedElementProperty('cosPhi', preset.cosPhi);
-        this.updateSelectedElementProperty('loadProfileControlPoints', [...preset.defaultProfile]);
-        this.updateSelectedElementProperty('loadProfile', LoadProfileEditor.getProfileFromControlPoints(
-          preset.defaultProfile, 
-          this.maxSimulationSteps, 
-          this.deltaTime, 
-          Math.max(...preset.defaultProfile.map(p => p.value), 1)
-        ));
-      }
+    // if (event.property === 'selectedPresetId' && event.value) {
+    //   const preset = LOAD_PRESETS.find(p => p.id === event.value);
+    //   if (preset) {
+    //     this.updateSelectedElementProperty('loadType', preset.loadType);
+    //     this.updateSelectedElementProperty('cosPhi', preset.cosPhi);
+    //     this.updateSelectedElementProperty('loadProfileControlPoints', [...preset.defaultProfile]);
+    //     this.updateSelectedElementProperty('loadProfile', LoadProfileEditor.getProfileFromControlPoints(
+    //       preset.defaultProfile, 
+    //       this.maxSimulationSteps, 
+    //       this.deltaTime, 
+    //       Math.max(...preset.defaultProfile.map(p => p.value), 1)
+    //     ));
+    //   }
+    // }
+
+    if (event.property === 'lengthInKm') {
+      this.updateSelectedElementProperty('lengthLabel', `${event.value} km`);
     }
 
-    if (event.property === 'catalogId' && event.value) {
-      const catalogItem = CATALOG_ITEMS.find(item => item.id === event.value);
+    // if (event.property === 'catalogId' && event.value) {
+    //   const catalogItem = MOCK_CABLES.find(item => item.id === event.value);
       
-      if (catalogItem) {
-        if (catalogItem['type'] === 'CableSpec') {
-          this.updateSelectedElementProperty('componentCrossSection', catalogItem['crossSection']);
-          this.updateSelectedElementProperty('componentMaterial', catalogItem['material']);
-          // Lock the R/X fields (we don't want the user overriding IEEE/EN 50160 specs)
-          this.updateSelectedElementProperty('resistancePerKm', catalogItem['resistancePerKm']);
-          this.updateSelectedElementProperty('reactancePerKm', catalogItem['reactancePerKm']);
-        } 
-        else if (catalogItem['type'] === 'TransformerSpec') {
-          this.updateSelectedElementProperty('nominalPrimaryVoltage', catalogItem['nominalPrimaryVoltage']);
-          this.updateSelectedElementProperty('nominalSecondaryVoltage', catalogItem['nominalSecondaryVoltage']);
-          this.updateSelectedElementProperty('impedancePercent', catalogItem['impedancePercent']);
-        }
-      }
-    }
+    //   if (catalogItem) {
+    //     if (catalogItem['category'] === 'cable') {
+    //       //this.updateSelectedElementProperty('componentCrossSection', catalogItem['physical']['crossSection']);
+    //       this.updateSelectedElementProperty('componentCrossSection', '16mm2');
+    //       this.updateSelectedElementProperty('componentMaterial', catalogItem['physical']['conductorMaterial']);
+    //       // Lock the R/X fields (we don't want the user overriding IEEE/EN 50160 specs)
+    //       this.updateSelectedElementProperty('resistancePerKm', catalogItem['electrical']['resistancePerKm']);
+    //       this.updateSelectedElementProperty('reactancePerKm', catalogItem['electrical']['reactancePerKm']);
+    //     } 
+ 
+    //   }
+    // }
 
     this.cdr.detectChanges();
   }
@@ -280,14 +418,29 @@ export class GridCanvas implements AfterViewInit {
   }
 
   private drawEdge(source: NodeSingular, target: NodeSingular) {
-    this.cy?.add({
-      data: { 
-        id: `edge_${source.id()}_${target.id()}`, 
-        source: source.id(), 
-        target: target.id() 
-      }
-    });
+  if (!this.cy) return;
+  
+  const edgeId = `edge_${source.id()}_${target.id()}`;
+  const reverseEdgeId = `edge_${target.id()}_${source.id()}`;
+  
+  if (this.cy.$('#' + edgeId).length > 0 || this.cy.$('#' + reverseEdgeId).length > 0) {
+    return;
   }
+  
+  if (source.id() === target.id()) {
+    return;
+  }
+
+  this.cy.add({
+    data: { 
+      id: edgeId,
+      source: source.id(), 
+      target: target.id(),
+      lengthInKm: 0.1,
+      lengthLabel: '0.1 km'
+    }
+  });
+}
 
   public selectTool(tool: string) {
     this.currentTool = tool;
@@ -486,20 +639,21 @@ export class GridCanvas implements AfterViewInit {
     this.cy.edges().forEach(edge => {
       const simData = edge.data('simulationData');
       if (simData && simData.statusTimeSeries) {
-        
         const status = simData.statusTimeSeries[step];
         
         if (status === 'VIOLATION') {
           edge.style({
-            'line-color': '#e74c3c',
-            'target-arrow-color': '#e74c3c',
-            'width': 6
+            'line-color': '#E8615D',
+            'target-arrow-color': '#E8615D',
+            'width': 5,
+            'line-opacity': 1,
           });
         } else {
           edge.style({
-            'line-color': '#27ae60',
-            'target-arrow-color': '#27ae60',
-            'width': 4
+            'line-color': '#3FBF7F',
+            'target-arrow-color': '#3FBF7F',
+            'width': 3,
+            'line-opacity': 0.9,
           });
         }
       }

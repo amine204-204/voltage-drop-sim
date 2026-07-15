@@ -4,12 +4,18 @@ import { SimulationTopBar, SimulationSettings } from './components/simulation-to
 import { SimulationService } from './services/simulation.service';
 import { MockSimulationService } from './mocks/mock-simulation.service';
 import { SimulationRequestDto } from './models/simulation.model';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
+import { MOCK_CABLES } from './mocks/equipement-catalog.mock';
+import { CatalogService } from './services/catalog.service';
+import { CableCatalog } from './models/catalog.model';
+import { AsyncPipe, NgIf } from '@angular/common';
+import { LoadPreset } from './models/load-preset.model';
+import { LOAD_PRESETS } from './mocks/load-preset.mock';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [GridCanvas, SimulationTopBar],
+  imports: [GridCanvas, SimulationTopBar, AsyncPipe, NgIf],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -22,19 +28,51 @@ export class App {
   public currentStep: number = 0;
   public isSimulationLoaded: boolean = false;
   
+  public cableCatalog: CableCatalog[] = [];
+  public loadPresets: LoadPreset[] = [];
+
+  isLoadingCatalog = true;
+  catalogError: string | null = null;
+
   private USE_MOCKS: boolean = false; 
 
   constructor(
-    private realService: SimulationService,
-    private mockService: MockSimulationService,
+    private simulationService: SimulationService,
+    private catalogService: CatalogService,
+    private mockSimulationService: MockSimulationService,
     private cdr: ChangeDetectorRef
   ) {}
 
-  private get service() {
-    return this.USE_MOCKS ? this.mockService : this.realService;
+ 
+  ngOnInit() {
+    if (this.USE_MOCKS) {
+      this.cableCatalog = MOCK_CABLES;
+      this.loadPresets = LOAD_PRESETS;
+      this.isLoadingCatalog = false;
+    } else {
+      this.catalogService.getCables().subscribe({
+        next: (cables) => {
+          this.cableCatalog = cables;
+          this.isLoadingCatalog = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.catalogError = 'Failed to load equipment catalog. Using defaults.';
+          this.cableCatalog = MOCK_CABLES;
+          this.isLoadingCatalog = false;
+          alert(this.catalogError);
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  private get simService() {
+    return this.USE_MOCKS ? this.mockSimulationService : this.simulationService;
   }
 
   public onRunClicked(settings: SimulationSettings) {
+    console.log(this.cableCatalog);
     try {
       const islands = this.gridCanvas.getIslands();
 
@@ -52,7 +90,7 @@ export class App {
           customMaxPu: settings.customMaxPu,
           graph: island
         };
-        return this.service.runSimulation(payload);
+        return this.simService.runSimulation(payload);
       });
 
       forkJoin(payloads).subscribe({

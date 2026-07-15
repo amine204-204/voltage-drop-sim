@@ -1,27 +1,78 @@
 <div class="workspace">
   
   <div class="toolbar">
-    <button (click)="selectTool('pointer')" [class.active-tool]="currentTool === 'pointer'">
-      ↖ Pointer
+    <button 
+      (click)="selectTool('pointer')" 
+      [class.active-tool]="currentTool === 'pointer'"
+      title="Select / Move">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+      </svg>
     </button>
     
     <hr class="toolbar-divider">
 
-    <button (click)="selectTool('place-SOURCE')" [class.active-tool]="currentTool === 'place-SOURCE'">
-      Substation
+    <button 
+      (click)="selectTool('place-SOURCE')" 
+      [class.active-tool]="currentTool === 'place-SOURCE'"
+      title="Substation (Source)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
     </button>
-    <button (click)="selectTool('place-JUNCTION')" [class.active-tool]="currentTool === 'place-JUNCTION'">
-      Busbar
+    
+    <button 
+      (click)="selectTool('place-JUNCTION')" 
+      [class.active-tool]="currentTool === 'place-JUNCTION'"
+      title="Busbar (Junction)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v7M12 15v7M2 12h7M15 12h7"/>
+      </svg>
     </button>
-    <button (click)="selectTool('place-CONSUMER')" [class.active-tool]="currentTool === 'place-CONSUMER'">
-      Load
+    
+    <button 
+      (click)="selectTool('place-CONSUMER')" 
+      [class.active-tool]="currentTool === 'place-CONSUMER'"
+      title="Load (Consumer)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 20V10"/>
+        <path d="M12 20V4"/>
+        <path d="M6 20v-6"/>
+      </svg>
     </button>
     
     <hr class="toolbar-divider">
 
-    <button (click)="selectTool('draw-cable')" [class.active-tool]="currentTool === 'draw-cable'">
-      Draw Cable
+    <button 
+      (click)="selectTool('draw-cable')" 
+      [class.active-tool]="currentTool === 'draw-cable'"
+      title="Draw Cable">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="6" cy="18" r="3"/>
+        <circle cx="18" cy="6" r="3"/>
+        <path d="M6 15V6a3 3 0 013-3h6"/>
+      </svg>
     </button>
+
+    <hr class="toolbar-divider">
+
+    <!-- <button 
+
+      title="Run Simulation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+    </button>
+    
+    <button 
+      title="Save Project">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+        <polyline points="7 3 7 8 15 8"/>
+      </svg>
+    </button> -->
   </div>
 
   <div class="canvas-container">
@@ -29,9 +80,14 @@
   </div>
 
   <app-property-panel 
+    *ngIf="selectedElementData"
     [elementData]="selectedElementData" 
     [elementType]="selectedElementType"
     [simulationStep]="currentSimulationStep"
+    [maxSimulationSteps]="maxSimulationSteps"
+    [deltaTime]="deltaTime"
+    [cableCatalogItems]="cableCatalogItems"
+    [loadPresets]="loadPresets"
     (propertyChanged)="onPropertyUpdated($event)"
     (openChart)="showChartModal = true"
     (openProfileEditor)="showProfileEditor = true">
