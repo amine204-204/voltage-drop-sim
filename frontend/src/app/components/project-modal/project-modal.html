@@ -1,0 +1,38 @@
+<div class="modal-overlay" (click)="onClose.emit()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h3>{{ isEdit ? 'Edit Project Details' : 'Save Project As' }}</h3>
+      <button class="close-btn" (click)="onClose.emit()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="proj-name">Project Name *</label>
+        <input 
+          id="proj-name" 
+          type="text" 
+          [(ngModel)]="name" 
+          placeholder="e.g. Substation Alpha Distribution"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="proj-desc">Description</label>
+        <textarea 
+          id="proj-desc" 
+          [(ngModel)]="description" 
+          placeholder="Explain grid scope, constraints, and time profile duration..."
+          rows="4"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="cancel-btn" (click)="onClose.emit()">Cancel</button>
+      <button class="save-btn" (click)="save()">Save Project</button>
+    </div>
+
+  </div>
+</div>

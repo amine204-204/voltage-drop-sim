@@ -27,7 +27,7 @@ export class SimulationTopBar {
   @Input() deltaTime: number = 0;
   @Input() isSimulationLoaded: boolean = false;
 
-  public currentStep: number = 1.0;
+  public currentStep: number = 0;
   public selectedNormType: string = 'en50160';
   public customMinPu: number = 0.90;
   public customMaxPu: number = 1.10;
@@ -46,5 +46,4 @@ export class SimulationTopBar {
     this.currentStepChanged.emit(parseInt(event.target.value, 10));
     this.currentStep = parseInt(event.target.value, 10);
   }
-
 }

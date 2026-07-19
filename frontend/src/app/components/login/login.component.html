@@ -1,0 +1,66 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="logo-icon">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+      <h1>Voltage Drop Simulator</h1>
+    </div>
+
+    <h2>{{ isRegisterMode ? 'Create Account' : 'Sign In' }}</h2>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          id="username"
+          type="text"
+          [(ngModel)]="username"
+          name="username"
+          required
+          autocomplete="username"
+          placeholder="Enter username"
+        >
+      </div>
+
+      <div class="form-group" *ngIf="isRegisterMode">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          required
+          autocomplete="email"
+          placeholder="Enter email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          required
+          autocomplete="current-password"
+          placeholder="Enter password"
+        >
+      </div>
+
+      <div class="error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" class="submit-btn">
+        {{ isRegisterMode ? 'Register' : 'Sign In' }}
+      </button>
+    </form>
+
+    <p class="toggle-text">
+      {{ isRegisterMode ? 'Already have an account?' : "Don't have an account?" }}
+      <a (click)="toggleMode()">{{ isRegisterMode ? 'Sign In' : 'Register' }}</a>
+    </p>
+  </div>
+</div>

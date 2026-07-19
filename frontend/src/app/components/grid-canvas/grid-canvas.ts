@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef, HostListener, Input } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef, HostListener, Input, Output, EventEmitter } from '@angular/core';
 import cytoscape, { Core, EventObject, NodeSingular } from 'cytoscape';
 import { PropertyPanel } from '../property-panel/property-panel';
 import { VoltageChartModal } from '../voltage-chart-modal/voltage-chart-modal';
@@ -412,7 +412,17 @@ export class GridCanvas implements AfterViewInit {
     if (type === 'JUNCTION') label = `Bus ${this.nodeCounter}`;
 
     this.cy?.add({
-      data: { id: `node_${this.nodeCounter}`, label: label, type: type },
+      data: {
+        id: `node_${this.nodeCounter}`,
+        label: label,
+        type: type,
+        nominalVoltage: type === 'SOURCE' ? 230 : null,
+        loadType: type === 'CONSUMER' ? 'CONSTANT_POWER' : null,
+        cosPhi: type === 'CONSUMER' ? 0.95 : null,
+        loadProfile: null,
+        loadProfileControlPoints: null,
+        selectedPresetId: null
+      },
       position: { x: position.x, y: position.y }
     });
   }
@@ -437,7 +447,10 @@ export class GridCanvas implements AfterViewInit {
       source: source.id(), 
       target: target.id(),
       lengthInKm: 0.1,
-      lengthLabel: '0.1 km'
+      lengthLabel: '0.1 km',
+      catalogId: null,
+      componentCrossSection: '16mm2',
+      componentMaterial: 'CU'
     }
   });
 }
@@ -673,5 +686,122 @@ export class GridCanvas implements AfterViewInit {
     
     this.showProfileEditor = false;
     this.cdr.detectChanges();
+  }
+
+  public clearCanvas() {
+    if (!this.cy) return;
+    this.cy.elements().remove();
+    this.nodeCounter = 0;
+    this.selectedElementData = null;
+    this.selectedElementType = '';
+    this.simulationResult = null;
+    this.cdr.detectChanges();
+  }
+
+  public getProjectGraph(): { nodes: any[]; branches: any[] } {
+    if (!this.cy) return { nodes: [], branches: [] };
+
+    const nodes = this.cy.nodes().map(node => {
+      const data = node.data();
+      const pos = node.position();
+      return {
+        id: data.id,
+        name: data.label,
+        type: data.type,
+        nominalVoltage: data.nominalVoltage || null,
+        loadType: data.loadType || null,
+        cosPhi: data.cosPhi || null,
+        loadProfile: data.loadProfile || null,
+        loadProfileControlPoints: data.loadProfileControlPoints || null,
+        selectedPresetId: data.selectedPresetId || null,
+        x: pos.x,
+        y: pos.y
+      };
+    });
+
+    const branches = this.cy.edges().map(edge => {
+      const data = edge.data();
+      return {
+        id: data.id,
+        name: data.name || `Cable ${data.source}-${data.target}`,
+        fromNodeId: data.source,
+        toNodeId: data.target,
+        lengthInKm: data.lengthInKm || 0.1,
+        catalogId: data.catalogId || null,
+        componentCrossSection: data.componentCrossSection || '16mm2',
+        componentMaterial: data.componentMaterial || 'CU'
+      };
+    });
+
+    return { nodes, branches };
+  }
+
+  public loadProjectGraph(nodes: any[], branches: any[], simulationResult?: any, deltaTimeSeconds?: number) {
+    if (!this.cy) return;
+    this.clearCanvas();
+
+    let maxNodeNum = 0;
+    nodes.forEach(node => {
+      const match = node.id.match(/node_(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNodeNum) maxNodeNum = num;
+      }
+
+      this.cy!.add({
+        data: {
+          id: node.id,
+          label: node.name,
+          type: node.type,
+          nominalVoltage: node.nominalVoltage,
+          loadType: node.loadType,
+          cosPhi: node.cosPhi,
+          loadProfile: node.loadProfile,
+          loadProfileControlPoints: node.loadProfileControlPoints,
+          selectedPresetId: node.selectedPresetId
+        },
+        position: { x: node.x, y: node.y }
+      });
+    });
+
+    this.nodeCounter = maxNodeNum;
+
+    branches.forEach(branch => {
+      this.cy!.add({
+        data: {
+          id: branch.id,
+          name: branch.name,
+          source: branch.fromNodeId,
+          target: branch.toNodeId,
+          lengthInKm: branch.lengthInKm,
+          lengthLabel: `${branch.lengthInKm} km`,
+          catalogId: branch.catalogId,
+          componentCrossSection: branch.componentCrossSection,
+          componentMaterial: branch.componentMaterial
+        }
+      });
+    });
+
+    this.cy.fit(undefined, 50);
+
+    if (simulationResult && deltaTimeSeconds !== undefined && simulationResult.nodesResults && simulationResult.branchesResults) {
+      const mappedResponse = {
+        nodes: simulationResult.nodesResults.map((nr: any) => ({
+          id: nr.nodeId,
+          potentialTimeSeries: nr.potentialTimeSeries
+        })),
+        branches: simulationResult.branchesResults.map((br: any) => ({
+          id: br.branchId,
+          currentTimeSeries: br.currentTimeSeries,
+          dropPercentTimeSeries: br.dropPercentTimeSeries,
+          statusTimeSeries: br.statusTimeSeries,
+          powerQualityEvents: br.powerQualityEvents
+        }))
+      };
+      
+      this.applySimulationResults(mappedResponse, deltaTimeSeconds);
+    } else {
+      this.updateSelectionState();
+    }
   }
 }

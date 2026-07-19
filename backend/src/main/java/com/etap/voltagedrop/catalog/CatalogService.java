@@ -31,9 +31,34 @@ public class CatalogService {
         return cableRepo.findByActiveTrue();
     }
 
+    public List<CableCatalogDocument> listAllCablesAdmin() {
+        return cableRepo.findAll();
+    }
+
     public CableCatalogDocument getCableDetail(String id) {
         return cableRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cable not found: " + id));
+    }
+
+    public CableCatalogDocument createCable(CableCatalogDocument cable) {
+        cable.setId(null);
+        return cableRepo.save(cable);
+    }
+
+    public CableCatalogDocument updateCable(String id, CableCatalogDocument cable) {
+        if (!cableRepo.existsById(id)) {
+            throw new IllegalArgumentException("Cable not found: " + id);
+        }
+        cable.setId(id);
+        return cableRepo.save(cable);
+    }
+
+    public boolean deleteCable(String id) {
+        if (!cableRepo.existsById(id)) {
+            return false;
+        }
+        cableRepo.deleteById(id);
+        return true;
     }
 
     public double getImpedanceAtTemp(String id, double tempC) {
