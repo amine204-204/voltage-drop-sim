@@ -4,6 +4,7 @@ import com.etap.voltagedrop.catalog.mongo.CableCatalogDocument;
 import com.etap.voltagedrop.catalog.mongo.CableCatalogRepository;
 import com.etap.voltagedrop.domain.catalog.BranchComponent;
 import com.etap.voltagedrop.domain.catalog.CableSpec;
+import com.etap.voltagedrop.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,7 @@ public class CatalogService {
     public BranchComponent getBranchComponent(String crossSection, String material) {
         String lookupId = material + "-" + crossSection;
         CableCatalogDocument doc = cableRepo.findById(lookupId)
-                .orElseThrow(() -> new IllegalArgumentException("Cable not found: " + lookupId));
+                .orElseThrow(() -> new ResourceNotFoundException("Cable not found: " + lookupId));
 
         return new CableSpec(
                 doc.getPhysical().getCrossSection(),
@@ -37,7 +38,7 @@ public class CatalogService {
 
     public CableCatalogDocument getCableDetail(String id) {
         return cableRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Cable not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Cable not found: " + id));
     }
 
     public CableCatalogDocument createCable(CableCatalogDocument cable) {
@@ -47,7 +48,7 @@ public class CatalogService {
 
     public CableCatalogDocument updateCable(String id, CableCatalogDocument cable) {
         if (!cableRepo.existsById(id)) {
-            throw new IllegalArgumentException("Cable not found: " + id);
+            throw new ResourceNotFoundException("Cable not found: " + id);
         }
         cable.setId(id);
         return cableRepo.save(cable);
@@ -62,7 +63,8 @@ public class CatalogService {
     }
 
     public double getImpedanceAtTemp(String id, double tempC) {
-        CableCatalogDocument doc = cableRepo.findById(id).orElseThrow();
+        CableCatalogDocument doc = cableRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cable not found: " + id));
         return doc.getImpedanceTable().stream()
                 .filter(i -> i.getTempC() >= tempC)
                 .findFirst()

@@ -2,6 +2,7 @@ package com.etap.voltagedrop.catalog;
 
 import com.etap.voltagedrop.catalog.mongo.LoadPresetDocument;
 import com.etap.voltagedrop.catalog.mongo.LoadPresetRepository;
+import com.etap.voltagedrop.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,6 @@ public class LoadPresetService {
 
     public LoadPresetDocument getPreset(String id) {
         return presetRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Preset not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Preset not found: " + id));
     }
 }

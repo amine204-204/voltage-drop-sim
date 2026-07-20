@@ -28,7 +28,7 @@
 
             <polyline [attr.points]="svgPath" fill="none" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
 
-            <polygon *ngIf="svgPath" [attr.points]="svgPath + ' 100,100 0,100'" fill="rgba(232, 163, 61, 0.12)" stroke="none"/>
+            <polygon *ngIf="svgPath" [attr.points]="svgPath + ' 100,100 0,100'" [attr.fill]="accentFill" stroke="none"/>
 
             <g *ngFor="let point of points; let i = index">
             <rect

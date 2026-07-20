@@ -49,11 +49,11 @@
     cursor: pointer;
     appearance: none;
     font-family: var(--font-ui);
+    padding-right: 28px;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238891A0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 13px;
-    padding-right: 28px;
   }
 
   label {
@@ -64,7 +64,7 @@
 .run-btn {
   margin-left: auto;
   background-color: var(--status-ok);
-  color: #0F1318;
+  color: var(--text-on-accent);
   border: none;
   padding: 8px 22px;
   font-size: 12.5px;
@@ -76,7 +76,8 @@
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
-    background-color: #4ED895;
+    background-color: var(--status-ok);
+    filter: brightness(1.15);
     box-shadow: 0 0 0 3px var(--status-ok-bg);
   }
 }
@@ -119,7 +120,7 @@
       background: var(--accent);
       border: 2px solid #0F1318;
       border-radius: 2px;
-      box-shadow: 0 0 6px rgba(232, 163, 61, 0.6);
+      box-shadow: 0 0 6px var(--accent-glow);
       cursor: pointer;
     }
 
@@ -127,9 +128,9 @@
       width: 12px;
       height: 12px;
       background: var(--accent);
-      border: 2px solid #0F1318;
+      border: 2px solid var(--bg-app);
       border-radius: 2px;
-      box-shadow: 0 0 6px rgba(232, 163, 61, 0.6);
+      box-shadow: 0 0 6px var(--accent-glow);
       cursor: pointer;
     }
   }

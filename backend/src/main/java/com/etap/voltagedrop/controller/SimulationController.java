@@ -14,6 +14,7 @@ import com.etap.voltagedrop.service.SimulationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -30,6 +31,7 @@ public class SimulationController {
     private final Map<String, NormEvaluator> systemNormEvaluators;
 
     @PostMapping("/run")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
     public ResponseEntity<NetworkGraph> runSimulation(@Valid @RequestBody SimulationRequestDto dto) {
 
         NetworkGraph graph = mapDtoToDomain(dto);

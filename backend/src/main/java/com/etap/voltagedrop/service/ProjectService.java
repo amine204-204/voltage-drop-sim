@@ -3,6 +3,7 @@ package com.etap.voltagedrop.service;
 import com.etap.voltagedrop.dto.ProjectDto;
 import com.etap.voltagedrop.dto.ProjectSummaryDto;
 import com.etap.voltagedrop.dto.SaveProjectDto;
+import com.etap.voltagedrop.exception.ResourceNotFoundException;
 import com.etap.voltagedrop.persistence.entity.*;
 import com.etap.voltagedrop.repository.jpa.ProjectRepository;
 import com.etap.voltagedrop.repository.jpa.UserRepository;
@@ -77,7 +78,7 @@ public class ProjectService {
 
     public ProjectDto getProjectById(Long id) {
         ProjectEntity project = projectRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
         assertOwnerOrAdmin(project);
         return mapEntityToDto(project);
     }
@@ -92,7 +93,7 @@ public class ProjectService {
 
     public ProjectDto updateProject(Long id, SaveProjectDto dto) {
         ProjectEntity project = projectRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
         assertOwnerOrAdmin(project);
         updateProjectEntityFromDto(project, dto);
         ProjectEntity saved = projectRepository.save(project);
@@ -101,7 +102,7 @@ public class ProjectService {
 
     public void deleteProject(Long id) {
         ProjectEntity project = projectRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
         assertOwnerOrAdmin(project);
         projectRepository.deleteById(id);
     }
@@ -115,7 +116,6 @@ public class ProjectService {
         project.setCustomMinPu(dto.getCustomMinPu());
         project.setCustomMaxPu(dto.getCustomMaxPu());
 
-        // Map nodes
         List<ProjectNodeEntity> nodes = new ArrayList<>();
         if (dto.getNodes() != null) {
             for (SaveProjectDto.NodeDto nodeDto : dto.getNodes()) {
@@ -136,7 +136,6 @@ public class ProjectService {
         }
         project.setNodes(nodes);
 
-        // Map branches
         List<ProjectBranchEntity> branches = new ArrayList<>();
         if (dto.getBranches() != null) {
             for (SaveProjectDto.BranchDto branchDto : dto.getBranches()) {
@@ -154,13 +153,11 @@ public class ProjectService {
         }
         project.setBranches(branches);
 
-        // Map simulation results
         if (dto.getSimulationResult() != null) {
             SimulationResultEntity simResult = new SimulationResultEntity();
             simResult.setRunAt(LocalDateTime.now());
             simResult.setProject(project);
 
-            // Nodes results
             List<NodeResultEntity> nodesResults = new ArrayList<>();
             if (dto.getSimulationResult().getNodesResults() != null) {
                 for (SaveProjectDto.NodeResultDto nrDto : dto.getSimulationResult().getNodesResults()) {
@@ -173,7 +170,6 @@ public class ProjectService {
             }
             simResult.setNodesResults(nodesResults);
 
-            // Branches results
             List<BranchResultEntity> branchesResults = new ArrayList<>();
             if (dto.getSimulationResult().getBranchesResults() != null) {
                 for (SaveProjectDto.BranchResultDto brDto : dto.getSimulationResult().getBranchesResults()) {
@@ -222,7 +218,6 @@ public class ProjectService {
         dto.setCreatedAt(p.getCreatedAt());
         dto.setUpdatedAt(p.getUpdatedAt());
 
-        // Map nodes
         dto.setNodes(p.getNodes().stream().map(node -> {
             ProjectDto.NodeDto n = new ProjectDto.NodeDto();
             n.setId(node.getNodeId());
@@ -239,7 +234,6 @@ public class ProjectService {
             return n;
         }).collect(Collectors.toList()));
 
-        // Map branches
         dto.setBranches(p.getBranches().stream().map(branch -> {
             ProjectDto.BranchDto b = new ProjectDto.BranchDto();
             b.setId(branch.getBranchId());
@@ -253,7 +247,6 @@ public class ProjectService {
             return b;
         }).collect(Collectors.toList()));
 
-        // Map simulationResult
         if (p.getSimulationResult() != null) {
             ProjectDto.SimulationResultDto sr = new ProjectDto.SimulationResultDto();
             

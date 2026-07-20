@@ -6,9 +6,8 @@ import com.etap.voltagedrop.dto.SaveProjectDto;
 import com.etap.voltagedrop.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,41 +25,26 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getProjectById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(projectService.getProjectById(id));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ProjectDto getProjectById(@PathVariable Long id) {
+        return projectService.getProjectById(id);
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody SaveProjectDto dto) {
         return ResponseEntity.ok(projectService.saveProject(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProject(@PathVariable Long id, @Valid @RequestBody SaveProjectDto dto) {
-        try {
-            return ResponseEntity.ok(projectService.updateProject(id, dto));
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
+    public ProjectDto updateProject(@PathVariable Long id, @Valid @RequestBody SaveProjectDto dto) {
+        return projectService.updateProject(id, dto);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProject(@PathVariable Long id) {
-        try {
-            projectService.deleteProject(id);
-            return ResponseEntity.ok().build();
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+        projectService.deleteProject(id);
+        return ResponseEntity.ok().build();
     }
 }

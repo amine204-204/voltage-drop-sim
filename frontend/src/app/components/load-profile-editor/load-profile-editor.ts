@@ -16,6 +16,8 @@ export interface ControlPoint {
 })
 export class LoadProfileEditor implements AfterViewInit {
 
+  public accentFill: string = 'rgba(232, 163, 61, 0.12)';
+
   @Input() totalSteps: number = 10;
   @Input() deltaTime: number = 1; // seconds per step
   @Input() maxLoadValue: number = 100;
@@ -43,6 +45,12 @@ export class LoadProfileEditor implements AfterViewInit {
 
   constructor() {
     this.updateCurve();
+    this.readAccentFill();
+  }
+
+  private readAccentFill() {
+    const style = getComputedStyle(document.documentElement);
+    this.accentFill = style.getPropertyValue('--accent-dim').trim() || this.accentFill;
   }
 
   ngAfterViewInit() {

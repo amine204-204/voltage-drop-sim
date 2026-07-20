@@ -113,6 +113,25 @@
     }
   }
 
+  .theme-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background-color: var(--bg-panel-raised);
+      color: var(--text-primary);
+    }
+  }
+
   .admin-btn {
     display: flex;
     align-items: center;

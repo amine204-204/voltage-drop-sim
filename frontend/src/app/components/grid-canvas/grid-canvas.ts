@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef, HostListener, Input, Output, EventEmitter } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef, HostListener, Input, Output, EventEmitter, effect } from '@angular/core';
 import cytoscape, { Core, EventObject, NodeSingular } from 'cytoscape';
 import { PropertyPanel } from '../property-panel/property-panel';
 import { VoltageChartModal } from '../voltage-chart-modal/voltage-chart-modal';
@@ -9,6 +9,7 @@ import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
 import { MOCK_CABLES } from '../../mocks/equipement-catalog.mock';
 import { CableCatalog } from '../../models/catalog.model';
 import { LoadPreset } from '../../models/load-preset.model';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-grid-canvas',
@@ -34,7 +35,7 @@ export class GridCanvas implements AfterViewInit {
   public selectedElementData: any = null;
   public selectedElementType: string = '';
 
-  private isSpacePressed: boolean = false;
+  public isSpacePressed: boolean = false;
 
   public currentSimulationStep: number = 0;
   private simulationResult: any = null; 
@@ -45,11 +46,44 @@ export class GridCanvas implements AfterViewInit {
 
   public selectedPresetId: string = '';
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  public get isEmpty(): boolean {
+    return this.cy ? this.cy.nodes().length === 0 : true;
+  }
+
+  public get nodeCount(): number {
+    return this.cy ? this.cy.nodes().length : 0;
+  }
+
+  public get edgeCount(): number {
+    return this.cy ? this.cy.edges().length : 0;
+  }
+
+  public get currentToolLabel(): string {
+    const labels: Record<string, string> = {
+      'pointer': 'Select',
+      'place-SOURCE': 'Place Substation',
+      'place-JUNCTION': 'Place Busbar',
+      'place-CONSUMER': 'Place Load',
+      'draw-cable': 'Draw Cable'
+    };
+    return labels[this.currentTool] || this.currentTool;
+  }
+
+  public get zoomPercent(): number {
+    return this.cy ? Math.round(this.cy.zoom() * 100) : 100;
+  }
+
+  constructor(private cdr: ChangeDetectorRef, private themeService: ThemeService) {
+    effect(() => {
+      this.themeService.mode();
+      this.syncCytoscapeTheme();
+    });
+  }
 
 
   ngAfterViewInit(): void {
     this.initCanvas();
+    requestAnimationFrame(() => this.cy?.resize());
   }
 
   private initCanvas() {
@@ -264,6 +298,7 @@ export class GridCanvas implements AfterViewInit {
                 renderedPosition: { x: e.offsetX, y: e.offsetY }
             });
         }
+        this.cdr.detectChanges();
     }, { passive: false });
 
     this.cy.on('dbltap', () => {
@@ -473,10 +508,100 @@ export class GridCanvas implements AfterViewInit {
     }
   }
 
+  public zoomIn() {
+    if (!this.cy) return;
+    this.cy.zoom({ level: this.cy.zoom() * 1.25, renderedPosition: this.cy.pan() });
+    this.cdr.detectChanges();
+  }
+
+  public zoomOut() {
+    if (!this.cy) return;
+    this.cy.zoom({ level: this.cy.zoom() / 1.25, renderedPosition: this.cy.pan() });
+    this.cdr.detectChanges();
+  }
+
+  public fitToScreen() {
+    if (!this.cy) return;
+    this.cy.fit(undefined, 50);
+    this.cdr.detectChanges();
+  }
+
+  private syncCytoscapeTheme() {
+    if (!this.cy) return;
+    const s = getComputedStyle(document.documentElement);
+
+    const textSecondary = s.getPropertyValue('--text-secondary').trim() || '#8891A0';
+    const statusDangerBg = s.getPropertyValue('--status-danger-bg').trim() || 'rgba(232, 97, 93, 0.14)';
+    const statusDanger = s.getPropertyValue('--status-danger').trim() || '#E8615D';
+    const accentDim = s.getPropertyValue('--accent-dim').trim() || 'rgba(232, 163, 61, 0.14)';
+    const accent = s.getPropertyValue('--accent').trim() || '#E8A33D';
+    const dataCyan = s.getPropertyValue('--data-cyan').trim() || '#4FB8D0';
+    const borderHairline = s.getPropertyValue('--border-hairline').trim() || '#2A323C';
+    const textTertiary = s.getPropertyValue('--text-tertiary').trim() || '#545C68';
+    const bgCanvas = s.getPropertyValue('--bg-canvas').trim() || '#12161C';
+    const accentStrong = s.getPropertyValue('--accent-strong').trim() || '#F4B75A';
+    const statusOk = s.getPropertyValue('--status-ok').trim() || '#3FBF7F';
+
+    const style = this.cy.style();
+
+    style.selector('node[type="SOURCE"]').style({
+      'color': textSecondary,
+      'background-color': statusDangerBg,
+      'border-color': statusDanger,
+    } as any);
+
+    style.selector('node[type="CONSUMER"]').style({
+      'color': textSecondary,
+      'background-color': accentDim,
+      'border-color': accent,
+    } as any);
+
+    style.selector('node[type="JUNCTION"]').style({
+      'color': textSecondary,
+      'background-color': `rgba(${hexToRgb(dataCyan)}, 0.12)`,
+      'border-color': dataCyan,
+    } as any);
+
+    style.selector('edge').style({
+      'line-color': borderHairline,
+      'target-arrow-color': borderHairline,
+      'color': textTertiary,
+      'text-background-color': bgCanvas,
+    } as any);
+
+    style.selector('node:selected').style({
+      'border-color': accent,
+    } as any);
+
+    style.selector('edge:selected').style({
+      'line-color': accent,
+      'target-arrow-color': accent,
+    } as any);
+
+    style.selector('node:active').style({
+      'border-color': accentStrong,
+    } as any);
+
+    style.selector('edge:active').style({
+      'line-color': accentDim,
+    } as any);
+
+    style.selector('edge.sim-ok').style({
+      'line-color': statusOk,
+      'target-arrow-color': statusOk,
+    } as any);
+
+    style.selector('edge.sim-violation').style({
+      'line-color': statusDanger,
+      'target-arrow-color': statusDanger,
+    } as any);
+
+    style.update();
+  }
+
   public getIslands(): any[] {
     if (!this.cy) throw new Error("Cytoscape not initialized");
-
-    const allNodes = this.cy.nodes().map(node => {
+    const allNodes = this.cy.nodes().map((node: any) => {
       const data = node.data();
       return {
         id: data.id, name: data.label, type: data.type,
@@ -486,7 +611,7 @@ export class GridCanvas implements AfterViewInit {
       };
     });
 
-    const allEdges = this.cy.edges().map(edge => {
+    const allEdges = this.cy.edges().map((edge: any) => {
       const data = edge.data();
       return {
         id: data.id, name: `Cable ${data.source}-${data.target}`,
@@ -605,6 +730,9 @@ export class GridCanvas implements AfterViewInit {
   public applySimulationResults(response: any, deltaTimeSeconds: number) {
     if (!this.cy) return;
     
+    const statusDanger = getComputedStyle(document.documentElement).getPropertyValue('--status-danger').trim() || '#E8615D';
+    const statusOk = getComputedStyle(document.documentElement).getPropertyValue('--status-ok').trim() || '#3FBF7F';
+
     this.simulationResult = response;
     this.currentSimulationStep = 0;
     this.deltaTime = deltaTimeSeconds;
@@ -617,14 +745,14 @@ export class GridCanvas implements AfterViewInit {
         
         if (initialStatus === 'VIOLATION') {
           cyEdge.style({
-            'line-color': '#e74c3c',
-            'target-arrow-color': '#e74c3c',
+            'line-color': statusDanger,
+            'target-arrow-color': statusDanger,
             'width': 6
           });
         } else {
           cyEdge.style({
-            'line-color': '#27ae60',
-            'target-arrow-color': '#27ae60',
+            'line-color': statusOk,
+            'target-arrow-color': statusOk,
             'width': 4
           });
         }
@@ -649,6 +777,9 @@ export class GridCanvas implements AfterViewInit {
     if (!this.cy) return;
     this.currentSimulationStep = step;
 
+    const statusDanger = getComputedStyle(document.documentElement).getPropertyValue('--status-danger').trim() || '#E8615D';
+    const statusOk = getComputedStyle(document.documentElement).getPropertyValue('--status-ok').trim() || '#3FBF7F';
+
     this.cy.edges().forEach(edge => {
       const simData = edge.data('simulationData');
       if (simData && simData.statusTimeSeries) {
@@ -656,15 +787,15 @@ export class GridCanvas implements AfterViewInit {
         
         if (status === 'VIOLATION') {
           edge.style({
-            'line-color': '#E8615D',
-            'target-arrow-color': '#E8615D',
+            'line-color': statusDanger,
+            'target-arrow-color': statusDanger,
             'width': 5,
             'line-opacity': 1,
           });
         } else {
           edge.style({
-            'line-color': '#3FBF7F',
-            'target-arrow-color': '#3FBF7F',
+            'line-color': statusOk,
+            'target-arrow-color': statusOk,
             'width': 3,
             'line-opacity': 0.9,
           });
@@ -804,4 +935,10 @@ export class GridCanvas implements AfterViewInit {
       this.updateSelectionState();
     }
   }
+}
+
+function hexToRgb(hex: string): string {
+  const clean = hex.replace('#', '');
+  const num = parseInt(clean, 16);
+  return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
 }

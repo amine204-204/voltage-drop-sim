@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProjectSummary } from '../../models/project.model';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-user-bar',
@@ -25,7 +26,11 @@ export class UserBarComponent {
   public username: string = '';
   public isAdmin: boolean = false;
 
-  constructor(private authService: AuthService, private router: Router) {
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    public themeService: ThemeService
+  ) {
     this.username = this.authService.getUsername() || '';
     this.isAdmin = this.authService.getRole() === 'ADMIN';
   }

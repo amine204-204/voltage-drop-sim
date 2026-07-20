@@ -8,6 +8,7 @@ import { UserSummary, CreateUserRequest } from '../../models/admin.model';
 import { CableCatalog } from '../../models/catalog.model';
 import { ProjectSummary } from '../../models/project.model';
 import { getErrorMessage } from '../../guards/error.interceptor';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-admin-panel',
@@ -36,7 +37,8 @@ export class AdminPanelComponent implements OnInit {
     private adminService: AdminService,
     private projectService: ProjectService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private toast: ToastService
   ) {}
 
   ngOnInit() {
@@ -60,7 +62,7 @@ export class AdminPanelComponent implements OnInit {
     this.loading = true;
     this.adminService.getUsers().subscribe({
       next: (list) => { this.users = list; this.loading = false; this.cdr.detectChanges(); },
-      error: (err) => { this.loading = false; alert(getErrorMessage(err)); this.cdr.detectChanges(); }
+      error: (err) => { this.loading = false; this.toast.error(getErrorMessage(err)); this.cdr.detectChanges(); }
     });
   }
 
@@ -71,9 +73,10 @@ export class AdminPanelComponent implements OnInit {
         this.users.push(user);
         this.showCreateUser = false;
         this.newUser = { username: '', email: '', password: '', role: 'ENGINEER' };
+        this.toast.success('User created successfully.');
         this.cdr.detectChanges();
       },
-      error: (err) => alert(getErrorMessage(err))
+      error: (err) => this.toast.error(getErrorMessage(err))
     });
   }
 
@@ -84,7 +87,7 @@ export class AdminPanelComponent implements OnInit {
         if (idx >= 0) this.users[idx] = updated;
         this.cdr.detectChanges();
       },
-      error: (err) => alert(getErrorMessage(err))
+      error: (err) => this.toast.error(getErrorMessage(err))
     });
   }
 
@@ -93,9 +96,10 @@ export class AdminPanelComponent implements OnInit {
     this.adminService.deleteUser(user.id).subscribe({
       next: () => {
         this.users = this.users.filter(u => u.id !== user.id);
+        this.toast.success('User deleted.');
         this.cdr.detectChanges();
       },
-      error: (err) => alert(getErrorMessage(err))
+      error: (err) => this.toast.error(getErrorMessage(err))
     });
   }
 
@@ -105,7 +109,7 @@ export class AdminPanelComponent implements OnInit {
     this.loading = true;
     this.adminService.getAllCables().subscribe({
       next: (list) => { this.cables = list; this.loading = false; this.cdr.detectChanges(); },
-      error: (err) => { this.loading = false; alert(getErrorMessage(err)); this.cdr.detectChanges(); }
+      error: (err) => { this.loading = false; this.toast.error(getErrorMessage(err)); this.cdr.detectChanges(); }
     });
   }
 
@@ -131,7 +135,7 @@ export class AdminPanelComponent implements OnInit {
           this.editingCable = null;
           this.cdr.detectChanges();
         },
-        error: (err) => alert(getErrorMessage(err))
+        error: (err) => this.toast.error(getErrorMessage(err))
       });
     } else {
       this.adminService.createCable(this.newCable).subscribe({
@@ -140,7 +144,7 @@ export class AdminPanelComponent implements OnInit {
           this.showCableForm = false;
           this.cdr.detectChanges();
         },
-        error: (err) => alert(getErrorMessage(err))
+        error: (err) => this.toast.error(getErrorMessage(err))
       });
     }
   }
@@ -150,9 +154,10 @@ export class AdminPanelComponent implements OnInit {
     this.adminService.deleteCable(cable.id).subscribe({
       next: () => {
         this.cables = this.cables.filter(c => c.id !== cable.id);
+        this.toast.success('Cable deleted.');
         this.cdr.detectChanges();
       },
-      error: (err) => alert(getErrorMessage(err))
+      error: (err) => this.toast.error(getErrorMessage(err))
     });
   }
 
@@ -162,7 +167,7 @@ export class AdminPanelComponent implements OnInit {
     this.loading = true;
     this.projectService.getProjects().subscribe({
       next: (list) => { this.projects = list; this.loading = false; this.cdr.detectChanges(); },
-      error: (err) => { this.loading = false; alert(getErrorMessage(err)); this.cdr.detectChanges(); }
+      error: (err) => { this.loading = false; this.toast.error(getErrorMessage(err)); this.cdr.detectChanges(); }
     });
   }
 

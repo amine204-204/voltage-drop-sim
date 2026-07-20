@@ -106,7 +106,7 @@
 
   &.primary {
     background: var(--accent);
-    color: #0F1318;
+    color: var(--text-on-accent);
     border-color: var(--accent);
 
     &:hover {

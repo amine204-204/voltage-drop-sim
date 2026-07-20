@@ -16,6 +16,7 @@ import { ProjectService } from '../../services/project.service';
 import { ProjectModal } from '../project-modal/project-modal';
 import { UserBarComponent } from '../user-bar/user-bar.component';
 import { getErrorMessage } from '../../guards/error.interceptor';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-main',
@@ -55,6 +56,7 @@ export class MainComponent {
     private catalogService: CatalogService,
     private projectService: ProjectService,
     private mockSimulationService: MockSimulationService,
+    private toast: ToastService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -76,7 +78,7 @@ export class MainComponent {
           this.catalogError = 'Failed to load equipment catalog. Using defaults.';
           this.cableCatalog = MOCK_CABLES;
           this.isLoadingCatalog = false;
-          alert(this.catalogError + '\n' + getErrorMessage(err));
+          this.toast.error(this.catalogError + '\n' + getErrorMessage(err));
           this.cdr.detectChanges();
         }
       });
@@ -90,8 +92,7 @@ export class MainComponent {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Failed to load projects list', err);
-        alert('Failed to load projects: ' + getErrorMessage(err));
+        this.toast.error('Failed to load projects: ' + getErrorMessage(err));
       }
     });
   }
@@ -101,15 +102,13 @@ export class MainComponent {
   }
 
   public onRunClicked(settings: SimulationSettings) {
-    console.log(this.cableCatalog);
     try {
       const islands = this.gridCanvas.getIslands();
 
       if (islands.length === 0) {
-        alert("Please draw a grid before running.");
+        this.toast.info('Please draw a grid before running.');
         return;
       }
-      console.log(settings.deltaTimeSeconds);
       const payloads: Observable<any>[] = islands.map(island => {
         const payload: SimulationRequestDto = {
           totalTimeSteps: settings.totalTimeSteps,
@@ -137,12 +136,12 @@ export class MainComponent {
           this.cdr.detectChanges();
         },
         error: (err) => {
-          alert('Simulation Error: ' + getErrorMessage(err));
+          this.toast.error('Simulation failed: ' + getErrorMessage(err));
         }
       });
 
     } catch (e: any) {
-      alert(e.message);
+      this.toast.error(e.message);
     }
   }
 
@@ -253,7 +252,7 @@ export class MainComponent {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        alert('Failed to load project: ' + getErrorMessage(err));
+        this.toast.error('Failed to load project: ' + getErrorMessage(err));
       }
     });
   }
@@ -267,11 +266,11 @@ export class MainComponent {
       const payload = this.getSavePayload(name, desc);
       this.projectService.updateProject(this.selectedProjectId, payload).subscribe({
         next: (saved) => {
-          alert('Project saved successfully!');
+          this.toast.success('Project saved successfully!');
           this.loadProjectsList();
         },
         error: (err) => {
-          alert('Failed to save project: ' + getErrorMessage(err));
+          this.toast.error('Failed to save project: ' + getErrorMessage(err));
         }
       });
     } else {
@@ -313,12 +312,12 @@ export class MainComponent {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
       this.projectService.deleteProject(this.selectedProjectId).subscribe({
         next: () => {
-          alert('Project deleted successfully.');
+          this.toast.success('Project deleted successfully.');
           this.loadProjectsList();
           this.onNewClicked();
         },
         error: (err) => {
-          alert('Failed to delete project: ' + getErrorMessage(err));
+          this.toast.error('Failed to delete project: ' + getErrorMessage(err));
         }
       });
     }
@@ -329,7 +328,7 @@ export class MainComponent {
     this.projectService.createProject(payload).subscribe({
       next: (saved) => {
         this.showProjectModal = false;
-        alert('Project saved successfully!');
+        this.toast.success('Project created successfully!');
         this.selectedProjectId = saved.id || null;
         this.loadProjectsList();
 
@@ -338,7 +337,7 @@ export class MainComponent {
         }
       },
       error: (err) => {
-        alert('Failed to create project: ' + getErrorMessage(err));
+        this.toast.error('Failed to create project: ' + getErrorMessage(err));
       }
     });
   }
