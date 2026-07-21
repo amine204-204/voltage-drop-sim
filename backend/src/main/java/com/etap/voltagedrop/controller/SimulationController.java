@@ -1,6 +1,5 @@
 package com.etap.voltagedrop.controller;
 
-import com.etap.voltagedrop.catalog.CatalogService;
 import com.etap.voltagedrop.domain.*;
 import com.etap.voltagedrop.domain.catalog.BranchComponent;
 import com.etap.voltagedrop.domain.norms.CustomNormEvaluator;
@@ -9,6 +8,7 @@ import com.etap.voltagedrop.domain.strategy.ConstantCurrentStrategy;
 import com.etap.voltagedrop.domain.strategy.ConstantPowerStrategy;
 import com.etap.voltagedrop.domain.strategy.LoadBehaviorStrategy;
 import com.etap.voltagedrop.dto.SimulationRequestDto;
+import com.etap.voltagedrop.service.BranchComponentFactory;
 import com.etap.voltagedrop.service.GraphValidationService;
 import com.etap.voltagedrop.service.SimulationService;
 import jakarta.validation.Valid;
@@ -26,7 +26,7 @@ public class SimulationController {
 
     private final SimulationService simulationService;
     private final GraphValidationService validationService;
-    private final CatalogService catalogService;
+    private final BranchComponentFactory branchComponentFactory;
 
     private final Map<String, NormEvaluator> systemNormEvaluators;
 
@@ -69,7 +69,7 @@ public class SimulationController {
     private NetworkGraph mapDtoToDomain(SimulationRequestDto dto) {
         NetworkGraph graph = new NetworkGraph();
 
-        double gridNominalVoltage = 230.0; // Safe fallback default
+        double gridNominalVoltage = 230.0;
         for (SimulationRequestDto.NodeDto nodeDto : dto.getGraph().getNodes()) {
             if ("SOURCE".equals(nodeDto.getType()) && nodeDto.getNominalVoltage() != null) {
                 gridNominalVoltage = nodeDto.getNominalVoltage();
@@ -77,7 +77,6 @@ public class SimulationController {
             }
         }
 
-        // 2. Second pass: Map Nodes and wire up Load Strategies
         for (SimulationRequestDto.NodeDto nodeDto : dto.getGraph().getNodes()) {
             NetworkNode node = new NetworkNode();
             node.setId(nodeDto.getId());
@@ -121,10 +120,7 @@ public class SimulationController {
             branch.setToNodeId(branchDto.getToNodeId());
             branch.setLengthInKm(branchDto.getLengthInKm());
 
-            BranchComponent component = catalogService.getBranchComponent(
-                    branchDto.getComponentCrossSection(),
-                    branchDto.getComponentMaterial()
-            );
+            BranchComponent component = branchComponentFactory.create(branchDto);
             branch.setComponent(component);
 
             graph.addBranch(branch);

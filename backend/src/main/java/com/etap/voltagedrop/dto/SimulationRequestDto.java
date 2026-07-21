@@ -47,7 +47,10 @@ public class SimulationRequestDto {
         private String fromNodeId;
         private String toNodeId;
         private double lengthInKm;
+        private String branchType;
+        private String catalogId;
         private String componentCrossSection;
         private String componentMaterial;
+        private boolean closed;
     }
 }

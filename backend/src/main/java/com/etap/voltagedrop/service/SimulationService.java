@@ -6,10 +6,10 @@ import com.etap.voltagedrop.domain.norms.NormEvaluator;
 import com.etap.voltagedrop.domain.quality.DisturbanceType;
 import com.etap.voltagedrop.domain.quality.PowerQualityEvent;
 import com.etap.voltagedrop.domain.quality.SimulationStatus;
+import com.etap.voltagedrop.service.visitor.ConductivityVisitor;
+import com.etap.voltagedrop.service.visitor.VoltageDropVisitor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -64,8 +64,14 @@ public class SimulationService {
         double totalDownstreamCurrent = 0.0;
 
         for (NetworkNode child : graph.getChildNodes(node.getId())) {
-            forwardSweepCurrents(graph, child, t, nominalVoltage);
             NetworkBranch branchToChild = graph.getIncomingBranch(child.getId());
+
+            boolean conducts = branchToChild.getComponent().accept(new ConductivityVisitor());
+            if (!conducts) {
+                continue;
+            }
+
+            forwardSweepCurrents(graph, child, t, nominalVoltage);
             totalDownstreamCurrent += branchToChild.getWorkingCurrent();
         }
 
@@ -86,7 +92,19 @@ public class SimulationService {
         for (NetworkNode child : graph.getChildNodes(node.getId())) {
             NetworkBranch branch = graph.getIncomingBranch(child.getId());
 
-            double newChildVoltage = getNewChildVoltage(node, branch);
+            boolean conducts = branch.getComponent().accept(new ConductivityVisitor());
+            if (!conducts) {
+                continue;
+            }
+
+            double newChildVoltage = branch.getComponent().accept(
+                    new VoltageDropVisitor(
+                            branch.getWorkingCurrent(),
+                            branch.getLengthInKm(),
+                            node.getWorkingVoltage(),
+                            props.getMath().getDefaultPowerFactor()
+                    )
+            );
 
             double oldChildVoltage = child.getWorkingVoltage();
             double errorPu = Math.abs(newChildVoltage - oldChildVoltage) / nominalVoltage;
@@ -102,35 +120,6 @@ public class SimulationService {
             }
         }
         return maxErrorPu;
-    }
-
-    private double getNewChildVoltage(NetworkNode node, NetworkBranch branch) {
-        double current = branch.getWorkingCurrent();
-        double r = branch.getComponent().getResistancePerKm() * branch.getLengthInKm();
-        double x = branch.getComponent().getReactancePerKm() * branch.getLengthInKm();
-
-        double cosPhi = props.getMath().getDefaultPowerFactor();
-        double phi = Math.acos(cosPhi); // Load angle
-        double z = Math.sqrt(r * r + x * x); // Impedance magnitude
-        double theta = Math.atan2(x, r); // Impedance angle
-
-        double vs = node.getWorkingVoltage();
-        double iz = current * z;
-        double angleDiff = theta - phi;
-
-        double realPartVr = vs - (iz * Math.cos(angleDiff));
-
-        if (realPartVr <= 0) {
-            return vs * 0.01;
-        }
-
-        double vrSquared = (vs * vs) - (2 * vs * iz * Math.cos(angleDiff)) + (iz * iz);
-
-        if (vrSquared <= 0) {
-            return vs * 0.01;
-        }
-
-        return Math.sqrt(vrSquared);
     }
 
     private void commitTimeStepAndEvaluateNorms(NetworkGraph graph, int t, double nominalVoltage, NormEvaluator activeNorm) {

@@ -1,6 +1,7 @@
 package com.etap.voltagedrop.domain.catalog;
 
+import com.etap.voltagedrop.domain.catalog.visitor.BranchVisitor;
+
 public interface BranchComponent {
-    double getResistancePerKm();
-    double getReactancePerKm();
+    <T> T accept(BranchVisitor<T> visitor);
 }

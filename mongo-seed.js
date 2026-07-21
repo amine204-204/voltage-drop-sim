@@ -92,6 +92,64 @@ db.cables.insertMany([
   }
 ]);
 
+db.transformers.insertMany([
+  {
+    _id: "tx-100kva-20kv-400v",
+    name: "Distribution Transformer 100kVA",
+    standard: "IEC 60076",
+    category: "distribution",
+    electrical: {
+      impedancePercent: 4.0,
+      ratedPowerKva: 100.0,
+      primaryVoltageV: 20000.0,
+      secondaryVoltageV: 400.0,
+      noLoadLossW: 300.0,
+      loadLossW: 1800.0
+    },
+    active: true
+  },
+  {
+    _id: "tx-250kva-20kv-400v",
+    name: "Distribution Transformer 250kVA",
+    standard: "IEC 60076",
+    category: "distribution",
+    electrical: {
+      impedancePercent: 4.5,
+      ratedPowerKva: 250.0,
+      primaryVoltageV: 20000.0,
+      secondaryVoltageV: 400.0,
+      noLoadLossW: 550.0,
+      loadLossW: 3600.0
+    },
+    active: true
+  }
+]);
+
+db.switches.insertMany([
+  {
+    _id: "sw-100a-mcb",
+    name: "Miniature Circuit Breaker 100A",
+    standard: "IEC 60898",
+    category: "protection",
+    electrical: {
+      ratedCurrentA: 100.0,
+      breakingCapacity: "10kA"
+    },
+    active: true
+  },
+  {
+    _id: "sw-63a-mcb",
+    name: "Miniature Circuit Breaker 63A",
+    standard: "IEC 60898",
+    category: "protection",
+    electrical: {
+      ratedCurrentA: 63.0,
+      breakingCapacity: "6kA"
+    },
+    active: true
+  }
+]);
+
 db.load_presets.insertMany([
   {
     _id: "residential-constant-current",
