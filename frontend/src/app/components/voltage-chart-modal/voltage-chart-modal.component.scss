@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: overlayFadeIn 0.2s ease forwards;
 }
 
 .modal-card {
@@ -16,6 +17,7 @@
   max-width: 90vw;
   box-shadow: 0 20px 50px var(--shadow-heavy);
   overflow: hidden;
+  animation: cardScaleIn 0.25s var(--ease-out-expo) forwards;
 }
 
 .modal-header {

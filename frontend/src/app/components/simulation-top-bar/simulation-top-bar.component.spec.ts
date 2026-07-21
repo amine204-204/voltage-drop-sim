@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { GridCanvas } from './grid-canvas';
+import { SimulationTopBar } from './simulation-top-bar.component';
 
-describe('GridCanvas', () => {
-  let component: GridCanvas;
-  let fixture: ComponentFixture<GridCanvas>;
+describe('SimulationTopBar', () => {
+  let component: SimulationTopBar;
+  let fixture: ComponentFixture<SimulationTopBar>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GridCanvas]
+      imports: [SimulationTopBar]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(GridCanvas);
+    fixture = TestBed.createComponent(SimulationTopBar);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

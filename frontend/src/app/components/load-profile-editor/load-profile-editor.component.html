@@ -1,9 +1,9 @@
-<div class="modal-overlay" (click)="onClose.emit()">
+<div class="modal-overlay" (click)="close.emit()">
   <div class="modal-card" (click)="$event.stopPropagation()">
 
     <div class="modal-header">
       <h3>Edit Load Curve</h3>
-      <button class="close-btn" (click)="onClose.emit()">✕</button>
+      <button class="close-btn" (click)="close.emit()">✕</button>
     </div>
 
     <div class="instructions">
@@ -60,7 +60,7 @@
     </div>
 
     <div class="modal-footer">
-      <button class="cancel-btn" (click)="onClose.emit()">Cancel</button>
+      <button class="cancel-btn" (click)="close.emit()">Cancel</button>
       <button class="save-btn" (click)="applyAndClose()">Sample &amp; Apply Curve</button>
     </div>
 

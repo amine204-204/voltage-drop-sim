@@ -1,18 +1,18 @@
-import { Component, Input, AfterViewInit, ViewChild, OnDestroy, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, AfterViewInit, ViewChild, OnDestroy, Output, EventEmitter, ElementRef } from '@angular/core';
 import { Chart, registerables } from 'chart.js';
+import { getCssVar } from '../../services/theme.service';
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-voltage-chart-modal',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './voltage-chart-modal.html',
-  styleUrl: './voltage-chart-modal.scss'
+  imports: [],
+  templateUrl: './voltage-chart-modal.component.html',
+  styleUrl: './voltage-chart-modal.component.scss'
 })
 export class VoltageChartModal implements AfterViewInit, OnDestroy {
-  @Output() onClose = new EventEmitter<void>();
+  @Output() close = new EventEmitter<void>();
 
   @Input() nodeName: string = '';
   @Input() voltageTimeSeries: number[] = [];
@@ -21,8 +21,8 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
   @Input() minLimitPu: number = 0.90;
   @Input() maxLimitPu: number = 1.10;
 
-  @ViewChild('chartCanvas') chartCanvas!: any;
-  private chart: any;
+  @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
+  private chart: Chart | null = null;
 
   ngAfterViewInit(): void {
     this.renderChart();
@@ -32,16 +32,15 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
     if (!this.chartCanvas) return;
 
     const ctx = this.chartCanvas.nativeElement.getContext('2d');
+    if (!ctx) return;
     
     const labels = this.voltageTimeSeries.map((_, i) => `${i * this.deltaTime}s`);
 
     const minVoltage = this.nominalVoltage * this.minLimitPu;
     const maxVoltage = this.nominalVoltage * this.maxLimitPu;
 
-    const s = getComputedStyle(document.documentElement);
-    const textSecondary = s.getPropertyValue('--text-secondary').trim() || '#8891A0';
-    const bgCanvas = s.getPropertyValue('--bg-canvas').trim() || '#12161C';
-    const accent = s.getPropertyValue('--accent').trim() || '#E8A33D';
+    const textSecondary = getCssVar('--text-secondary', '#8891A0');
+    const accent = getCssVar('--accent', '#E8A33D');
 
     this.chart = new Chart(ctx, {
       type: 'line',
@@ -97,21 +96,21 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
           ctx.font = '12px Arial';
           
           const yMin = yAxis.getPixelForValue(minVoltage);
-          ctx.strokeStyle = s.getPropertyValue('--status-danger').trim() || '#e74c3c';
+          ctx.strokeStyle = getCssVar('--status-danger', '#e74c3c');
           ctx.beginPath();
           ctx.moveTo(chart.chartArea.left, yMin);
           ctx.lineTo(chart.chartArea.right, yMin);
           ctx.stroke();
-          ctx.fillStyle = s.getPropertyValue('--status-danger').trim() || '#e74c3c';
+          ctx.fillStyle = getCssVar('--status-danger', '#e74c3c');
           ctx.fillText(`Min Limit (${minVoltage}V)`, chart.chartArea.right - 120, yMin - 5);
 
           const yMax = yAxis.getPixelForValue(maxVoltage);
-          ctx.strokeStyle = s.getPropertyValue('--accent').trim() || '#f39c12';
+          ctx.strokeStyle = getCssVar('--accent', '#f39c12');
           ctx.beginPath();
           ctx.moveTo(chart.chartArea.left, yMax);
           ctx.lineTo(chart.chartArea.right, yMax);
           ctx.stroke();
-          ctx.fillStyle = s.getPropertyValue('--accent').trim() || '#f39c12';
+          ctx.fillStyle = getCssVar('--accent', '#f39c12');
           ctx.fillText(`Max Limit (${maxVoltage}V)`, chart.chartArea.right - 120, yMax - 5);
 
           ctx.restore();

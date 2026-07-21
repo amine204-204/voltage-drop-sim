@@ -1,4 +1,4 @@
-import { ControlPoint } from "../components/load-profile-editor/load-profile-editor";
+import { ControlPoint } from "../components/load-profile-editor/load-profile-editor.component";
 
 export interface LoadPreset {
   id: string;

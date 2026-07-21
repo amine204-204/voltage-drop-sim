@@ -29,7 +29,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
 }
 
 .toolbar button svg {
@@ -40,6 +40,7 @@
 .toolbar button:hover {
   background-color: var(--bg-panel-raised);
   color: var(--text-primary);
+  transform: scale(1.08);
 }
 
 .toolbar button:disabled {
@@ -196,13 +197,18 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.12s ease, color 0.12s ease;
+    transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
 
     &:hover {
       background: var(--bg-panel-raised);
       color: var(--text-primary);
+      transform: scale(1.12);
     }
   }
+}
+
+.zoom-controls button:active {
+  transform: scale(0.95);
 }
 
 /* ── Status Bar ──────────────────────────────────────── */

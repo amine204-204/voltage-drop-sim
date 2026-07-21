@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SimulationTopBar } from './simulation-top-bar';
+import { VoltageChartModal } from './voltage-chart-modal.component';
 
-describe('SimulationTopBar', () => {
-  let component: SimulationTopBar;
-  let fixture: ComponentFixture<SimulationTopBar>;
+describe('VoltageChartModal', () => {
+  let component: VoltageChartModal;
+  let fixture: ComponentFixture<VoltageChartModal>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SimulationTopBar]
+      imports: [VoltageChartModal]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(SimulationTopBar);
+    fixture = TestBed.createComponent(VoltageChartModal);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

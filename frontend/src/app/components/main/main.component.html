@@ -2,6 +2,7 @@
   <app-user-bar
     [projects]="projects"
     [selectedProjectId]="selectedProjectId"
+    [deleteConfirmStep]="deleteConfirmStep"
     (projectSelected)="onProjectSelected($event)"
     (newProject)="onNewClicked()"
     (saveProject)="onSaveClicked()"
@@ -18,10 +19,17 @@
     [maxSteps]="maxSimulationSteps"
     [deltaTime]="deltaTime"
     [isSimulationLoaded]="isSimulationLoaded"
+    [isSimulating]="isSimulating"
+    [currentStep]="currentStep"
+    [selectedNormType]="selectedNormType"
+    [customMinPu]="customMinPu"
+    [customMaxPu]="customMaxPu"
     (runClicked)="onRunClicked($event)"
     (deltaTimeChanged)="onDeltaTimeChanged($event)"
     (maxStepsChanged)="onMaxStepsChanged($event)"
-    (currentStepChanged)="onCurrentStepChanged($event)">
+    (currentStepChanged)="onCurrentStepChanged($event)"
+    (normTypeChanged)="onNormTypeChanged($event)"
+    (customPuLimitsChanged)="onCustomPuLimitsChanged($event)">
   </app-simulation-top-bar>
   
    <app-grid-canvas 
@@ -36,7 +44,8 @@
     [name]="modalProjectName"
     [description]="modalProjectDescription"
     [isEdit]="isEditModal"
-    (onSave)="onModalSave($event)"
-    (onClose)="showProjectModal = false">
+    [errorMessage]="modalError"
+    (save)="onModalSave($event)"
+    (close)="showProjectModal = false">
   </app-project-modal>
 </div>

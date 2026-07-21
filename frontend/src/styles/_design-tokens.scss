@@ -50,8 +50,15 @@
   --font-mono: ui-monospace, 'JetBrains Mono', 'IBM Plex Mono', 'Cascadia Code', Consolas, monospace;
 
   // Radius — kept small and sharp; this isn't a consumer app
-  --radius-sm: 2px;
-  --radius-md: 3px;
+  --radius-sm: 2.5px;
+  --radius-md: 4.5px;
+
+  // Animation
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --duration-fast: 150ms;
+  --duration-med: 250ms;
+  --duration-slow: 400ms;
 }
 
 // ---------------------------------------------------------------------------

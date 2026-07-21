@@ -1,7 +1,8 @@
 import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgIf, NgFor, DecimalPipe } from '@angular/common';
+import { getCssVar } from '../../services/theme.service';
 
-/* in absolute values (time, value), not percentages or step indices) */
+/* ControlPoint in absolute values (time, value), not percentages or step indices */
 export interface ControlPoint {
   time: number;
   value: number;
@@ -10,9 +11,9 @@ export interface ControlPoint {
 @Component({
   selector: 'app-load-profile-editor',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './load-profile-editor.html',
-  styleUrl: './load-profile-editor.scss'
+  imports: [NgIf, NgFor, DecimalPipe],
+  templateUrl: './load-profile-editor.component.html',
+  styleUrl: './load-profile-editor.component.scss'
 })
 export class LoadProfileEditor implements AfterViewInit {
 
@@ -25,8 +26,8 @@ export class LoadProfileEditor implements AfterViewInit {
   @Input() initialControlPoints: ControlPoint[] | null = null;
   @Input() loadUnit: string = 'A';
 
-  @Output() onSave = new EventEmitter<{ profile: number[]; controlPoints: ControlPoint[] }>();
-  @Output() onClose = new EventEmitter<void>();
+  @Output() save = new EventEmitter<{ profile: number[]; controlPoints: ControlPoint[] }>();
+  @Output() close = new EventEmitter<void>();
 
   public points: ControlPoint[] = [
     { time: 0, value: 0 },
@@ -49,8 +50,7 @@ export class LoadProfileEditor implements AfterViewInit {
   }
 
   private readAccentFill() {
-    const style = getComputedStyle(document.documentElement);
-    this.accentFill = style.getPropertyValue('--accent-dim').trim() || this.accentFill;
+    this.accentFill = getCssVar('--accent-dim', this.accentFill);
   }
 
   ngAfterViewInit() {
@@ -294,24 +294,8 @@ export class LoadProfileEditor implements AfterViewInit {
   }
 
   public applyAndClose() {
-    const dense = LoadProfileEditor.generateClampedCatmullRom(this.points, this.maxLoadValue);
-    const finalArray: number[] = [];
-
-    for (let i = 0; i < this.totalSteps; i++) {
-      const targetTime = i * this.deltaTime;
-      let closest = dense[0]?.value ?? 0;
-      let minDistance = Infinity;
-      for (const pt of dense) {
-        const dist = Math.abs(pt.time - targetTime);
-        if (dist < minDistance) {
-          minDistance = dist;
-          closest = pt.value;
-        }
-      }
-      finalArray.push(closest);
-    }
-
-    this.onSave.emit({ profile: finalArray, controlPoints: this.points.map(p => ({ ...p })) });
+    const profile = LoadProfileEditor.getProfileFromControlPoints(this.points, this.totalSteps, this.deltaTime, this.maxLoadValue);
+    this.save.emit({ profile, controlPoints: this.points.map(p => ({ ...p })) });
   }
 
   public get xGridData(): { percent: number, instant: number }[] {

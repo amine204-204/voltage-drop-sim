@@ -3,6 +3,7 @@ package com.etap.voltagedrop.service;
 import com.etap.voltagedrop.dto.ProjectDto;
 import com.etap.voltagedrop.dto.ProjectSummaryDto;
 import com.etap.voltagedrop.dto.SaveProjectDto;
+import com.etap.voltagedrop.exception.ConflictException;
 import com.etap.voltagedrop.exception.ResourceNotFoundException;
 import com.etap.voltagedrop.persistence.entity.*;
 import com.etap.voltagedrop.repository.jpa.ProjectRepository;
@@ -84,8 +85,12 @@ public class ProjectService {
     }
 
     public ProjectDto saveProject(SaveProjectDto dto) {
+        Long userId = getCurrentUserId();
+        if (projectRepository.existsByOwnerIdAndName(userId, dto.getName())) {
+            throw new ConflictException("A project with the name \"" + dto.getName() + "\" already exists.");
+        }
         ProjectEntity project = new ProjectEntity();
-        project.setOwnerId(getCurrentUserId());
+        project.setOwnerId(userId);
         updateProjectEntityFromDto(project, dto);
         ProjectEntity saved = projectRepository.save(project);
         return mapEntityToDto(saved);
@@ -95,6 +100,10 @@ public class ProjectService {
         ProjectEntity project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
         assertOwnerOrAdmin(project);
+        Long userId = getCurrentUserId();
+        if (projectRepository.existsByOwnerIdAndNameAndIdNot(userId, dto.getName(), id)) {
+            throw new ConflictException("A project with the name \"" + dto.getName() + "\" already exists.");
+        }
         updateProjectEntityFromDto(project, dto);
         ProjectEntity saved = projectRepository.save(project);
         return mapEntityToDto(saved);

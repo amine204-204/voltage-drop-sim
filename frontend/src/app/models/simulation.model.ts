@@ -1,3 +1,7 @@
+export type NodeType = 'SOURCE' | 'CONSUMER' | 'JUNCTION';
+
+export type LoadType = 'CONSTANT_CURRENT' | 'CONSTANT_POWER';
+
 export interface SimulationRequestDto {
   totalTimeSteps: number;
   deltaTimeSeconds: number;
@@ -15,9 +19,9 @@ export interface GraphDto {
 export interface NodeDto {
   id: string;
   name: string;
-  type: 'SOURCE' | 'CONSUMER' | 'JUNCTION';
+  type: NodeType;
   nominalVoltage?: number;
-  loadType?: 'CONSTANT_CURRENT' | 'CONSTANT_POWER';
+  loadType?: LoadType;
   loadProfile?: number[];
   cosPhi?: number;
 }
@@ -30,4 +34,29 @@ export interface BranchDto {
   lengthInKm: number;
   componentCrossSection: string;
   componentMaterial: string;
+}
+
+export interface PowerQualityEvent {
+  startTimeStep: number;
+  endTimeStep: number;
+  worstMagnitudePu: number;
+  classification: string;
+}
+
+export interface SimulationNodeResult {
+  id: string;
+  potentialTimeSeries: number[];
+}
+
+export interface SimulationBranchResult {
+  id: string;
+  currentTimeSeries: number[];
+  dropPercentTimeSeries: number[];
+  statusTimeSeries: ('OK' | 'VIOLATION')[];
+  powerQualityEvents: PowerQualityEvent[];
+}
+
+export interface SimulationResponseDto {
+  nodes: SimulationNodeResult[];
+  branches: SimulationBranchResult[];
 }

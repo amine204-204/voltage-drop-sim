@@ -1,9 +1,9 @@
-<div class="modal-overlay" (click)="onClose.emit()">
+<div class="modal-overlay" (click)="close.emit()">
   <div class="modal-card" (click)="$event.stopPropagation()">
 
     <div class="modal-header">
       <h3>{{ isEdit ? 'Edit Project Details' : 'Save Project As' }}</h3>
-      <button class="close-btn" (click)="onClose.emit()">✕</button>
+      <button class="close-btn" (click)="close.emit()">✕</button>
     </div>
 
     <div class="modal-body">
@@ -16,6 +16,7 @@
           placeholder="e.g. Substation Alpha Distribution"
           required
         >
+        <div class="field-error" *ngIf="errorMessage || nameError">{{ nameError || errorMessage }}</div>
       </div>
 
       <div class="form-group">
@@ -30,8 +31,8 @@
     </div>
 
     <div class="modal-footer">
-      <button class="cancel-btn" (click)="onClose.emit()">Cancel</button>
-      <button class="save-btn" (click)="save()">Save Project</button>
+      <button class="cancel-btn" (click)="close.emit()">Cancel</button>
+      <button class="save-btn" (click)="submit()">Save Project</button>
     </div>
 
   </div>

@@ -116,15 +116,15 @@
 
   <app-voltage-chart-modal *ngIf="showChartModal && selectedElementData" [nodeName]="selectedElementData.label"
     [voltageTimeSeries]="selectedElementData.simulationData?.potentialTimeSeries" [nominalVoltage]="chartNominalVoltage"
-    [deltaTime]="deltaTime" (onClose)="showChartModal = false">
+    [deltaTime]="deltaTime" (close)="showChartModal = false">
   </app-voltage-chart-modal>
 
   <app-load-profile-editor *ngIf="showProfileEditor && selectedElementData"
     [initialProfile]="selectedElementData.loadProfile || []"
     [initialControlPoints]="selectedElementData.loadProfileControlPoints || null" [totalSteps]="maxSimulationSteps"
     [deltaTime]="deltaTime" [maxLoadValue]="100"
-    [loadUnit]="selectedElementData.loadType === 'CONSTANT_POWER' ? 'W' : 'A'" (onSave)="onProfileSaved($event)"
-    (onClose)="showProfileEditor = false">
+    [loadUnit]="selectedElementData.loadType === 'CONSTANT_POWER' ? 'W' : 'A'" (save)="onProfileSaved($event)"
+    (close)="showProfileEditor = false">
   </app-load-profile-editor>
 
 </div>

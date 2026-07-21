@@ -66,7 +66,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
 
   svg {
     width: 16px;
@@ -76,12 +76,25 @@
   &:hover {
     background-color: var(--bg-panel-raised);
     color: var(--text-primary);
+    transform: scale(1.08);
   }
 }
 
 .delete-btn:hover {
   background-color: var(--status-danger-bg);
   color: var(--status-danger);
+  transform: scale(1.08);
+}
+
+.delete-btn.confirm-delete {
+  background-color: var(--status-danger);
+  color: #fff;
+  animation: pulse-confirm 1s ease-in-out infinite;
+}
+
+@keyframes pulse-confirm {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .user-section {
@@ -104,12 +117,13 @@
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 
     &:hover {
       background-color: var(--status-danger-bg);
       color: var(--status-danger);
       border-color: var(--status-danger);
+      transform: scale(1.04);
     }
   }
 
@@ -124,11 +138,12 @@
     border-radius: var(--radius-sm);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 
     &:hover {
       background-color: var(--bg-panel-raised);
       color: var(--text-primary);
+      transform: scale(1.08);
     }
   }
 
@@ -145,12 +160,13 @@
     font-weight: 600;
     font-family: var(--font-ui);
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 
     &:hover {
       background-color: var(--accent-dim);
       color: var(--accent);
       border-color: var(--accent);
+      transform: scale(1.04);
     }
   }
 }

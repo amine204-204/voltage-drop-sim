@@ -14,23 +14,25 @@ export interface SimulationSettings {
   selector: 'app-simulation-top-bar',
   standalone: true,
   imports: [FormsModule, NgIf],
-  templateUrl: './simulation-top-bar.html',
-  styleUrl: './simulation-top-bar.scss'
+  templateUrl: './simulation-top-bar.component.html',
+  styleUrl: './simulation-top-bar.component.scss'
 })
 export class SimulationTopBar {
   @Output() runClicked = new EventEmitter<SimulationSettings>();
   @Output() deltaTimeChanged = new EventEmitter<number>();
   @Output() currentStepChanged = new EventEmitter<number>();
   @Output() maxStepsChanged = new EventEmitter<number>();
+  @Output() normTypeChanged = new EventEmitter<string>();
+  @Output() customPuLimitsChanged = new EventEmitter<{ min: number; max: number }>();
 
   @Input() maxSteps: number = 0;
   @Input() deltaTime: number = 0;
   @Input() isSimulationLoaded: boolean = false;
-
-  public currentStep: number = 0;
-  public selectedNormType: string = 'en50160';
-  public customMinPu: number = 0.90;
-  public customMaxPu: number = 1.10;
+  @Input() isSimulating: boolean = false;
+  @Input() currentStep: number = 0;
+  @Input() selectedNormType: string = 'en50160';
+  @Input() customMinPu: number = 0.90;
+  @Input() customMaxPu: number = 1.10;
 
   public onRun() {
     this.runClicked.emit({
@@ -42,8 +44,21 @@ export class SimulationTopBar {
     });
   }
 
-  public onSliderChange(event: any) {
-    this.currentStepChanged.emit(parseInt(event.target.value, 10));
-    this.currentStep = parseInt(event.target.value, 10);
+  public onSliderChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const step = parseInt(target.value, 10);
+    this.currentStepChanged.emit(step);
+  }
+
+  public onNormTypeChange(value: string) {
+    this.normTypeChanged.emit(value);
+  }
+
+  public onCustomMinPuChange(value: number) {
+    this.customPuLimitsChanged.emit({ min: value, max: this.customMaxPu });
+  }
+
+  public onCustomMaxPuChange(value: number) {
+    this.customPuLimitsChanged.emit({ min: this.customMinPu, max: value });
   }
 }

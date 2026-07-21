@@ -1,0 +1,120 @@
+<div class="side-panel" *ngIf="elementData">
+  <h3>{{ elementData.label || 'Properties' }}</h3>
+
+  <div *ngIf="elementData.simulationData !== undefined" class="results-section">
+    <h4>Simulation State</h4>
+
+    <div class="result-row" *ngIf="elementType === 'node'">
+      <span class="result-label">Voltage:</span>
+      <span class="result-value"
+        [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
+        {{ elementData.simulationData.potentialTimeSeries[simulationStep]?.toFixed(2) }} V
+      </span>
+    </div>
+
+    <div class="result-row" *ngIf="elementType === 'edge'">
+      <span class="result-label">Current:</span>
+      <span class="result-value">{{ elementData.simulationData.currentTimeSeries?.[simulationStep]?.toFixed(2) }}
+        A</span>
+    </div>
+
+    <div class="result-row" *ngIf="elementType === 'edge'">
+      <span class="result-label">Voltage Drop:</span>
+      <span class="result-value"
+        [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
+        {{ elementData.simulationData.dropPercentTimeSeries?.[simulationStep]?.toFixed(2) }} %
+      </span>
+    </div>
+
+    <div *ngIf="elementType === 'edge'" class="status-badge"
+      [class.badge-ok]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'OK'"
+      [class.badge-violation]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
+      {{ elementData.simulationData.statusTimeSeries?.[simulationStep] || elementData.simulationData.simStatus || 'N/A'
+      }}
+    </div>
+
+    <div *ngIf="elementData.simulationData.powerQualityEvents?.length > 0 && elementType === 'edge'"
+      class="events-list">
+      <h5>Power Quality Events</h5>
+      <ul>
+        <li *ngFor="let event of elementData.simulationData.powerQualityEvents">
+          <strong>{{ event.classification }}</strong> (Steps {{ event.startTimeStep }} to {{ event.endTimeStep }})
+          <br><small>Worst: {{ (event.worstMagnitudePu * 100).toFixed(1) }}% Pu</small>
+        </li>
+      </ul>
+    </div>
+
+    <button class="chart-btn"
+      *ngIf="elementType === 'node' && elementData.simulationData.potentialTimeSeries !== undefined"
+      (click)="openChart.emit()">
+      View Voltage Profile
+    </button>
+  </div>
+
+  <div class="form-group">
+    <label>Name</label>
+    <input type="text" [value]="elementData.label" (input)="onPropertyChange('label', $any($event.target).value)">
+  </div>
+
+  <div *ngIf="elementData.type === 'SOURCE'">
+    <div class="form-group">
+      <label>Nominal Voltage (V)</label>
+      <input type="number" [value]="elementData.nominalVoltage"
+        (input)="onPropertyChange('nominalVoltage', $any($event.target).value)">
+    </div>
+  </div>
+
+  <div *ngIf="elementData.type === 'CONSUMER'">
+    <div class="form-group">
+      <label>Load Type</label>
+      <select [value]="elementData.loadType" (change)="onPropertyChange('loadType', $any($event.target).value)">
+        <option value="CONSTANT_CURRENT">Constant Current (A)</option>
+        <option value="CONSTANT_POWER">Constant Power (W)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Load Preset</label>
+      <select [(ngModel)]="elementData.selectedPresetId" (ngModelChange)="onLoadPresetSelect($event)">
+        <option value="null">Custom</option>
+        <option *ngFor="let preset of filteredLoadPresets" [value]="preset.id">{{ preset.name }}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Load Profile ({{ elementData.loadProfile?.length || 0 }} steps)</label>
+      <button class="chart-btn" (click)="openProfileEditor.emit()">
+        Open Graph Editor
+      </button>
+    </div>
+    <div class="form-group">
+      <label>Power Factor (cosPhi)</label>
+      <input type="number" step="0.01" [(ngModel)]="elementData.cosPhi"
+        (ngModelChange)="onPropertyChange('cosPhi', $event)">
+    </div>
+  </div>
+
+  <div *ngIf="elementType === 'edge'">
+    <div class="form-group">
+      <label>Length (km)</label>
+      <input type="number" step="0.01" [(ngModel)]="elementData.lengthInKm"
+        (ngModelChange)="onPropertyChange('lengthInKm', $event)">
+    </div>
+
+    <div class="form-group">
+      <label>Equipment Catalog</label>
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)">
+        <option *ngFor="let item of cableCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="elementData.catalogId">
+      <label>Cross Section</label>
+      <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentCrossSection"
+        (change)="onPropertyChange('componentCrossSection', $any($event.target).value)">
+    </div>
+    <div class="form-group" *ngIf="elementData.catalogId">
+      <label>Material</label>
+      <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentMaterial"
+        (change)="onPropertyChange('componentMaterial', $any($event.target).value)">
+    </div>
+  </div>
+</div>

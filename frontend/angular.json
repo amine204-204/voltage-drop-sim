@@ -68,10 +68,9 @@
               "buildTarget": "frontend:build:development"
             }
           },
-          "defaultConfiguration": "development"
-	  "options": {
-	      "proxyConfig": "src/proxy.conf.json"
-	  }
+          "defaultConfiguration": "development""options": {
+            "proxyConfig": "src/proxy.conf.json"
+          }
         },
         "test": {
           "builder": "@angular/build:unit-test"

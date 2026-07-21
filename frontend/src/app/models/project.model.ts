@@ -1,4 +1,5 @@
-import { ControlPoint } from '../components/load-profile-editor/load-profile-editor';
+import { ControlPoint } from '../components/load-profile-editor/load-profile-editor.component';
+import { PowerQualityEvent } from './simulation.model';
 
 export interface ProjectSummary {
   id: number;
@@ -34,6 +35,24 @@ export interface ProjectBranch {
   componentMaterial: string;
 }
 
+export interface ProjectNodeResult {
+  nodeId: string;
+  potentialTimeSeries: number[];
+}
+
+export interface ProjectBranchResult {
+  branchId: string;
+  currentTimeSeries: number[];
+  dropPercentTimeSeries: number[];
+  statusTimeSeries: ('OK' | 'VIOLATION')[];
+  powerQualityEvents: PowerQualityEvent[];
+}
+
+export interface ProjectSimulationResult {
+  nodesResults: ProjectNodeResult[];
+  branchesResults: ProjectBranchResult[];
+}
+
 export interface Project {
   id?: number;
   name: string;
@@ -46,7 +65,7 @@ export interface Project {
   customMaxPu?: number;
   nodes: ProjectNode[];
   branches: ProjectBranch[];
-  simulationResult?: any;
+  simulationResult?: ProjectSimulationResult;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -1,9 +1,9 @@
-<div class="modal-overlay" (click)="onClose.emit()">
+<div class="modal-overlay" (click)="close.emit()">
   <div class="modal-card" (click)="$event.stopPropagation()">
     
     <div class="modal-header">
       <h3>Voltage Profile: {{ nodeName }}</h3>
-      <button class="close-btn" (click)="onClose.emit()">✕</button>
+      <button class="close-btn" (click)="close.emit()">✕</button>
     </div>
 
     <div class="chart-container">

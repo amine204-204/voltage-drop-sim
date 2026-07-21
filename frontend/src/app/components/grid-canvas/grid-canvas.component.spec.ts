@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PropertyPanel } from './property-panel';
+import { GridCanvas } from './grid-canvas.component';
 
-describe('PropertyPanel', () => {
-  let component: PropertyPanel;
-  let fixture: ComponentFixture<PropertyPanel>;
+describe('GridCanvas', () => {
+  let component: GridCanvas;
+  let fixture: ComponentFixture<GridCanvas>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PropertyPanel]
+      imports: [GridCanvas]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(PropertyPanel);
+    fixture = TestBed.createComponent(GridCanvas);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

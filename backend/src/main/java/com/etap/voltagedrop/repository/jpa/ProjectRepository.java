@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface ProjectRepository extends JpaRepository<ProjectEntity, Long> {
     List<ProjectEntity> findAllByOwnerId(Long ownerId);
+    boolean existsByOwnerIdAndName(Long ownerId, String name);
+    boolean existsByOwnerIdAndNameAndIdNot(Long ownerId, String name, Long id);
 }

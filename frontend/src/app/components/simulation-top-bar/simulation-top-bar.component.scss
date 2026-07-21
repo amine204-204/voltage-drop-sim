@@ -73,12 +73,17 @@
   text-transform: uppercase;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 
   &:hover {
     background-color: var(--status-ok);
     filter: brightness(1.15);
     box-shadow: 0 0 0 3px var(--status-ok-bg);
+    transform: scale(1.03);
+  }
+
+  &:active {
+    transform: scale(0.97);
   }
 }
 
@@ -122,6 +127,12 @@
       border-radius: 2px;
       box-shadow: 0 0 6px var(--accent-glow);
       cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    &::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px var(--accent-glow);
     }
 
     &::-moz-range-thumb {
@@ -132,6 +143,12 @@
       border-radius: 2px;
       box-shadow: 0 0 6px var(--accent-glow);
       cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    &::-moz-range-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px var(--accent-glow);
     }
   }
 

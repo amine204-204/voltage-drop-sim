@@ -1,39 +1,43 @@
-import { Component, ViewChild, ChangeDetectorRef } from '@angular/core';
-import { GridCanvas } from '../grid-canvas/grid-canvas';
-import { SimulationTopBar, SimulationSettings } from '../simulation-top-bar/simulation-top-bar';
+import { Component, ViewChild, ChangeDetectorRef, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { GridCanvas } from '../grid-canvas/grid-canvas.component';
+import { SimulationTopBar, SimulationSettings } from '../simulation-top-bar/simulation-top-bar.component';
 import { SimulationService } from '../../services/simulation.service';
 import { MockSimulationService } from '../../mocks/mock-simulation.service';
-import { SimulationRequestDto } from '../../models/simulation.model';
-import { forkJoin, Observable, of } from 'rxjs';
-import { MOCK_CABLES } from '../../mocks/equipement-catalog.mock';
+import { SimulationRequestDto, SimulationResponseDto } from '../../models/simulation.model';
+import { forkJoin, Observable } from 'rxjs';
+import { MOCK_CABLES } from '../../mocks/equipment-catalog.mock';
 import { CatalogService } from '../../services/catalog.service';
 import { CableCatalog } from '../../models/catalog.model';
 import { NgIf } from '@angular/common';
 import { LoadPreset } from '../../models/load-preset.model';
 import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
-import { ProjectSummary, Project } from '../../models/project.model';
+import { ProjectSummary, Project, ProjectSimulationResult } from '../../models/project.model';
 import { ProjectService } from '../../services/project.service';
 import { ProjectModal } from '../project-modal/project-modal';
 import { UserBarComponent } from '../user-bar/user-bar.component';
-import { getErrorMessage } from '../../guards/error.interceptor';
+import { getErrorMessage } from '../../shared/utils/error.utils';
 import { ToastService } from '../../services/toast.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-main',
   standalone: true,
   imports: [GridCanvas, SimulationTopBar, ProjectModal, UserBarComponent, NgIf],
   templateUrl: './main.component.html',
-  styleUrl: './main.component.scss'
+  styleUrl: './main.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MainComponent {
+export class MainComponent implements OnInit {
 
   @ViewChild(GridCanvas) gridCanvas!: GridCanvas;
-  @ViewChild(SimulationTopBar) topBar!: SimulationTopBar;
 
   public maxSimulationSteps: number = 10;
   public deltaTime: number = 1;
   public currentStep: number = 0;
   public isSimulationLoaded: boolean = false;
+  public selectedNormType: string = 'en50160';
+  public customMinPu: number = 0.90;
+  public customMaxPu: number = 1.10;
 
   public cableCatalog: CableCatalog[] = [];
   public loadPresets: LoadPreset[] = [];
@@ -45,11 +49,12 @@ export class MainComponent {
   public isEditModal: boolean = false;
   public modalProjectName: string = '';
   public modalProjectDescription: string = '';
+  public modalError: string = '';
 
   isLoadingCatalog = true;
   catalogError: string | null = null;
-
-  private USE_MOCKS: boolean = false;
+  isSimulating: boolean = false;
+  deleteConfirmStep: boolean = false;
 
   constructor(
     private simulationService: SimulationService,
@@ -63,7 +68,7 @@ export class MainComponent {
 
   ngOnInit() {
     this.loadProjectsList();
-    if (this.USE_MOCKS) {
+    if (environment.useMocks) {
       this.cableCatalog = MOCK_CABLES;
       this.loadPresets = LOAD_PRESETS;
       this.isLoadingCatalog = false;
@@ -72,14 +77,14 @@ export class MainComponent {
         next: (cables) => {
           this.cableCatalog = cables;
           this.isLoadingCatalog = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.catalogError = 'Failed to load equipment catalog. Using defaults.';
           this.cableCatalog = MOCK_CABLES;
           this.isLoadingCatalog = false;
           this.toast.error(this.catalogError + '\n' + getErrorMessage(err));
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
       });
     }
@@ -89,7 +94,7 @@ export class MainComponent {
     this.projectService.getProjects().subscribe({
       next: (list) => {
         this.projects = list;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.toast.error('Failed to load projects: ' + getErrorMessage(err));
@@ -98,18 +103,23 @@ export class MainComponent {
   }
 
   private get simService() {
-    return this.USE_MOCKS ? this.mockSimulationService : this.simulationService;
+    return environment.useMocks ? this.mockSimulationService : this.simulationService;
   }
 
   public onRunClicked(settings: SimulationSettings) {
+    this.isSimulating = true;
+    this.cdr.markForCheck();
+
     try {
       const islands = this.gridCanvas.getIslands();
 
       if (islands.length === 0) {
         this.toast.info('Please draw a grid before running.');
+        this.isSimulating = false;
+        this.cdr.markForCheck();
         return;
       }
-      const payloads: Observable<any>[] = islands.map(island => {
+      const payloads: Observable<SimulationResponseDto>[] = islands.map(island => {
         const payload: SimulationRequestDto = {
           totalTimeSteps: settings.totalTimeSteps,
           deltaTimeSeconds: settings.deltaTimeSeconds,
@@ -122,7 +132,7 @@ export class MainComponent {
       });
 
       forkJoin(payloads).subscribe({
-        next: (responses: any[]) => {
+        next: (responses: SimulationResponseDto[]) => {
           const mergedResponse = {
             nodes: responses.flatMap(r => r.nodes),
             branches: responses.flatMap(r => r.branches)
@@ -133,15 +143,20 @@ export class MainComponent {
           this.maxSimulationSteps = settings.totalTimeSteps;
           this.currentStep = 0;
           this.isSimulationLoaded = true;
-          this.cdr.detectChanges();
+          this.isSimulating = false;
+          this.cdr.markForCheck();
         },
         error: (err) => {
+          this.isSimulating = false;
           this.toast.error('Simulation failed: ' + getErrorMessage(err));
+          this.cdr.markForCheck();
         }
       });
 
-    } catch (e: any) {
-      this.toast.error(e.message);
+    } catch (e: unknown) {
+      this.isSimulating = false;
+      this.toast.error(e instanceof Error ? e.message : 'Unknown error');
+      this.cdr.markForCheck();
     }
   }
 
@@ -158,55 +173,31 @@ export class MainComponent {
     this.maxSimulationSteps = maxSteps;
   }
 
+  public onNormTypeChanged(normType: string) {
+    this.selectedNormType = normType;
+  }
+
+  public onCustomPuLimitsChanged(limits: { min: number; max: number }) {
+    this.customMinPu = limits.min;
+    this.customMaxPu = limits.max;
+  }
+
   private getSavePayload(name: string, description: string): Project {
     const canvasGraph = this.gridCanvas.getProjectGraph();
 
-    let simulationResult: any = null;
+    let simulationResult: ProjectSimulationResult | undefined = undefined;
     if (this.isSimulationLoaded) {
-      const nodesResults = canvasGraph.nodes.map(node => {
-        const cyNode = this.gridCanvas['cy']?.$('#' + node.id);
-        const simData = cyNode?.data('simulationData');
-        return {
-          nodeId: node.id,
-          potentialTimeSeries: simData ? simData.potentialTimeSeries : []
-        };
-      });
-
-      const branchesResults = canvasGraph.branches.map(branch => {
-        const cyEdge = this.gridCanvas['cy']?.$('#' + branch.id);
-        const simData = cyEdge?.data('simulationData');
-        return {
-          branchId: branch.id,
-          currentTimeSeries: simData ? simData.currentTimeSeries : [],
-          dropPercentTimeSeries: simData ? simData.dropPercentTimeSeries : [],
-          statusTimeSeries: simData ? simData.statusTimeSeries : [],
-          powerQualityEvents: simData ? simData.powerQualityEvents.map((pq: any) => ({
-            startTimeStep: pq.startTimeStep,
-            endTimeStep: pq.endTimeStep,
-            worstMagnitudePu: pq.worstMagnitudePu,
-            classification: pq.classification
-          })) : []
-        };
-      });
-
-      simulationResult = {
-        nodesResults,
-        branchesResults
-      };
+      simulationResult = this.gridCanvas.getSimulationSnapshot() ?? undefined;
     }
-
-    const normType = this.topBar ? this.topBar.selectedNormType : 'en50160';
-    const minPu = this.topBar ? this.topBar.customMinPu : 0.90;
-    const maxPu = this.topBar ? this.topBar.customMaxPu : 1.10;
 
     return {
       name,
       description,
       totalTimeSteps: this.maxSimulationSteps,
       deltaTimeSeconds: this.deltaTime,
-      selectedNormType: normType,
-      customMinPu: normType === 'custom' ? minPu : undefined,
-      customMaxPu: normType === 'custom' ? maxPu : undefined,
+      selectedNormType: this.selectedNormType,
+      customMinPu: this.selectedNormType === 'custom' ? this.customMinPu : undefined,
+      customMaxPu: this.selectedNormType === 'custom' ? this.customMaxPu : undefined,
       nodes: canvasGraph.nodes,
       branches: canvasGraph.branches,
       simulationResult
@@ -219,7 +210,8 @@ export class MainComponent {
       this.gridCanvas.clearCanvas();
       this.isSimulationLoaded = false;
       this.currentStep = 0;
-      this.cdr.detectChanges();
+      this.deleteConfirmStep = false;
+      this.cdr.markForCheck();
       return;
     }
 
@@ -229,16 +221,10 @@ export class MainComponent {
         this.maxSimulationSteps = project.totalTimeSteps;
         this.deltaTime = project.deltaTimeSeconds;
         this.currentStep = 0;
-
-        if (this.topBar) {
-          this.topBar.maxSteps = project.totalTimeSteps;
-          this.topBar.deltaTime = project.deltaTimeSeconds;
-          this.topBar.selectedNormType = project.selectedNormType;
-          this.topBar.currentStep = 0;
-          if (project.selectedNormType === 'custom') {
-            this.topBar.customMinPu = project.customMinPu || 0.90;
-            this.topBar.customMaxPu = project.customMaxPu || 1.10;
-          }
+        this.selectedNormType = project.selectedNormType;
+        if (project.selectedNormType === 'custom') {
+          this.customMinPu = project.customMinPu || 0.90;
+          this.customMaxPu = project.customMaxPu || 1.10;
         }
 
         this.gridCanvas.loadProjectGraph(
@@ -249,7 +235,7 @@ export class MainComponent {
         );
 
         this.isSimulationLoaded = project.simulationResult ? true : false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.toast.error('Failed to load project: ' + getErrorMessage(err));
@@ -277,8 +263,9 @@ export class MainComponent {
       this.isEditModal = false;
       this.modalProjectName = '';
       this.modalProjectDescription = '';
+      this.modalError = '';
       this.showProjectModal = true;
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     }
   }
 
@@ -288,8 +275,9 @@ export class MainComponent {
     this.isEditModal = false;
     this.modalProjectName = existing ? `${existing.name} (Copy)` : 'New Project Copy';
     this.modalProjectDescription = existing ? existing.description || '' : '';
+    this.modalError = '';
     this.showProjectModal = true;
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
   public onNewClicked() {
@@ -297,33 +285,38 @@ export class MainComponent {
     this.gridCanvas.clearCanvas();
     this.isSimulationLoaded = false;
     this.currentStep = 0;
+    this.selectedNormType = 'en50160';
+    this.customMinPu = 0.90;
+    this.customMaxPu = 1.10;
+    this.deleteConfirmStep = false;
 
-    if (this.topBar) {
-      this.topBar.currentStep = 0;
-    }
-
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
   public onDeleteClicked() {
     if (this.selectedProjectId === null) return;
-    const existing = this.projects.find(p => p.id === this.selectedProjectId);
-    const name = existing ? existing.name : 'this project';
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      this.projectService.deleteProject(this.selectedProjectId).subscribe({
-        next: () => {
-          this.toast.success('Project deleted successfully.');
-          this.loadProjectsList();
-          this.onNewClicked();
-        },
-        error: (err) => {
-          this.toast.error('Failed to delete project: ' + getErrorMessage(err));
-        }
-      });
+
+    if (!this.deleteConfirmStep) {
+      this.deleteConfirmStep = true;
+      this.cdr.markForCheck();
+      return;
     }
+
+    this.deleteConfirmStep = false;
+    this.projectService.deleteProject(this.selectedProjectId).subscribe({
+      next: () => {
+        this.toast.success('Project deleted successfully.');
+        this.loadProjectsList();
+        this.onNewClicked();
+      },
+      error: (err) => {
+        this.toast.error('Failed to delete project: ' + getErrorMessage(err));
+      }
+    });
   }
 
   public onModalSave(result: { name: string; description: string }) {
+    this.modalError = '';
     const payload = this.getSavePayload(result.name, result.description);
     this.projectService.createProject(payload).subscribe({
       next: (saved) => {
@@ -337,7 +330,12 @@ export class MainComponent {
         }
       },
       error: (err) => {
-        this.toast.error('Failed to create project: ' + getErrorMessage(err));
+        if (err.status === 409) {
+          this.modalError = getErrorMessage(err);
+          this.cdr.markForCheck();
+        } else {
+          this.toast.error('Failed to create project: ' + getErrorMessage(err));
+        }
       }
     });
   }

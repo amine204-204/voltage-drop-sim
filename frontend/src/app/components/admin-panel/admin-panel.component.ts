@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgIf, NgFor, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminService } from '../../services/admin.service';
@@ -7,13 +7,13 @@ import { ProjectService } from '../../services/project.service';
 import { UserSummary, CreateUserRequest } from '../../models/admin.model';
 import { CableCatalog } from '../../models/catalog.model';
 import { ProjectSummary } from '../../models/project.model';
-import { getErrorMessage } from '../../guards/error.interceptor';
+import { getErrorMessage } from '../../shared/utils/error.utils';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-admin-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [NgIf, NgFor, FormsModule, DatePipe],
   templateUrl: './admin-panel.component.html',
   styleUrl: './admin-panel.component.scss'
 })

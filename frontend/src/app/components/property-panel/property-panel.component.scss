@@ -7,6 +7,7 @@
   overflow-y: auto;
   font-family: var(--font-ui);
   color: var(--text-primary);
+  animation: fadeSlideIn 0.2s var(--ease-out-expo) forwards;
 
   h3 {
     margin: 0 0 16px 0;

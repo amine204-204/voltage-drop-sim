@@ -7,6 +7,7 @@
   align-items: center; 
   justify-content: center;
   z-index: 1000;
+  animation: overlayFadeIn 0.2s ease forwards;
 }
 
 .modal-card {
@@ -18,18 +19,7 @@
   box-shadow: 0 20px 40px var(--shadow-heavy);
   overflow: hidden;
   font-family: var(--font-ui);
-  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  animation: cardScaleIn 0.25s var(--ease-out-expo) forwards;
 }
 
 .modal-header {
@@ -105,6 +95,14 @@
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-dim);
       }
+    }
+
+    .field-error {
+      font-size: 11px;
+      color: var(--status-danger);
+      background: var(--status-danger-bg);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
     }
 
     textarea {

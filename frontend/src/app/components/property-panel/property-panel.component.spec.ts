@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { LoadProfileEditor } from './load-profile-editor';
+import { PropertyPanel } from './property-panel.component';
 
-describe('LoadProfileEditor', () => {
-  let component: LoadProfileEditor;
-  let fixture: ComponentFixture<LoadProfileEditor>;
+describe('PropertyPanel', () => {
+  let component: PropertyPanel;
+  let fixture: ComponentFixture<PropertyPanel>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LoadProfileEditor]
+      imports: [PropertyPanel]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(LoadProfileEditor);
+    fixture = TestBed.createComponent(PropertyPanel);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
