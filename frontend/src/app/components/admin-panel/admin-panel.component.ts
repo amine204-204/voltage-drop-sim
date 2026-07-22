@@ -1,9 +1,12 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { AdminService } from '../../services/admin.service';
+import { AuthService } from '../../services/auth.service';
 import { ProjectService } from '../../services/project.service';
+import { PageHeaderComponent } from '../shared/page-header/page-header.component';
+import { ConfirmDeleteButtonComponent } from '../shared/confirm-delete-button/confirm-delete-button.component';
+import { IconComponent } from '../shared/icon/icon.component';
 import { UserSummary, CreateUserRequest } from '../../models/admin.model';
 import { CableCatalog } from '../../models/catalog.model';
 import { ProjectSummary } from '../../models/project.model';
@@ -13,7 +16,7 @@ import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-admin-panel',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, DatePipe],
+  imports: [NgIf, NgFor, FormsModule, DatePipe, IconComponent, PageHeaderComponent, ConfirmDeleteButtonComponent],
   templateUrl: './admin-panel.component.html',
   styleUrl: './admin-panel.component.scss'
 })
@@ -26,20 +29,24 @@ export class AdminPanelComponent implements OnInit {
 
   public showCreateUser = false;
   public newUser: CreateUserRequest = { username: '', email: '', password: '', role: 'ENGINEER' };
+  public confirmPassword = '';
 
   public editingCable: CableCatalog | null = null;
   public showCableForm = false;
   public newCable: Partial<CableCatalog> = this.emptyCable();
 
   public loading = true;
+  public currentUsername: string | null = null;
 
   constructor(
     private adminService: AdminService,
+    private authService: AuthService,
     private projectService: ProjectService,
     private cdr: ChangeDetectorRef,
-    private router: Router,
     private toast: ToastService
-  ) {}
+  ) {
+    this.currentUsername = this.authService.getUsername();
+  }
 
   ngOnInit() {
     this.loadUsers();
@@ -50,10 +57,6 @@ export class AdminPanelComponent implements OnInit {
     if (tab === 'users' && this.users.length === 0) this.loadUsers();
     if (tab === 'catalog' && this.cables.length === 0) this.loadCables();
     if (tab === 'projects' && this.projects.length === 0) this.loadProjects();
-  }
-
-  goBack() {
-    this.router.navigate(['']);
   }
 
   // ── Users ──────────────────────────────────────────────────
@@ -68,11 +71,16 @@ export class AdminPanelComponent implements OnInit {
 
   createUser() {
     if (!this.newUser.username || !this.newUser.email || !this.newUser.password) return;
+    if (this.newUser.password !== this.confirmPassword) {
+      this.toast.error('Passwords do not match.');
+      return;
+    }
     this.adminService.createUser(this.newUser).subscribe({
       next: (user) => {
         this.users.push(user);
         this.showCreateUser = false;
         this.newUser = { username: '', email: '', password: '', role: 'ENGINEER' };
+        this.confirmPassword = '';
         this.toast.success('User created successfully.');
         this.cdr.detectChanges();
       },
@@ -92,7 +100,6 @@ export class AdminPanelComponent implements OnInit {
   }
 
   deleteUser(user: UserSummary) {
-    if (!confirm(`Delete user "${user.username}"?`)) return;
     this.adminService.deleteUser(user.id).subscribe({
       next: () => {
         this.users = this.users.filter(u => u.id !== user.id);
@@ -150,7 +157,6 @@ export class AdminPanelComponent implements OnInit {
   }
 
   deleteCable(cable: CableCatalog) {
-    if (!confirm(`Delete cable "${cable.name}"?`)) return;
     this.adminService.deleteCable(cable.id).subscribe({
       next: () => {
         this.cables = this.cables.filter(c => c.id !== cable.id);
@@ -168,6 +174,17 @@ export class AdminPanelComponent implements OnInit {
     this.projectService.getProjects().subscribe({
       next: (list) => { this.projects = list; this.loading = false; this.cdr.detectChanges(); },
       error: (err) => { this.loading = false; this.toast.error(getErrorMessage(err)); this.cdr.detectChanges(); }
+    });
+  }
+
+  deleteProject(project: ProjectSummary) {
+    this.projectService.deleteProject(project.id).subscribe({
+      next: () => {
+        this.projects = this.projects.filter(p => p.id !== project.id);
+        this.toast.success('Project deleted.');
+        this.cdr.detectChanges();
+      },
+      error: (err) => this.toast.error(getErrorMessage(err))
     });
   }
 

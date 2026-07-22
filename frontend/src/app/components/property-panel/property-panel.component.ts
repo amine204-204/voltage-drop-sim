@@ -2,16 +2,17 @@ import { NgFor, NgIf } from '@angular/common';
 import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
-import { MOCK_CABLES } from '../../mocks/equipment-catalog.mock';
-import { CableCatalog } from '../../models/catalog.model';
+import { MOCK_CABLES, MOCK_TRANSFORMERS } from '../../mocks/equipment-catalog.mock';
+import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/catalog.model';
 import { LoadPreset } from '../../models/load-preset.model';
 import { LoadProfileEditor } from '../load-profile-editor/load-profile-editor.component';
-import { NodeType, LoadType } from '../../models/simulation.model';
+import { NodeType, LoadType, BranchType } from '../../models/simulation.model';
 
 export interface CytoscapeElementData {
   id: string;
   label: string;
   type: NodeType;
+  branchType?: BranchType;
   nominalVoltage?: number;
   loadType?: LoadType;
   cosPhi?: number;
@@ -23,6 +24,7 @@ export interface CytoscapeElementData {
   catalogId?: string;
   componentCrossSection?: string;
   componentMaterial?: string;
+  closed?: boolean;
   simulationData?: any;
   [key: string]: any;
 }
@@ -41,6 +43,8 @@ export class PropertyPanel {
   @Input() maxSimulationSteps: number = 10;
   @Input() deltaTime: number = 1;
   @Input() cableCatalogItems: CableCatalog[] = MOCK_CABLES;
+  @Input() transformerCatalogItems: TransformerCatalog[] = MOCK_TRANSFORMERS;
+  @Input() switchCatalogItems: SwitchCatalog[] = [];
   @Input() loadPresets: LoadPreset[] = LOAD_PRESETS;
 
   @Output() propertyChanged = new EventEmitter<{property: string, value: any}>();
@@ -61,6 +65,28 @@ export class PropertyPanel {
     return this.loadPresets.filter(p => p.loadType === this.elementData!.loadType);
   }
 
+  get isCable(): boolean {
+    return this.elementData?.branchType === 'CABLE' || !this.elementData?.branchType;
+  }
+
+  get isTransformer(): boolean {
+    return this.elementData?.branchType === 'TRANSFORMER';
+  }
+
+  get isSwitch(): boolean {
+    return this.elementData?.branchType === 'SWITCH';
+  }
+
+  get selectedTransformer(): TransformerCatalog | undefined {
+    if (!this.elementData?.catalogId) return undefined;
+    return this.transformerCatalogItems.find(t => t.id === this.elementData!.catalogId);
+  }
+
+  get selectedSwitch(): SwitchCatalog | undefined {
+    if (!this.elementData?.catalogId) return undefined;
+    return this.switchCatalogItems.find(s => s.id === this.elementData!.catalogId);
+  }
+
   onPropertyChange(property: string, value: string | number | boolean) {
     if (property === 'loadProfile' && typeof value === 'string') {
       const numberArray = value.split(',')
@@ -73,14 +99,31 @@ export class PropertyPanel {
   }
 
   onCatalogSelect(catalogId: string) {
-    const cable = this.cableCatalogItems.find(c => c.id === catalogId);
-    if (cable) {
-      this.propertyChanged.emit({ property: 'catalogId', value: catalogId });
-      this.propertyChanged.emit({ property: 'componentCrossSection', value: cable.physical.crossSection });
-      this.propertyChanged.emit({ property: 'componentMaterial', value: cable.physical.conductorMaterial });
-      this.propertyChanged.emit({ property: 'resistancePerKm', value: cable.electrical.resistancePerKm });
-      this.propertyChanged.emit({ property: 'reactancePerKm', value: cable.electrical.reactancePerKm });
+    if (this.isCable) {
+      const cable = this.cableCatalogItems.find(c => c.id === catalogId);
+      if (cable) {
+        this.propertyChanged.emit({ property: 'catalogId', value: catalogId });
+        this.propertyChanged.emit({ property: 'componentCrossSection', value: cable.physical.crossSection });
+        this.propertyChanged.emit({ property: 'componentMaterial', value: cable.physical.conductorMaterial });
+        this.propertyChanged.emit({ property: 'resistancePerKm', value: cable.electrical.resistancePerKm });
+        this.propertyChanged.emit({ property: 'reactancePerKm', value: cable.electrical.reactancePerKm });
+      }
+    } else if (this.isTransformer) {
+      const tx = this.transformerCatalogItems.find(t => t.id === catalogId);
+      if (tx) {
+        this.propertyChanged.emit({ property: 'catalogId', value: catalogId });
+      }
+    } else if (this.isSwitch) {
+      const sw = this.switchCatalogItems.find(s => s.id === catalogId);
+      if (sw) {
+        this.propertyChanged.emit({ property: 'catalogId', value: catalogId });
+      }
     }
+  }
+
+  onSwitchToggle(closed: boolean) {
+    this.propertyChanged.emit({ property: 'closed', value: closed });
+    this.propertyChanged.emit({ property: 'lengthLabel', value: closed ? 'Closed' : 'Open' });
   }
 
   onLoadPresetSelect(presetId: string) {

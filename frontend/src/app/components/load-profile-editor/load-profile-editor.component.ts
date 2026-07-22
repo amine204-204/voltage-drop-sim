@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, HostListener } from '@angular/core';
 import { NgIf, NgFor, DecimalPipe } from '@angular/common';
+import { ModalComponent } from '../shared/modal/modal.component';
 import { getCssVar } from '../../services/theme.service';
 
 /* ControlPoint in absolute values (time, value), not percentages or step indices */
@@ -11,7 +12,7 @@ export interface ControlPoint {
 @Component({
   selector: 'app-load-profile-editor',
   standalone: true,
-  imports: [NgIf, NgFor, DecimalPipe],
+  imports: [NgIf, NgFor, DecimalPipe, ModalComponent],
   templateUrl: './load-profile-editor.component.html',
   styleUrl: './load-profile-editor.component.scss'
 })

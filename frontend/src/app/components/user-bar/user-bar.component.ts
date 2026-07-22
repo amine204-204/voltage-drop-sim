@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 import { ProjectSummary } from '../../models/project.model';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
+import { IconComponent } from '../shared/icon/icon.component';
 
 @Component({
   selector: 'app-user-bar',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule],
+  imports: [NgIf, NgFor, FormsModule, IconComponent],
   templateUrl: './user-bar.component.html',
   styleUrl: './user-bar.component.scss'
 })
@@ -23,6 +24,7 @@ export class UserBarComponent {
   @Output() saveProject = new EventEmitter<void>();
   @Output() saveAsProject = new EventEmitter<void>();
   @Output() deleteProject = new EventEmitter<void>();
+  @Output() settingsClicked = new EventEmitter<void>();
 
   public username: string = '';
   public isAdmin: boolean = false;
@@ -43,6 +45,10 @@ export class UserBarComponent {
 
   public goToAdmin() {
     this.router.navigate(['/admin']);
+  }
+
+  public goToProfile() {
+    this.router.navigate(['/profile']);
   }
 
   public logout() {

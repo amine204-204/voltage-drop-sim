@@ -2,6 +2,8 @@ export type NodeType = 'SOURCE' | 'CONSUMER' | 'JUNCTION';
 
 export type LoadType = 'CONSTANT_CURRENT' | 'CONSTANT_POWER';
 
+export type BranchType = 'CABLE' | 'TRANSFORMER' | 'SWITCH';
+
 export interface SimulationRequestDto {
   totalTimeSteps: number;
   deltaTimeSeconds: number;
@@ -32,8 +34,11 @@ export interface BranchDto {
   fromNodeId: string;
   toNodeId: string;
   lengthInKm: number;
+  branchType?: BranchType;
+  catalogId?: string;
   componentCrossSection: string;
   componentMaterial: string;
+  closed?: boolean;
 }
 
 export interface PowerQualityEvent {
@@ -46,6 +51,7 @@ export interface PowerQualityEvent {
 export interface SimulationNodeResult {
   id: string;
   potentialTimeSeries: number[];
+  localNominalVoltage?: number;
 }
 
 export interface SimulationBranchResult {

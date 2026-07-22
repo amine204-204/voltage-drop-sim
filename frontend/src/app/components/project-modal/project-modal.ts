@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ModalComponent } from '../shared/modal/modal.component';
 
 @Component({
   selector: 'app-project-modal',
   standalone: true,
-  imports: [NgIf, FormsModule],
+  imports: [NgIf, FormsModule, ModalComponent],
   templateUrl: './project-modal.html',
   styleUrl: './project-modal.scss'
 })

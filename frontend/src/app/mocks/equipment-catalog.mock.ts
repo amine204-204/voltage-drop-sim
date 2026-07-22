@@ -1,4 +1,4 @@
-import { CableCatalog, TransformerCatalog } from '../models/catalog.model';
+import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../models/catalog.model';
 
 export const MOCK_CABLES: CableCatalog[] = [
   {
@@ -579,4 +579,29 @@ export const MOCK_TRANSFORMERS: TransformerCatalog[] = [
       stepVoltagePercent: 2.5,
     },
   }
-]
+];
+
+export const MOCK_SWITCHES: SwitchCatalog[] = [
+  {
+    id: 'SW-MCB-100',
+    name: 'Miniature Circuit Breaker 100A',
+    category: 'switch',
+    standard: 'IEC 60898',
+    active: true,
+    electrical: {
+      ratedCurrentA: 100,
+      breakingCapacity: '10 kA',
+    },
+  },
+  {
+    id: 'SW-MCB-63',
+    name: 'Miniature Circuit Breaker 63A',
+    category: 'switch',
+    standard: 'IEC 60898',
+    active: true,
+    electrical: {
+      ratedCurrentA: 63,
+      breakingCapacity: '10 kA',
+    },
+  },
+];

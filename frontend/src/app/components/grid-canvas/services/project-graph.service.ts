@@ -41,13 +41,15 @@ export function getProjectGraph(cy: Core): ProjectGraph {
     const data = edge.data();
     return {
       id: data.id,
-      name: data.name || `Cable ${data.source}-${data.target}`,
+      name: data.name || `${data.branchType || 'Cable'} ${data.source}-${data.target}`,
       fromNodeId: data.source,
       toNodeId: data.target,
       lengthInKm: data.lengthInKm || 0.1,
+      branchType: data.branchType || 'CABLE',
       catalogId: data.catalogId || null,
       componentCrossSection: data.componentCrossSection || '16mm2',
-      componentMaterial: data.componentMaterial || 'CU'
+      componentMaterial: data.componentMaterial || 'CU',
+      closed: data.closed
     };
   });
 
@@ -88,9 +90,11 @@ export function loadProjectGraph(cy: Core, nodes: ProjectNode[], branches: Proje
         target: branch.toNodeId,
         lengthInKm: branch.lengthInKm,
         lengthLabel: `${branch.lengthInKm} km`,
+        branchType: branch.branchType || 'CABLE',
         catalogId: branch.catalogId,
         componentCrossSection: branch.componentCrossSection,
-        componentMaterial: branch.componentMaterial
+        componentMaterial: branch.componentMaterial,
+        closed: branch.closed
       }
     });
   });

@@ -1,43 +1,8 @@
 .admin-panel {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   background: var(--bg-app);
   font-family: var(--font-ui);
-}
-
-.admin-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 24px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-hairline);
-
-  h1 {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
-  .back-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: 1px solid var(--border-hairline);
-    border-radius: var(--radius-sm);
-    color: var(--text-secondary);
-    padding: 6px 12px;
-    font-size: 12px;
-    font-family: var(--font-ui);
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
-
-    &:hover {
-      background: var(--bg-panel-raised);
-      color: var(--text-primary);
-    }
-  }
 }
 
 .tab-bar {
@@ -188,11 +153,6 @@
   &:hover {
     background: var(--bg-panel-raised);
     color: var(--text-primary);
-  }
-
-  &.danger:hover {
-    background: var(--status-danger-bg);
-    color: var(--status-danger);
   }
 }
 

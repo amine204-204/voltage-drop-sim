@@ -1,9 +1,9 @@
-export type CatalogItem = CableCatalog | TransformerCatalog;
+export type CatalogItem = CableCatalog | TransformerCatalog | SwitchCatalog;
 
 export interface BaseCatalogItem {
   id: string;
   name: string;
-  category: 'cable' | 'transformer';
+  category: 'cable' | 'transformer' | 'switch';
   standard: string;
   active: boolean;
 }
@@ -47,5 +47,13 @@ export interface TransformerCatalog extends BaseCatalogItem {
   tapChanger?: {
     steps: number;
     stepVoltagePercent: number;
+  };
+}
+
+export interface SwitchCatalog extends BaseCatalogItem {
+  category: 'switch';
+  electrical: {
+    ratedCurrentA: number;
+    breakingCapacity: string;
   };
 }

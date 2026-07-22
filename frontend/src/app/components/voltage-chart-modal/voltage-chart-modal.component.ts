@@ -1,4 +1,5 @@
 import { Component, Input, AfterViewInit, ViewChild, OnDestroy, Output, EventEmitter, ElementRef } from '@angular/core';
+import { ModalComponent } from '../shared/modal/modal.component';
 import { Chart, registerables } from 'chart.js';
 import { getCssVar } from '../../services/theme.service';
 
@@ -7,7 +8,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-voltage-chart-modal',
   standalone: true,
-  imports: [],
+  imports: [ModalComponent],
   templateUrl: './voltage-chart-modal.component.html',
   styleUrl: './voltage-chart-modal.component.scss'
 })
@@ -33,7 +34,7 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
 
     const ctx = this.chartCanvas.nativeElement.getContext('2d');
     if (!ctx) return;
-    
+
     const labels = this.voltageTimeSeries.map((_, i) => `${i * this.deltaTime}s`);
 
     const minVoltage = this.nominalVoltage * this.minLimitPu;
@@ -74,8 +75,8 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
         scales: {
           y: {
             title: { display: true, text: 'Voltage (V)', color: textSecondary },
-            suggestedMin: minVoltage - 20,
-            suggestedMax: maxVoltage + 20,
+            suggestedMin: minVoltage - (maxVoltage - minVoltage) / 4,
+            suggestedMax: maxVoltage + (maxVoltage - minVoltage) / 4,
             grid: { color: textSecondary + '33' }
           },
           x: {
@@ -89,12 +90,12 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
         afterDraw: (chart) => {
           const yAxis = chart.scales['y'];
           const ctx = chart.ctx;
-          
+
           ctx.save();
           ctx.setLineDash([5, 5]);
           ctx.lineWidth = 2;
           ctx.font = '12px Arial';
-          
+
           const yMin = yAxis.getPixelForValue(minVoltage);
           ctx.strokeStyle = getCssVar('--status-danger', '#e74c3c');
           ctx.beginPath();

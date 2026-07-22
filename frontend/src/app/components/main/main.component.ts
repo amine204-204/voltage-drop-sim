@@ -1,13 +1,13 @@
-import { Component, ViewChild, ChangeDetectorRef, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, ViewChild, ChangeDetectorRef, ChangeDetectionStrategy, OnInit, HostListener } from '@angular/core';
 import { GridCanvas } from '../grid-canvas/grid-canvas.component';
 import { SimulationTopBar, SimulationSettings } from '../simulation-top-bar/simulation-top-bar.component';
 import { SimulationService } from '../../services/simulation.service';
 import { MockSimulationService } from '../../mocks/mock-simulation.service';
 import { SimulationRequestDto, SimulationResponseDto } from '../../models/simulation.model';
 import { forkJoin, Observable } from 'rxjs';
-import { MOCK_CABLES } from '../../mocks/equipment-catalog.mock';
+import { MOCK_CABLES, MOCK_TRANSFORMERS, MOCK_SWITCHES } from '../../mocks/equipment-catalog.mock';
 import { CatalogService } from '../../services/catalog.service';
-import { CableCatalog } from '../../models/catalog.model';
+import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/catalog.model';
 import { NgIf } from '@angular/common';
 import { LoadPreset } from '../../models/load-preset.model';
 import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
@@ -15,6 +15,7 @@ import { ProjectSummary, Project, ProjectSimulationResult } from '../../models/p
 import { ProjectService } from '../../services/project.service';
 import { ProjectModal } from '../project-modal/project-modal';
 import { UserBarComponent } from '../user-bar/user-bar.component';
+import { SettingsModalComponent, ProjectSettings } from '../settings-modal/settings-modal.component';
 import { getErrorMessage } from '../../shared/utils/error.utils';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
@@ -22,7 +23,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-main',
   standalone: true,
-  imports: [GridCanvas, SimulationTopBar, ProjectModal, UserBarComponent, NgIf],
+  imports: [GridCanvas, SimulationTopBar, ProjectModal, UserBarComponent, SettingsModalComponent, NgIf],
   templateUrl: './main.component.html',
   styleUrl: './main.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -40,12 +41,15 @@ export class MainComponent implements OnInit {
   public customMaxPu: number = 1.10;
 
   public cableCatalog: CableCatalog[] = [];
+  public transformerCatalog: TransformerCatalog[] = [];
+  public switchCatalog: SwitchCatalog[] = [];
   public loadPresets: LoadPreset[] = [];
 
   public projects: ProjectSummary[] = [];
   public selectedProjectId: number | null = null;
 
   public showProjectModal: boolean = false;
+  public showSettingsModal: boolean = false;
   public isEditModal: boolean = false;
   public modalProjectName: string = '';
   public modalProjectDescription: string = '';
@@ -65,23 +69,44 @@ export class MainComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) { }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    if (this.deleteConfirmStep) {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.delete-btn')) {
+        this.deleteConfirmStep = false;
+        this.cdr.markForCheck();
+      }
+    }
+  }
+
 
   ngOnInit() {
     this.loadProjectsList();
     if (environment.useMocks) {
       this.cableCatalog = MOCK_CABLES;
+      this.transformerCatalog = MOCK_TRANSFORMERS;
+      this.switchCatalog = MOCK_SWITCHES;
       this.loadPresets = LOAD_PRESETS;
       this.isLoadingCatalog = false;
     } else {
-      this.catalogService.getCables().subscribe({
-        next: (cables) => {
-          this.cableCatalog = cables;
+      forkJoin({
+        cables: this.catalogService.getCables(),
+        transformers: this.catalogService.getTransformers(),
+        switches: this.catalogService.getSwitches()
+      }).subscribe({
+        next: (result) => {
+          this.cableCatalog = result.cables;
+          this.transformerCatalog = result.transformers;
+          this.switchCatalog = result.switches;
           this.isLoadingCatalog = false;
           this.cdr.markForCheck();
         },
         error: (err) => {
           this.catalogError = 'Failed to load equipment catalog. Using defaults.';
           this.cableCatalog = MOCK_CABLES;
+          this.transformerCatalog = MOCK_TRANSFORMERS;
+          this.switchCatalog = MOCK_SWITCHES;
           this.isLoadingCatalog = false;
           this.toast.error(this.catalogError + '\n' + getErrorMessage(err));
           this.cdr.markForCheck();
@@ -113,19 +138,23 @@ export class MainComponent implements OnInit {
     try {
       const islands = this.gridCanvas.getIslands();
 
-      if (islands.length === 0) {
+      const simlatableIslands = islands.filter(island =>
+        island.nodes.some(node => node.type === 'SOURCE')
+      );
+
+      if (simlatableIslands.length === 0) {
         this.toast.info('Please draw a grid before running.');
         this.isSimulating = false;
         this.cdr.markForCheck();
         return;
       }
-      const payloads: Observable<SimulationResponseDto>[] = islands.map(island => {
+      const payloads: Observable<SimulationResponseDto>[] = simlatableIslands.map(island => {
         const payload: SimulationRequestDto = {
           totalTimeSteps: settings.totalTimeSteps,
           deltaTimeSeconds: settings.deltaTimeSeconds,
-          selectedNormType: settings.selectedNormType,
-          customMinPu: settings.customMinPu,
-          customMaxPu: settings.customMaxPu,
+          selectedNormType: this.selectedNormType,
+          customMinPu: this.selectedNormType === 'custom' ? this.customMinPu : undefined,
+          customMaxPu: this.selectedNormType === 'custom' ? this.customMaxPu : undefined,
           graph: island
         };
         return this.simService.runSimulation(payload);
@@ -171,15 +200,6 @@ export class MainComponent implements OnInit {
 
   public onMaxStepsChanged(maxSteps: number) {
     this.maxSimulationSteps = maxSteps;
-  }
-
-  public onNormTypeChanged(normType: string) {
-    this.selectedNormType = normType;
-  }
-
-  public onCustomPuLimitsChanged(limits: { min: number; max: number }) {
-    this.customMinPu = limits.min;
-    this.customMaxPu = limits.max;
   }
 
   private getSavePayload(name: string, description: string): Project {
@@ -278,6 +298,43 @@ export class MainComponent implements OnInit {
     this.modalError = '';
     this.showProjectModal = true;
     this.cdr.markForCheck();
+  }
+
+  public onSettingsClicked() {
+    if (this.selectedProjectId !== null) {
+      const existing = this.projects.find(p => p.id === this.selectedProjectId);
+      this.modalProjectName = existing ? existing.name : '';
+      this.modalProjectDescription = existing ? existing.description || '' : '';
+    } else {
+      this.modalProjectName = '';
+      this.modalProjectDescription = '';
+    }
+    this.showSettingsModal = true;
+    this.cdr.markForCheck();
+  }
+
+  public onSettingsApplied(settings: ProjectSettings) {
+    this.showSettingsModal = false;
+    this.selectedNormType = settings.selectedNormType;
+    this.customMinPu = settings.customMinPu;
+    this.customMaxPu = settings.customMaxPu;
+
+    if (this.selectedProjectId !== null) {
+      const payload = this.getSavePayload(settings.name, settings.description);
+      this.projectService.updateProject(this.selectedProjectId, payload).subscribe({
+        next: () => {
+          this.toast.success('Project settings saved.');
+          this.loadProjectsList();
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.toast.error('Failed to save settings: ' + getErrorMessage(err));
+          this.cdr.markForCheck();
+        }
+      });
+    } else {
+      this.cdr.markForCheck();
+    }
   }
 
   public onNewClicked() {

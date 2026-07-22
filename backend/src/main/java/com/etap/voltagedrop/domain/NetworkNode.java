@@ -20,6 +20,7 @@ public class NetworkNode {
 
     // Working Memory for FBS Algorithm (not serialized to frontend ideally)
     private double workingVoltage;
+    private double localNominalVoltage;
 
     @JsonIgnore
     private PowerSource sourceBehavior;

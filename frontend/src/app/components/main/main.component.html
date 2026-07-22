@@ -7,7 +7,8 @@
     (newProject)="onNewClicked()"
     (saveProject)="onSaveClicked()"
     (saveAsProject)="onSaveAsClicked()"
-    (deleteProject)="onDeleteClicked()">
+    (deleteProject)="onDeleteClicked()"
+    (settingsClicked)="onSettingsClicked()">
   </app-user-bar>
 
   <div class="loading-overlay" *ngIf="isLoadingCatalog">
@@ -21,22 +22,21 @@
     [isSimulationLoaded]="isSimulationLoaded"
     [isSimulating]="isSimulating"
     [currentStep]="currentStep"
-    [selectedNormType]="selectedNormType"
-    [customMinPu]="customMinPu"
-    [customMaxPu]="customMaxPu"
     (runClicked)="onRunClicked($event)"
     (deltaTimeChanged)="onDeltaTimeChanged($event)"
     (maxStepsChanged)="onMaxStepsChanged($event)"
-    (currentStepChanged)="onCurrentStepChanged($event)"
-    (normTypeChanged)="onNormTypeChanged($event)"
-    (customPuLimitsChanged)="onCustomPuLimitsChanged($event)">
+    (currentStepChanged)="onCurrentStepChanged($event)">
   </app-simulation-top-bar>
   
    <app-grid-canvas 
     *ngIf="!isLoadingCatalog"
     [maxSimulationSteps]="maxSimulationSteps"
     [deltaTime]="deltaTime"
-    [cableCatalogItems]="cableCatalog">
+    [minLimitPu]="customMinPu"
+    [maxLimitPu]="customMaxPu"
+    [cableCatalogItems]="cableCatalog"
+    [transformerCatalogItems]="transformerCatalog"
+    [switchCatalogItems]="switchCatalog">
   </app-grid-canvas>
 
   <app-project-modal
@@ -48,4 +48,16 @@
     (save)="onModalSave($event)"
     (close)="showProjectModal = false">
   </app-project-modal>
+
+  <app-settings-modal
+    *ngIf="showSettingsModal"
+    [name]="modalProjectName"
+    [description]="modalProjectDescription"
+    [selectedNormType]="selectedNormType"
+    [customMinPu]="customMinPu"
+    [customMaxPu]="customMaxPu"
+    [hasProject]="selectedProjectId !== null"
+    (settingsChange)="onSettingsApplied($event)"
+    (close)="showSettingsModal = false">
+  </app-settings-modal>
 </div>

@@ -108,13 +108,13 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge',
       style: {
         'width': 3,
-        'line-color': '#2A323C', // var(--border-hairline)
+        'line-color': '#5A6A7A', // var(--edge-color)
         'line-opacity': 0.8,
         'curve-style': 'bezier',
         'control-point-step-size': 40,
 
         'target-arrow-shape': 'triangle',
-        'target-arrow-color': '#2A323C',
+        'target-arrow-color': '#5A6A7A',
         'target-arrow-width': 8,
         'arrow-scale': 0.8,
 
@@ -185,6 +185,46 @@ export function getCytoscapeStyles(): any[] {
         'line-opacity': 1,
       } as any
     },
+
+    // === BRANCH TYPES ===
+    {
+      selector: 'edge[branchType = "TRANSFORMER"]',
+      style: {
+        'line-color': '#4FB8D0', // var(--data-cyan)
+        'target-arrow-color': '#4FB8D0',
+        'line-style': 'dashed',
+        'line-dash-pattern': [8, 4],
+        'width': 3,
+        'label': 'data(lengthLabel)',
+        'text-rotation': 'autorotate',
+      } as any
+    },
+    {
+      selector: 'edge[branchType = "SWITCH"]',
+      style: {
+        'line-color': '#3FBF7F', // var(--status-ok) for closed
+        'target-arrow-color': '#3FBF7F',
+        'width': 2,
+        'label': 'data(lengthLabel)',
+      } as any
+    },
+    {
+      selector: 'edge[branchType = "SWITCH"][?closed]',
+      style: {
+        'line-color': '#3FBF7F',
+        'target-arrow-color': '#3FBF7F',
+        'line-style': 'solid',
+      } as any
+    },
+    {
+      selector: 'edge[branchType = "SWITCH"][!closed]',
+      style: {
+        'line-color': '#E8615D',
+        'target-arrow-color': '#E8615D',
+        'line-style': 'dotted',
+        'line-dash-pattern': [4, 4],
+      } as any
+    },
   ];
 }
 
@@ -195,7 +235,7 @@ export function syncCytoscapeTheme(cy: Core): void {
   const accentDim = getCssVar('--accent-dim', 'rgba(232, 163, 61, 0.14)');
   const accent = getCssVar('--accent', '#E8A33D');
   const dataCyan = getCssVar('--data-cyan', '#4FB8D0');
-  const borderHairline = getCssVar('--border-hairline', '#2A323C');
+  const edgeColor = getCssVar('--edge-color', '#5A6A7A');
   const textTertiary = getCssVar('--text-tertiary', '#545C68');
   const bgCanvas = getCssVar('--bg-canvas', '#12161C');
   const accentStrong = getCssVar('--accent-strong', '#F4B75A');
@@ -222,8 +262,8 @@ export function syncCytoscapeTheme(cy: Core): void {
   } as any);
 
   style.selector('edge').style({
-    'line-color': borderHairline,
-    'target-arrow-color': borderHairline,
+    'line-color': edgeColor,
+    'target-arrow-color': edgeColor,
     'color': textTertiary,
     'text-background-color': bgCanvas,
   } as any);

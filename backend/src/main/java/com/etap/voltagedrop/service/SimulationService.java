@@ -7,6 +7,7 @@ import com.etap.voltagedrop.domain.quality.DisturbanceType;
 import com.etap.voltagedrop.domain.quality.PowerQualityEvent;
 import com.etap.voltagedrop.domain.quality.SimulationStatus;
 import com.etap.voltagedrop.service.visitor.ConductivityVisitor;
+import com.etap.voltagedrop.service.visitor.DownstreamNominalVoltageVisitor;
 import com.etap.voltagedrop.service.visitor.VoltageDropVisitor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,7 @@ public class SimulationService {
     private void initializeWorkingVoltages(NetworkGraph graph, double nominalVoltage) {
         for (NetworkNode node : graph.getNodes()) {
             node.setWorkingVoltage(nominalVoltage);
+            node.setLocalNominalVoltage(nominalVoltage);
         }
     }
 
@@ -76,7 +78,7 @@ public class SimulationService {
         }
 
         if (node.isConsumer()) {
-            double voltagePu = node.getWorkingVoltage() / nominalVoltage;
+            double voltagePu = node.getWorkingVoltage() / node.getLocalNominalVoltage();
             totalDownstreamCurrent += node.getConsumerBehavior().getCurrentLoadAtStep(voltagePu, t);
         }
 
@@ -106,8 +108,13 @@ public class SimulationService {
                     )
             );
 
+            double newChildNominalVoltage = branch.getComponent().accept(
+                    new DownstreamNominalVoltageVisitor(node.getLocalNominalVoltage())
+            );
+            child.setLocalNominalVoltage(newChildNominalVoltage);
+
             double oldChildVoltage = child.getWorkingVoltage();
-            double errorPu = Math.abs(newChildVoltage - oldChildVoltage) / nominalVoltage;
+            double errorPu = Math.abs(newChildVoltage - oldChildVoltage) / child.getLocalNominalVoltage();
             if (errorPu > maxErrorPu) {
                 maxErrorPu = errorPu;
             }
@@ -136,12 +143,13 @@ public class SimulationService {
             if (incomingBranch != null) {
                 double parentVoltage = graph.getNodeById(incomingBranch.getFromNodeId()).getWorkingVoltage();
                 double voltageDrop = parentVoltage - finalVoltage;
-                double dropPercent = (voltageDrop / nominalVoltage) * 100.0;
+                double nodeNominal = node.getLocalNominalVoltage();
+                double dropPercent = (voltageDrop / nodeNominal) * 100.0;
 
                 incomingBranch.getCurrentTimeSeries().add(incomingBranch.getWorkingCurrent());
                 incomingBranch.getDropPercentTimeSeries().add(dropPercent);
 
-                double voltagePu = finalVoltage / nominalVoltage;
+                double voltagePu = finalVoltage / nodeNominal;
 
                 boolean isCompliant = activeNorm.isCompliant(voltagePu);
 
@@ -160,7 +168,7 @@ public class SimulationService {
                     if (eventStart == -1) eventStart = t;
 
                     NetworkNode downstreamNode = graph.getNodeById(branch.getToNodeId());
-                    double currentPu = downstreamNode.getPotentialTimeSeries().get(t) / nominalVoltage;
+                    double currentPu = downstreamNode.getPotentialTimeSeries().get(t) / downstreamNode.getLocalNominalVoltage();
                     if (currentPu < worstPu) worstPu = currentPu;
                 } else {
                     if (eventStart != -1) {

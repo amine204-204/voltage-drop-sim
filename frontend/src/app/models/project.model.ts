@@ -30,9 +30,11 @@ export interface ProjectBranch {
   fromNodeId: string;
   toNodeId: string;
   lengthInKm: number;
+  branchType?: string;
   catalogId?: string;
   componentCrossSection: string;
   componentMaterial: string;
+  closed?: boolean;
 }
 
 export interface ProjectNodeResult {

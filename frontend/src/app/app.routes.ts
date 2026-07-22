@@ -13,6 +13,16 @@ export const routes: Routes = [
     loadComponent: () => import('./components/admin-panel/admin-panel.component').then(m => m.AdminPanelComponent)
   },
   {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent)
+  },
+  {
+    path: 'profile/:id',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent)
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./components/main/main.component').then(m => m.MainComponent)

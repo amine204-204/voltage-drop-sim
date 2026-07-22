@@ -1,0 +1,33 @@
+:host {
+  display: contents;
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: var(--bg-panel-raised);
+    color: var(--text-primary);
+  }
+
+  &.danger:hover {
+    background: var(--status-danger-bg);
+    color: var(--status-danger);
+  }
+
+  &.danger.armed {
+    background: var(--status-danger);
+    color: #fff;
+    animation: pulse-confirm 1s ease-in-out infinite;
+  }
+}

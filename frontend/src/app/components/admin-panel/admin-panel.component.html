@@ -1,13 +1,5 @@
 <div class="admin-panel">
-  <header class="admin-header">
-    <button class="back-btn" (click)="goBack()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-        <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
-      </svg>
-      Back to App
-    </button>
-    <h1>Admin Panel</h1>
-  </header>
+  <app-page-header title="Admin Panel"></app-page-header>
 
   <nav class="tab-bar">
     <button [class.active]="activeTab === 'users'" (click)="switchTab('users')">Users</button>
@@ -21,7 +13,7 @@
     <div *ngIf="activeTab === 'users'" class="section">
       <div class="section-header">
         <h2>Users ({{ users.length }})</h2>
-        <button class="action-btn" (click)="showCreateUser = !showCreateUser">
+        <button class="action-btn" (click)="showCreateUser = !showCreateUser; confirmPassword = ''">
           {{ showCreateUser ? 'Cancel' : '+ New User' }}
         </button>
       </div>
@@ -30,6 +22,7 @@
         <input placeholder="Username" [(ngModel)]="newUser.username">
         <input placeholder="Email" [(ngModel)]="newUser.email" type="email">
         <input placeholder="Password" [(ngModel)]="newUser.password" type="password">
+        <input placeholder="Confirm Password" [(ngModel)]="confirmPassword" type="password">
         <select [(ngModel)]="newUser.role">
           <option value="ENGINEER">Engineer</option>
           <option value="VIEWER">Viewer</option>
@@ -61,11 +54,7 @@
               </select>
             </td>
             <td>
-              <button class="icon-btn danger" (click)="deleteUser(user)" title="Delete user">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-              </button>
+              <app-confirm-delete-button *ngIf="user.username !== currentUsername" title="Delete user" (confirm)="deleteUser(user)"></app-confirm-delete-button>
             </td>
           </tr>
         </tbody>
@@ -148,16 +137,9 @@
             <td class="mono">{{ cable.electrical.ampacityFreeAirA }}</td>
             <td class="row-actions">
               <button class="icon-btn" (click)="editCable(cable)" title="Edit">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
+                <app-icon name="pencil" [size]="14"></app-icon>
               </button>
-              <button class="icon-btn danger" (click)="deleteCable(cable)" title="Delete">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-              </button>
+              <app-confirm-delete-button title="Delete cable" (confirm)="deleteCable(cable)"></app-confirm-delete-button>
             </td>
           </tr>
         </tbody>
@@ -178,6 +160,7 @@
             <th>Name</th>
             <th>Description</th>
             <th>Created</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -186,6 +169,9 @@
             <td>{{ p.name }}</td>
             <td>{{ p.description || '—' }}</td>
             <td class="mono">{{ p.createdAt | date:'short' }}</td>
+            <td>
+              <app-confirm-delete-button title="Delete project" (confirm)="deleteProject(p)"></app-confirm-delete-button>
+            </td>
           </tr>
         </tbody>
       </table>

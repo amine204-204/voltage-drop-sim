@@ -41,6 +41,9 @@
   --grid-line: rgba(255, 255, 255, 0.035);
   --grid-line-strong: rgba(255, 255, 255, 0.07);
 
+  // Canvas edges (cables, transformers, switches)
+  --edge-color: #5A6A7A;
+
   // Overlays & shadows
   --modal-overlay: rgba(8, 10, 13, 0.75);
   --shadow-heavy: rgba(0, 0, 0, 0.5);
@@ -93,6 +96,8 @@
 
   --grid-line: rgba(0, 0, 0, 0.06);
   --grid-line-strong: rgba(0, 0, 0, 0.12);
+
+  --edge-color: #6B7280;
 
   --text-on-accent: #FFFFFF;
   --modal-overlay: rgba(0, 0, 0, 0.40);

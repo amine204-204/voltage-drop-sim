@@ -35,7 +35,7 @@
 
     <div *ngIf="elementData.simulationData.powerQualityEvents?.length > 0 && elementType === 'edge'"
       class="events-list">
-      <h5>Power Quality Events</h5>
+      <h5>Power Quality Events <span class="event-standard">(IEEE 1159)</span></h5>
       <ul>
         <li *ngFor="let event of elementData.simulationData.powerQualityEvents">
           <strong>{{ event.classification }}</strong> (Steps {{ event.startTimeStep }} to {{ event.endTimeStep }})
@@ -92,7 +92,7 @@
     </div>
   </div>
 
-  <div *ngIf="elementType === 'edge'">
+  <div *ngIf="elementType === 'edge' && isCable">
     <div class="form-group">
       <label>Length (km)</label>
       <input type="number" step="0.01" [(ngModel)]="elementData.lengthInKm"
@@ -115,6 +115,49 @@
       <label>Material</label>
       <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentMaterial"
         (change)="onPropertyChange('componentMaterial', $any($event.target).value)">
+    </div>
+  </div>
+
+  <div *ngIf="elementType === 'edge' && isTransformer">
+    <div class="form-group">
+      <label>Transformer Catalog</label>
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)">
+        <option value="null">Select transformer...</option>
+        <option *ngFor="let item of transformerCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
+      <label>Rated Power</label>
+      <input type="text" [disabled]="true" [value]="selectedTransformer?.electrical?.ratedPowerKva + ' kVA'">
+    </div>
+    <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
+      <label>Primary / Secondary</label>
+      <input type="text" [disabled]="true"
+        [value]="selectedTransformer?.electrical?.primaryVoltageV + 'V / ' + selectedTransformer?.electrical?.secondaryVoltageV + 'V'">
+    </div>
+  </div>
+
+  <div *ngIf="elementType === 'edge' && isSwitch">
+    <div class="form-group">
+      <label>Switch Catalog</label>
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)">
+        <option value="null">Select switch...</option>
+        <option *ngFor="let item of switchCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
+      <label>Rated Current</label>
+      <input type="text" [disabled]="true" [value]="selectedSwitch?.electrical?.ratedCurrentA + ' A'">
+    </div>
+
+    <div class="form-group">
+      <label>State</label>
+      <div class="switch-toggle">
+        <button [class.active]="elementData.closed" (click)="onSwitchToggle(true)">Closed</button>
+        <button [class.active]="!elementData.closed" (click)="onSwitchToggle(false)">Open</button>
+      </div>
     </div>
   </div>
 </div>

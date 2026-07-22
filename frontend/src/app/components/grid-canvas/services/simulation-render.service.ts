@@ -6,6 +6,13 @@ export function applySimulationResults(cy: Core, response: SimulationResponseDto
   const statusDanger = getCssVar('--status-danger', '#E8615D');
   const statusOk = getCssVar('--status-ok', '#3FBF7F');
 
+  cy.elements().forEach((el: any) => { el.removeData('simulationData'); });
+  cy.edges().forEach(edge => {
+    edge.style('line-color', '');
+    edge.style('target-arrow-color', '');
+    edge.style('width', '');
+  });
+
   response.branches.forEach(branch => {
     const cyEdge = cy.$('#' + branch.id);
 

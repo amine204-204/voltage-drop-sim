@@ -72,4 +72,32 @@ public class UserService {
         userRepository.deleteById(id);
         return true;
     }
+
+    public UserSummaryDto updateProfile(Long id, String username, String email) {
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (!user.getUsername().equals(username) && existsByUsername(username)) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        if (!user.getEmail().equals(email) && existsByEmail(email)) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        user.setUsername(username);
+        user.setEmail(email);
+        return UserSummaryDto.fromEntity(userRepository.save(user));
+    }
+
+    public void changePassword(Long id, String currentPassword, String newPassword) {
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }

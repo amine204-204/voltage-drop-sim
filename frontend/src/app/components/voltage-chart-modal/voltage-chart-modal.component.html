@@ -1,14 +1,5 @@
-<div class="modal-overlay" (click)="close.emit()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
-    
-    <div class="modal-header">
-      <h3>Voltage Profile: {{ nodeName }}</h3>
-      <button class="close-btn" (click)="close.emit()">✕</button>
-    </div>
-
-    <div class="chart-container">
-      <canvas #chartCanvas></canvas>
-    </div>
-
+<app-modal [title]="'Voltage Profile: ' + nodeName" width="800px" (close)="close.emit()">
+  <div class="chart-container">
+    <canvas #chartCanvas></canvas>
   </div>
-</div>
+</app-modal>

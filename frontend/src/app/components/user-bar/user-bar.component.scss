@@ -68,11 +68,6 @@
   justify-content: center;
   transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
 
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-
   &:hover {
     background-color: var(--bg-panel-raised);
     color: var(--text-primary);
@@ -90,14 +85,7 @@
   background-color: var(--status-danger);
   color: #fff;
   animation: pulse-confirm 1s ease-in-out infinite;
-}
-
-@keyframes pulse-confirm {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.user-section {
+}.user-section {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -106,6 +94,15 @@
     font-size: 12px;
     color: var(--text-secondary);
     font-family: var(--font-mono);
+  }
+
+  .profile-link {
+    cursor: pointer;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--accent);
+    }
   }
 
   .logout-btn {

@@ -2,11 +2,12 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { Toast, ToastService } from '../../services/toast.service';
+import { IconComponent } from '../shared/icon/icon.component';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [NgIf, NgFor],
+  imports: [NgIf, NgFor, IconComponent],
   templateUrl: './toast.component.html',
   styleUrl: './toast.component.scss'
 })

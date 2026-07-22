@@ -2,6 +2,8 @@ package com.etap.voltagedrop.controller;
 
 import com.etap.voltagedrop.catalog.CatalogService;
 import com.etap.voltagedrop.catalog.mongo.CableCatalogDocument;
+import com.etap.voltagedrop.catalog.mongo.SwitchCatalogDocument;
+import com.etap.voltagedrop.catalog.mongo.TransformerCatalogDocument;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,5 +25,15 @@ public class CatalogController {
     @GetMapping("/cables/{id}")
     public CableCatalogDocument getCable(@PathVariable String id) {
         return catalogService.getCableDetail(id);
+    }
+
+    @GetMapping("/transformers")
+    public List<TransformerCatalogDocument> listTransformers() {
+        return catalogService.listAllTransformers();
+    }
+
+    @GetMapping("/switches")
+    public List<SwitchCatalogDocument> listSwitches() {
+        return catalogService.listAllSwitches();
     }
 }

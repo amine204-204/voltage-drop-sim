@@ -163,7 +163,9 @@ public class ProjectService {
         project.setBranches(branches);
 
         if (dto.getSimulationResult() != null) {
-            SimulationResultEntity simResult = new SimulationResultEntity();
+            SimulationResultEntity simResult = project.getSimulationResult() != null
+                    ? project.getSimulationResult()
+                    : new SimulationResultEntity();
             simResult.setRunAt(LocalDateTime.now());
             simResult.setProject(project);
 

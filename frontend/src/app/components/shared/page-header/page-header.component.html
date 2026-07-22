@@ -1,0 +1,11 @@
+<header class="page-header">
+  <button class="back-btn" (click)="goBack()">
+    <app-icon name="arrow-left" [size]="16"></app-icon>
+    Back to App
+  </button>
+  <h1>{{ title }}</h1>
+  <div class="header-spacer"></div>
+  <button class="theme-btn" (click)="themeService.toggle()" [attr.title]="themeService.isLight() ? 'Switch to dark mode' : 'Switch to light mode'">
+    <app-icon [name]="themeService.isLight() ? 'moon' : 'sun'" [size]="16"></app-icon>
+  </button>
+</header>

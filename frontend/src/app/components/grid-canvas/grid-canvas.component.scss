@@ -32,11 +32,6 @@
   transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
 }
 
-.toolbar button svg {
-  width: 18px;
-  height: 18px;
-}
-
 .toolbar button:hover {
   background-color: var(--bg-panel-raised);
   color: var(--text-primary);
@@ -147,7 +142,7 @@
   pointer-events: none;
   z-index: 5;
 
-  svg {
+  app-icon {
     color: var(--text-tertiary);
     opacity: 0.4;
   }

@@ -34,17 +34,17 @@
 
 .toast-success {
   border-left: 3px solid var(--status-ok);
-  svg { color: var(--status-ok); }
+  app-icon { color: var(--status-ok); }
 }
 
 .toast-error {
   border-left: 3px solid var(--status-danger);
-  svg { color: var(--status-danger); }
+  app-icon { color: var(--status-danger); }
 }
 
 .toast-info {
   border-left: 3px solid var(--data-cyan);
-  svg { color: var(--data-cyan); }
+  app-icon { color: var(--data-cyan); }
 }
 
 @keyframes slideIn {

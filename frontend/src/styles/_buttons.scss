@@ -1,0 +1,86 @@
+.action-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel-raised);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: var(--bg-input);
+  }
+
+  &.primary {
+    background: var(--accent);
+    color: var(--text-on-accent);
+    border-color: var(--accent);
+
+    &:hover {
+      background: var(--accent-strong);
+    }
+  }
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: var(--bg-panel-raised);
+    color: var(--text-primary);
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  background-color: var(--bg-panel-raised);
+  border-top: 1px solid var(--border-hairline);
+
+  button {
+    padding: 8px 18px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .cancel-btn {
+    background: transparent;
+    border: 1px solid var(--border-hairline);
+    color: var(--text-secondary);
+
+    &:hover {
+      color: var(--text-primary);
+      border-color: var(--text-secondary);
+    }
+  }
+
+  .save-btn {
+    background: var(--accent);
+    color: var(--text-on-accent);
+
+    &:hover {
+      background: var(--accent-strong);
+    }
+  }
+}

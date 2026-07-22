@@ -1,39 +1,32 @@
-<div class="modal-overlay" (click)="close.emit()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
+<app-modal [title]="isEdit ? 'Edit Project Details' : 'Save Project As'" (close)="close.emit()">
 
-    <div class="modal-header">
-      <h3>{{ isEdit ? 'Edit Project Details' : 'Save Project As' }}</h3>
-      <button class="close-btn" (click)="close.emit()">✕</button>
+  <div class="modal-body">
+    <div class="form-group">
+      <label for="proj-name">Project Name *</label>
+      <input
+        id="proj-name"
+        type="text"
+        [(ngModel)]="name"
+        placeholder="e.g. Substation Alpha Distribution"
+        required
+      >
+      <div class="field-error" *ngIf="errorMessage || nameError">{{ nameError || errorMessage }}</div>
     </div>
 
-    <div class="modal-body">
-      <div class="form-group">
-        <label for="proj-name">Project Name *</label>
-        <input 
-          id="proj-name" 
-          type="text" 
-          [(ngModel)]="name" 
-          placeholder="e.g. Substation Alpha Distribution"
-          required
-        >
-        <div class="field-error" *ngIf="errorMessage || nameError">{{ nameError || errorMessage }}</div>
-      </div>
-
-      <div class="form-group">
-        <label for="proj-desc">Description</label>
-        <textarea 
-          id="proj-desc" 
-          [(ngModel)]="description" 
-          placeholder="Explain grid scope, constraints, and time profile duration..."
-          rows="4"
-        ></textarea>
-      </div>
+    <div class="form-group">
+      <label for="proj-desc">Description</label>
+      <textarea
+        id="proj-desc"
+        [(ngModel)]="description"
+        placeholder="Explain grid scope, constraints, and time profile duration..."
+        rows="4"
+      ></textarea>
     </div>
-
-    <div class="modal-footer">
-      <button class="cancel-btn" (click)="close.emit()">Cancel</button>
-      <button class="save-btn" (click)="submit()">Save Project</button>
-    </div>
-
   </div>
-</div>
+
+  <div class="modal-footer">
+    <button class="cancel-btn" (click)="close.emit()">Cancel</button>
+    <button class="save-btn" (click)="submit()">Save Project</button>
+  </div>
+
+</app-modal>

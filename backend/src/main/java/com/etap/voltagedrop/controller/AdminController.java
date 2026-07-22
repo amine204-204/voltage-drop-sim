@@ -10,6 +10,7 @@ import com.etap.voltagedrop.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,7 +50,14 @@ public class AdminController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.findByUsername(currentUsername).ifPresent(user -> {
+            if (user.getId().equals(id)) {
+                throw new ConflictException("Cannot delete your own account");
+            }
+        });
+
         return userService.deleteUser(id)
                 ? ResponseEntity.ok().build()
                 : ResponseEntity.notFound().build();

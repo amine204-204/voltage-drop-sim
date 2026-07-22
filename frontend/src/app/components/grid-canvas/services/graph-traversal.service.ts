@@ -1,5 +1,5 @@
 import { Core } from 'cytoscape';
-import { NodeType, LoadType } from '../../../models/simulation.model';
+import { NodeType, LoadType, BranchType } from '../../../models/simulation.model';
 
 export interface IslandNode {
   id: string;
@@ -17,8 +17,11 @@ export interface IslandBranch {
   fromNodeId: string;
   toNodeId: string;
   lengthInKm: number;
+  branchType: BranchType;
+  catalogId?: string;
   componentCrossSection: string;
   componentMaterial: string;
+  closed?: boolean;
 }
 
 export interface Island {
@@ -39,18 +42,24 @@ export function getIslands(cy: Core): Island[] {
 
   const allEdges: IslandBranch[] = cy.edges().map((edge: any) => {
     const data = edge.data();
+    const branchType: BranchType = data.branchType || 'CABLE';
     return {
-      id: data.id, name: `Cable ${data.source}-${data.target}`,
+      id: data.id,
+      name: data.name || `${branchType} ${data.source}-${data.target}`,
       fromNodeId: data.source, toNodeId: data.target,
       lengthInKm: data.lengthInKm || 0.1,
+      branchType,
+      catalogId: data.catalogId || undefined,
       componentCrossSection: data.componentCrossSection || '16mm2',
-      componentMaterial: data.componentMaterial || 'CU'
+      componentMaterial: data.componentMaterial || 'CU',
+      closed: data.closed
     };
   });
 
   const adjacency = new Map<string, string[]>();
   allNodes.forEach(n => adjacency.set(n.id, []));
   allEdges.forEach(e => {
+    if (e.branchType === 'SWITCH' && e.closed === false) return;
     adjacency.get(e.fromNodeId)?.push(e.toNodeId);
     adjacency.get(e.toNodeId)?.push(e.fromNodeId);
   });
@@ -86,15 +95,27 @@ export function getIslands(cy: Core): Island[] {
 }
 
 export function getNominalVoltageForNode(cy: Core, nodeId: string): number {
+  const node = cy.$('#' + nodeId);
+  if (node.length) {
+    const simData = node.data('simulationData');
+    if (simData?.localNominalVoltage) {
+      return simData.localNominalVoltage;
+    }
+
+    if (node.data('type') === 'SOURCE') {
+      return node.data('nominalVoltage') || 230;
+    }
+  }
+
   let currentId = nodeId;
   let safetyLimit = 50;
 
   while (safetyLimit-- > 0) {
-    const node = cy.$('#' + currentId);
-    if (!node.length) break;
+    const n = cy.$('#' + currentId);
+    if (!n.length) break;
 
-    if (node.data('type') === 'SOURCE') {
-      return node.data('nominalVoltage') || 230;
+    if (n.data('type') === 'SOURCE') {
+      return n.data('nominalVoltage') || 230;
     }
 
     const incomingEdge = cy.edges(`[target = "${currentId}"]`).first();
