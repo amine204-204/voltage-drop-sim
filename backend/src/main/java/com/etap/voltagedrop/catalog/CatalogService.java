@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,10 +24,24 @@ public class CatalogService {
     private final TransformerCatalogRepository transformerRepo;
     private final SwitchCatalogRepository switchRepo;
 
-    public CableSpec getCable(String crossSection, String material) {
-        String lookupId = material + "-" + crossSection;
-        CableCatalogDocument doc = cableRepo.findById(lookupId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cable not found: " + lookupId));
+    public CableSpec getCable(String catalogId, String crossSection, String material) {
+        CableCatalogDocument doc = null;
+
+        if (catalogId != null && !catalogId.isBlank()) {
+            Optional<CableCatalogDocument> byId = cableRepo.findById(catalogId);
+            if (byId.isPresent()) {
+                doc = byId.get();
+            }
+        }
+
+        if (doc == null) {
+            List<CableCatalogDocument> matches = cableRepo.findByPhysicalConductorMaterialAndPhysicalCrossSection(material, crossSection);
+            if (matches.isEmpty()) {
+                throw new ResourceNotFoundException(
+                        "Cable not found for material=" + material + " crossSection=" + crossSection);
+            }
+            doc = matches.get(0);
+        }
 
         return new CableSpec(
                 doc.getPhysical().getCrossSection(),
@@ -85,7 +100,6 @@ public class CatalogService {
     }
 
     public CableCatalogDocument createCable(CableCatalogDocument cable) {
-        cable.setId(null);
         return cableRepo.save(cable);
     }
 

@@ -156,19 +156,37 @@
   }
 }
 
-.create-form, .cable-form {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  margin-bottom: 16px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: flex-end;
+.modal-body {
+  padding: 16px 20px;
 }
 
-.create-form {
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 4px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
   input, select {
     padding: 7px 10px;
     border: 1px solid var(--border-hairline);
@@ -176,65 +194,13 @@
     background: var(--bg-input);
     color: var(--text-primary);
     font-size: 12.5px;
-    font-family: var(--font-ui);
+    font-family: var(--font-mono);
 
     &:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-dim);
     }
-  }
-
-  input { width: 160px; }
-  select { width: 120px; cursor: pointer; }
-}
-
-.cable-form {
-  flex-direction: column;
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    label {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-
-    input, select {
-      padding: 7px 10px;
-      border: 1px solid var(--border-hairline);
-      border-radius: var(--radius-sm);
-      background: var(--bg-input);
-      color: var(--text-primary);
-      font-size: 12.5px;
-      font-family: var(--font-mono);
-
-      &:focus {
-        outline: none;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-dim);
-      }
-    }
-  }
-
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border-hairline);
-    margin-top: 4px;
   }
 }
 

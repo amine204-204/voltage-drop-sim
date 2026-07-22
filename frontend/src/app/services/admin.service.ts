@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { UserSummary, CreateUserRequest, UpdateRoleRequest } from '../models/admin.model';
 import { CableCatalog } from '../models/catalog.model';
+import { ComplianceStandard } from '../models/compliance-standard.model';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -44,5 +45,23 @@ export class AdminService {
 
   deleteCable(id: string): Observable<void> {
     return this.http.delete<void>(`${this.API}/catalogs/${id}`);
+  }
+
+  // ── Compliance Standards ────────────────────────────────────
+
+  getComplianceStandards(): Observable<ComplianceStandard[]> {
+    return this.http.get<ComplianceStandard[]>(`${this.API}/compliance-standards`);
+  }
+
+  createComplianceStandard(standard: Partial<ComplianceStandard>): Observable<ComplianceStandard> {
+    return this.http.post<ComplianceStandard>(`${this.API}/compliance-standards`, standard);
+  }
+
+  updateComplianceStandard(id: number, standard: ComplianceStandard): Observable<ComplianceStandard> {
+    return this.http.put<ComplianceStandard>(`${this.API}/compliance-standards/${id}`, standard);
+  }
+
+  deleteComplianceStandard(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.API}/compliance-standards/${id}`);
   }
 }

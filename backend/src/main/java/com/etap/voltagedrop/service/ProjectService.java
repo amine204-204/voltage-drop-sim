@@ -1,8 +1,11 @@
 package com.etap.voltagedrop.service;
 
+import com.etap.voltagedrop.dto.GraphExportDto;
 import com.etap.voltagedrop.dto.ProjectDto;
 import com.etap.voltagedrop.dto.ProjectSummaryDto;
 import com.etap.voltagedrop.dto.SaveProjectDto;
+import com.etap.voltagedrop.catalog.mongo.CableCatalogDocument;
+import com.etap.voltagedrop.catalog.mongo.CableCatalogRepository;
 import com.etap.voltagedrop.exception.ConflictException;
 import com.etap.voltagedrop.exception.ResourceNotFoundException;
 import com.etap.voltagedrop.persistence.entity.*;
@@ -27,6 +30,7 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final CableCatalogRepository cableCatalogRepository;
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -116,6 +120,99 @@ public class ProjectService {
         projectRepository.deleteById(id);
     }
 
+    public GraphExportDto exportProject(Long id) {
+        ProjectEntity project = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+        assertOwnerOrAdmin(project);
+
+        GraphExportDto dto = new GraphExportDto();
+
+        dto.setNodes(project.getNodes().stream().map(node -> {
+            GraphExportDto.NodeDto n = new GraphExportDto.NodeDto();
+            n.setId(node.getNodeId());
+            n.setName(node.getName());
+            n.setType(node.getType());
+            n.setNominalVoltage(node.getNominalVoltage());
+            n.setLoadType(node.getLoadType());
+            n.setSelectedPresetId(node.getSelectedPresetId());
+            n.setCosPhi(node.getCosPhi());
+            n.setLoadProfile(node.getLoadProfile());
+            n.setLoadProfileControlPoints(node.getLoadProfileControlPoints());
+            n.setX(node.getX());
+            n.setY(node.getY());
+            return n;
+        }).collect(Collectors.toList()));
+
+        dto.setBranches(project.getBranches().stream().map(branch -> {
+            GraphExportDto.BranchDto b = new GraphExportDto.BranchDto();
+            b.setId(branch.getBranchId());
+            b.setName(branch.getName());
+            b.setFromNodeId(branch.getFromNodeId());
+            b.setToNodeId(branch.getToNodeId());
+            b.setLengthInKm(branch.getLengthInKm());
+            b.setBranchType(branch.getBranchType());
+            b.setCatalogId(branch.getCatalogId());
+            b.setClosed(branch.getClosed());
+            return b;
+        }).collect(Collectors.toList()));
+
+        return dto;
+    }
+
+    public ProjectDto importProject(GraphExportDto dto) {
+        SaveProjectDto saveDto = new SaveProjectDto();
+        saveDto.setName("Imported Graph");
+        saveDto.setTotalTimeSteps(96);
+        saveDto.setDeltaTimeSeconds(900);
+        saveDto.setSelectedNormType("en50160");
+
+        saveDto.setNodes(dto.getNodes().stream().map(node -> {
+            SaveProjectDto.NodeDto n = new SaveProjectDto.NodeDto();
+            n.setId(node.getId());
+            n.setName(node.getName());
+            n.setType(node.getType());
+            n.setNominalVoltage(node.getNominalVoltage());
+            n.setLoadType(node.getLoadType());
+            n.setSelectedPresetId(node.getSelectedPresetId());
+            n.setCosPhi(node.getCosPhi());
+            n.setLoadProfile(node.getLoadProfile());
+            n.setLoadProfileControlPoints(node.getLoadProfileControlPoints());
+            n.setX(node.getX());
+            n.setY(node.getY());
+            return n;
+        }).collect(Collectors.toList()));
+
+        saveDto.setBranches(dto.getBranches().stream().map(branch -> {
+            SaveProjectDto.BranchDto b = new SaveProjectDto.BranchDto();
+            b.setId(branch.getId());
+            b.setName(branch.getName());
+            b.setFromNodeId(branch.getFromNodeId());
+            b.setToNodeId(branch.getToNodeId());
+            b.setLengthInKm(branch.getLengthInKm());
+            b.setBranchType(branch.getBranchType());
+            b.setCatalogId(branch.getCatalogId());
+            b.setClosed(branch.getClosed());
+
+            if (branch.getCatalogId() != null) {
+                java.util.Optional<CableCatalogDocument> cableOpt = cableCatalogRepository.findById(branch.getCatalogId());
+                if (cableOpt.isPresent()) {
+                    CableCatalogDocument cable = cableOpt.get();
+                    b.setComponentCrossSection(cable.getPhysical().getCrossSection());
+                    b.setComponentMaterial(cable.getPhysical().getConductorMaterial());
+                } else {
+                    b.setComponentCrossSection("");
+                    b.setComponentMaterial("");
+                }
+            } else {
+                b.setComponentCrossSection("");
+                b.setComponentMaterial("");
+            }
+            return b;
+        }).collect(Collectors.toList()));
+
+        return saveProject(saveDto);
+    }
+
     private void updateProjectEntityFromDto(ProjectEntity project, SaveProjectDto dto) {
         project.setName(dto.getName());
         project.setDescription(dto.getDescription());
@@ -154,9 +251,11 @@ public class ProjectService {
                 branch.setFromNodeId(branchDto.getFromNodeId());
                 branch.setToNodeId(branchDto.getToNodeId());
                 branch.setLengthInKm(branchDto.getLengthInKm());
+                branch.setBranchType(branchDto.getBranchType());
                 branch.setCatalogId(branchDto.getCatalogId());
                 branch.setComponentCrossSection(branchDto.getComponentCrossSection());
                 branch.setComponentMaterial(branchDto.getComponentMaterial());
+                branch.setClosed(branchDto.getClosed());
                 branches.add(branch);
             }
         }
@@ -252,9 +351,11 @@ public class ProjectService {
             b.setFromNodeId(branch.getFromNodeId());
             b.setToNodeId(branch.getToNodeId());
             b.setLengthInKm(branch.getLengthInKm());
+            b.setBranchType(branch.getBranchType());
             b.setCatalogId(branch.getCatalogId());
             b.setComponentCrossSection(branch.getComponentCrossSection());
             b.setComponentMaterial(branch.getComponentMaterial());
+            b.setClosed(branch.getClosed());
             return b;
         }).collect(Collectors.toList()));
 

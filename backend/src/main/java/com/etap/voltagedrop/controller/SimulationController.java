@@ -3,12 +3,15 @@ package com.etap.voltagedrop.controller;
 import com.etap.voltagedrop.domain.*;
 import com.etap.voltagedrop.domain.catalog.BranchComponent;
 import com.etap.voltagedrop.domain.norms.CustomNormEvaluator;
+import com.etap.voltagedrop.domain.norms.DatabaseNormEvaluator;
 import com.etap.voltagedrop.domain.norms.NormEvaluator;
 import com.etap.voltagedrop.domain.strategy.ConstantCurrentStrategy;
 import com.etap.voltagedrop.domain.strategy.ConstantPowerStrategy;
 import com.etap.voltagedrop.domain.strategy.LoadBehaviorStrategy;
 import com.etap.voltagedrop.dto.SimulationRequestDto;
+import com.etap.voltagedrop.persistence.entity.ComplianceStandardEntity;
 import com.etap.voltagedrop.service.BranchComponentFactory;
+import com.etap.voltagedrop.service.ComplianceStandardService;
 import com.etap.voltagedrop.service.GraphValidationService;
 import com.etap.voltagedrop.service.SimulationService;
 import jakarta.validation.Valid;
@@ -16,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/simulations")
@@ -27,8 +28,7 @@ public class SimulationController {
     private final SimulationService simulationService;
     private final GraphValidationService validationService;
     private final BranchComponentFactory branchComponentFactory;
-
-    private final Map<String, NormEvaluator> systemNormEvaluators;
+    private final ComplianceStandardService complianceStandardService;
 
     @PostMapping("/run")
     @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
@@ -58,11 +58,8 @@ public class SimulationController {
             }
             return new CustomNormEvaluator(dto.getCustomMinPu(), dto.getCustomMaxPu());
         } else {
-            NormEvaluator norm = systemNormEvaluators.get(dto.getSelectedNormType());
-            if (norm == null) {
-                throw new IllegalArgumentException("Unknown system norm selected: " + dto.getSelectedNormType());
-            }
-            return norm;
+            ComplianceStandardEntity standard = complianceStandardService.findEntityByName(dto.getSelectedNormType());
+            return new DatabaseNormEvaluator(standard);
         }
     }
 

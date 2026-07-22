@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.dto.GraphExportDto;
 import com.etap.voltagedrop.dto.ProjectDto;
 import com.etap.voltagedrop.dto.ProjectSummaryDto;
 import com.etap.voltagedrop.dto.SaveProjectDto;
@@ -46,5 +47,20 @@ public class ProjectController {
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/export")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GraphExportDto> exportProject(@PathVariable Long id) {
+        GraphExportDto dto = projectService.exportProject(id);
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"project-" + id + ".json\"")
+                .body(dto);
+    }
+
+    @PostMapping("/import")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ProjectDto> importProject(@Valid @RequestBody GraphExportDto dto) {
+        return ResponseEntity.ok(projectService.importProject(dto));
     }
 }

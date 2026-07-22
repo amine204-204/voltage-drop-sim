@@ -1,4 +1,4 @@
-import { Component, ViewChild, ChangeDetectorRef, ChangeDetectionStrategy, OnInit, HostListener } from '@angular/core';
+import { Component, ViewChild, ChangeDetectorRef, ChangeDetectionStrategy, OnInit, OnDestroy, AfterViewInit, HostListener } from '@angular/core';
 import { GridCanvas } from '../grid-canvas/grid-canvas.component';
 import { SimulationTopBar, SimulationSettings } from '../simulation-top-bar/simulation-top-bar.component';
 import { SimulationService } from '../../services/simulation.service';
@@ -11,24 +11,26 @@ import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/ca
 import { NgIf } from '@angular/common';
 import { LoadPreset } from '../../models/load-preset.model';
 import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
-import { ProjectSummary, Project, ProjectSimulationResult } from '../../models/project.model';
+import { ProjectSummary, Project, ProjectBranch, ProjectSimulationResult } from '../../models/project.model';
 import { ProjectService } from '../../services/project.service';
 import { ProjectModal } from '../project-modal/project-modal';
 import { UserBarComponent } from '../user-bar/user-bar.component';
+import { IconComponent } from '../shared/icon/icon.component';
 import { SettingsModalComponent, ProjectSettings } from '../settings-modal/settings-modal.component';
 import { getErrorMessage } from '../../shared/utils/error.utils';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
+import { GraphExport, GraphExportBranch } from '../../models/graph-export.model';
 
 @Component({
   selector: 'app-main',
   standalone: true,
-  imports: [GridCanvas, SimulationTopBar, ProjectModal, UserBarComponent, SettingsModalComponent, NgIf],
+  imports: [GridCanvas, SimulationTopBar, ProjectModal, UserBarComponent, SettingsModalComponent, IconComponent, NgIf],
   templateUrl: './main.component.html',
   styleUrl: './main.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MainComponent implements OnInit {
+export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild(GridCanvas) gridCanvas!: GridCanvas;
 
@@ -59,6 +61,8 @@ export class MainComponent implements OnInit {
   catalogError: string | null = null;
   isSimulating: boolean = false;
   deleteConfirmStep: boolean = false;
+  isDragOver: boolean = false;
+  private pendingLoadProjectId: number | null = null;
 
   constructor(
     private simulationService: SimulationService,
@@ -80,15 +84,35 @@ export class MainComponent implements OnInit {
     }
   }
 
+  @HostListener('window:beforeunload')
+  onBeforeUnload() {
+    this.saveScratchpad();
+  }
+
+  ngOnDestroy() {
+    this.saveScratchpad();
+  }
+
 
   ngOnInit() {
     this.loadProjectsList();
+
+    const storedId = sessionStorage.getItem('currentProjectId');
+    if (storedId !== null) {
+      const id = parseInt(storedId, 10);
+      if (!isNaN(id)) {
+        this.pendingLoadProjectId = id;
+      }
+    }
+
     if (environment.useMocks) {
       this.cableCatalog = MOCK_CABLES;
       this.transformerCatalog = MOCK_TRANSFORMERS;
       this.switchCatalog = MOCK_SWITCHES;
       this.loadPresets = LOAD_PRESETS;
       this.isLoadingCatalog = false;
+      this.cdr.markForCheck();
+      setTimeout(() => this.tryLoadPendingProject());
     } else {
       forkJoin({
         cables: this.catalogService.getCables(),
@@ -101,6 +125,7 @@ export class MainComponent implements OnInit {
           this.switchCatalog = result.switches;
           this.isLoadingCatalog = false;
           this.cdr.markForCheck();
+          setTimeout(() => this.tryLoadPendingProject());
         },
         error: (err) => {
           this.catalogError = 'Failed to load equipment catalog. Using defaults.';
@@ -110,9 +135,44 @@ export class MainComponent implements OnInit {
           this.isLoadingCatalog = false;
           this.toast.error(this.catalogError + '\n' + getErrorMessage(err));
           this.cdr.markForCheck();
+          setTimeout(() => this.tryLoadPendingProject());
         }
       });
     }
+  }
+
+  ngAfterViewInit() {
+    this.tryLoadPendingProject();
+  }
+
+  private tryLoadPendingProject() {
+    if (!this.gridCanvas) return;
+    if (this.pendingLoadProjectId !== null) {
+      const id = this.pendingLoadProjectId;
+      this.pendingLoadProjectId = null;
+      this.onProjectSelected(id);
+      return;
+    }
+    const scratchpadJson = sessionStorage.getItem('scratchpadGraph');
+    if (scratchpadJson && this.gridCanvas.isEmpty) {
+      try {
+        const graph = JSON.parse(scratchpadJson);
+        if (graph.nodes && graph.branches) {
+          this.gridCanvas.loadProjectGraph(graph.nodes, graph.branches);
+        }
+      } catch {
+      }
+    }
+  }
+
+  private saveScratchpad() {
+    if (!this.gridCanvas || this.gridCanvas.isEmpty) return;
+    const graph = this.gridCanvas.getProjectGraph();
+    sessionStorage.setItem('scratchpadGraph', JSON.stringify(graph));
+  }
+
+  private clearScratchpad() {
+    sessionStorage.removeItem('scratchpadGraph');
   }
 
   private loadProjectsList() {
@@ -227,6 +287,7 @@ export class MainComponent implements OnInit {
   public onProjectSelected(id: number | null) {
     if (id === null) {
       this.selectedProjectId = null;
+      sessionStorage.removeItem('currentProjectId');
       this.gridCanvas.clearCanvas();
       this.isSimulationLoaded = false;
       this.currentStep = 0;
@@ -235,6 +296,7 @@ export class MainComponent implements OnInit {
       return;
     }
 
+    sessionStorage.setItem('currentProjectId', String(id));
     this.projectService.getProject(id).subscribe({
       next: (project) => {
         this.selectedProjectId = project.id || null;
@@ -272,6 +334,7 @@ export class MainComponent implements OnInit {
       const payload = this.getSavePayload(name, desc);
       this.projectService.updateProject(this.selectedProjectId, payload).subscribe({
         next: (saved) => {
+          this.clearScratchpad();
           this.toast.success('Project saved successfully!');
           this.loadProjectsList();
         },
@@ -300,6 +363,122 @@ export class MainComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  public onExportClicked() {
+    const canvasGraph = this.gridCanvas.getProjectGraph();
+    const exportData: GraphExport = {
+      nodes: canvasGraph.nodes.map(n => ({
+        id: n.id,
+        name: n.name,
+        type: n.type,
+        nominalVoltage: n.nominalVoltage,
+        loadType: n.loadType,
+        cosPhi: n.cosPhi,
+        loadProfile: n.loadProfile,
+        loadProfileControlPoints: n.loadProfileControlPoints,
+        selectedPresetId: n.selectedPresetId,
+        x: n.x,
+        y: n.y
+      })),
+      branches: canvasGraph.branches.map(b => ({
+        id: b.id,
+        name: b.name,
+        fromNodeId: b.fromNodeId,
+        toNodeId: b.toNodeId,
+        lengthInKm: b.lengthInKm,
+        branchType: b.branchType,
+        catalogId: b.catalogId,
+        closed: b.closed
+      }))
+    };
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'graph-export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.toast.success('Graph exported as JSON.');
+  }
+
+  private resolveCatalogSpecs(branches: GraphExportBranch[]): ProjectBranch[] {
+    return branches.map(b => {
+      const resolved: ProjectBranch = {
+        id: b.id,
+        name: b.name,
+        fromNodeId: b.fromNodeId,
+        toNodeId: b.toNodeId,
+        lengthInKm: b.lengthInKm,
+        branchType: b.branchType,
+        catalogId: b.catalogId,
+        componentCrossSection: '',
+        componentMaterial: '',
+        closed: b.closed
+      };
+      if (b.catalogId) {
+        const cable = this.cableCatalog.find(c => c.id === b.catalogId);
+        if (cable) {
+          resolved.componentCrossSection = cable.physical.crossSection;
+          resolved.componentMaterial = cable.physical.conductorMaterial;
+        }
+      }
+      return resolved;
+    });
+  }
+
+  public onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer?.types.includes('Files')) {
+      this.isDragOver = true;
+      this.cdr.markForCheck();
+    }
+  }
+
+  public onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = false;
+    this.cdr.markForCheck();
+  }
+
+  public onDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = false;
+    const file = event.dataTransfer?.files?.[0];
+    if (file && file.name.endsWith('.json')) {
+      this.onImportClicked(file);
+    } else {
+      this.toast.error('Please drop a .json file.');
+    }
+    this.cdr.markForCheck();
+  }
+
+  public onImportClicked(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data: GraphExport = JSON.parse(e.target?.result as string);
+        if (!data.nodes || !data.branches) {
+          this.toast.error('Invalid JSON: missing "nodes" or "branches".');
+          return;
+        }
+        const branches = this.resolveCatalogSpecs(data.branches);
+        const result = this.gridCanvas.appendGraph(data.nodes, branches);
+        this.selectedProjectId = null;
+        sessionStorage.removeItem('currentProjectId');
+        this.cdr.markForCheck();
+        this.toast.success(`Imported ${result.nodesAdded} nodes and ${result.branchesAdded} branches as a new island.`);
+      } catch {
+        this.toast.error('Failed to parse JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
   public onSettingsClicked() {
     if (this.selectedProjectId !== null) {
       const existing = this.projects.find(p => p.id === this.selectedProjectId);
@@ -323,6 +502,7 @@ export class MainComponent implements OnInit {
       const payload = this.getSavePayload(settings.name, settings.description);
       this.projectService.updateProject(this.selectedProjectId, payload).subscribe({
         next: () => {
+          this.clearScratchpad();
           this.toast.success('Project settings saved.');
           this.loadProjectsList();
           this.cdr.markForCheck();
@@ -339,6 +519,8 @@ export class MainComponent implements OnInit {
 
   public onNewClicked() {
     this.selectedProjectId = null;
+    sessionStorage.removeItem('currentProjectId');
+    this.clearScratchpad();
     this.gridCanvas.clearCanvas();
     this.isSimulationLoaded = false;
     this.currentStep = 0;
@@ -375,10 +557,11 @@ export class MainComponent implements OnInit {
   public onModalSave(result: { name: string; description: string }) {
     this.modalError = '';
     const payload = this.getSavePayload(result.name, result.description);
-    this.projectService.createProject(payload).subscribe({
-      next: (saved) => {
-        this.showProjectModal = false;
-        this.toast.success('Project created successfully!');
+      this.projectService.createProject(payload).subscribe({
+        next: (saved) => {
+          this.showProjectModal = false;
+          this.clearScratchpad();
+          this.toast.success('Project created successfully!');
         this.selectedProjectId = saved.id || null;
         this.loadProjectsList();
 

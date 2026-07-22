@@ -16,7 +16,8 @@
     <div class="form-group">
       <label for="settings-norm">Compliance Standard</label>
       <select id="settings-norm" [(ngModel)]="selectedNormType">
-        <option value="en50160">EN 50160 (±10%)</option>
+        <option *ngIf="loading" disabled>Loading...</option>
+        <option *ngFor="let s of standards" [value]="s.name">{{ s.name }}</option>
         <option value="custom">Custom Limits</option>
       </select>
     </div>

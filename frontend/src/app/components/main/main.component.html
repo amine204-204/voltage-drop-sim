@@ -7,6 +7,8 @@
     (newProject)="onNewClicked()"
     (saveProject)="onSaveClicked()"
     (saveAsProject)="onSaveAsClicked()"
+    (exportProject)="onExportClicked()"
+    (importProject)="onImportClicked($event)"
     (deleteProject)="onDeleteClicked()"
     (settingsClicked)="onSettingsClicked()">
   </app-user-bar>
@@ -28,16 +30,27 @@
     (currentStepChanged)="onCurrentStepChanged($event)">
   </app-simulation-top-bar>
   
-   <app-grid-canvas 
-    *ngIf="!isLoadingCatalog"
-    [maxSimulationSteps]="maxSimulationSteps"
-    [deltaTime]="deltaTime"
-    [minLimitPu]="customMinPu"
-    [maxLimitPu]="customMaxPu"
-    [cableCatalogItems]="cableCatalog"
-    [transformerCatalogItems]="transformerCatalog"
-    [switchCatalogItems]="switchCatalog">
-  </app-grid-canvas>
+   <div class="canvas-drop-zone"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)">
+    <app-grid-canvas 
+      *ngIf="!isLoadingCatalog"
+      [maxSimulationSteps]="maxSimulationSteps"
+      [deltaTime]="deltaTime"
+      [minLimitPu]="customMinPu"
+      [maxLimitPu]="customMaxPu"
+      [cableCatalogItems]="cableCatalog"
+      [transformerCatalogItems]="transformerCatalog"
+      [switchCatalogItems]="switchCatalog">
+    </app-grid-canvas>
+    <div class="drop-overlay" *ngIf="isDragOver">
+      <div class="drop-overlay-content">
+        <app-icon name="upload" [size]="48"></app-icon>
+        <p>Drop JSON file to import graph</p>
+      </div>
+    </div>
+  </div>
 
   <app-project-modal
     *ngIf="showProjectModal"

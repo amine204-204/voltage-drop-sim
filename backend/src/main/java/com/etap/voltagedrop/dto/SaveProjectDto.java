@@ -44,9 +44,11 @@ public class SaveProjectDto {
         private String fromNodeId;
         private String toNodeId;
         private double lengthInKm;
+        private String branchType;
         private String catalogId;
         private String componentCrossSection;
         private String componentMaterial;
+        private Boolean closed;
     }
 
     @Getter

@@ -22,6 +22,7 @@ public class BranchComponentFactory {
 
         return switch (branchType) {
             case "CABLE" -> catalogService.getCable(
+                    branchDto.getCatalogId(),
                     branchDto.getComponentCrossSection(),
                     branchDto.getComponentMaterial()
             );

@@ -24,9 +24,11 @@ public class ProjectBranchEntity {
     private String fromNodeId;
     private String toNodeId;
     private double lengthInKm;
+    private String branchType;
     private String catalogId;
     private String componentCrossSection;
     private String componentMaterial;
+    private Boolean closed;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")

@@ -10,6 +10,7 @@ import java.util.List;
 public interface CableCatalogRepository extends MongoRepository<CableCatalogDocument, String> {
     List<CableCatalogDocument> findByActiveTrue();
     List<CableCatalogDocument> findByPhysicalConductorMaterial(String material);
+    List<CableCatalogDocument> findByPhysicalConductorMaterialAndPhysicalCrossSection(String material, String crossSection);
 
     @Query("{ 'electical.ampacityFreeAirA': { $gte: ?0 } }")
     List<CableCatalogDocument> findByMinAmpacity(double ampacity);

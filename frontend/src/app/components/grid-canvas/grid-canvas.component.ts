@@ -63,6 +63,10 @@ export class GridCanvas implements AfterViewInit {
     return this.cy ? this.cy.nodes().length === 0 : true;
   }
 
+  public hasElements(): boolean {
+    return this.cy ? this.cy.elements().length > 0 : false;
+  }
+
   public get nodeCount(): number {
     return this.cy ? this.cy.nodes().length : 0;
   }
@@ -482,6 +486,50 @@ export class GridCanvas implements AfterViewInit {
     } else {
       this.updateSelectionState();
     }
+  }
+
+  public appendGraph(nodes: ProjectNode[], branches: ProjectBranch[]): { nodesAdded: number; branchesAdded: number } {
+    if (!this.cy) return { nodesAdded: 0, branchesAdded: 0 };
+
+    const existingIds = new Set<string>();
+    this.cy.nodes().forEach(n => { existingIds.add(n.id()); });
+    this.cy.edges().forEach(e => { existingIds.add(e.id()); });
+
+    const idMap = new Map<string, string>();
+    const remappedNodes: ProjectNode[] = [];
+    const remappedBranches: ProjectBranch[] = [];
+
+    let maxX = 0;
+    this.cy.nodes().forEach(n => { const p = n.position(); if (p.x > maxX) maxX = p.x; });
+    const offsetX = maxX + 250;
+
+    for (const node of nodes) {
+      if (existingIds.has(node.id)) {
+        this.nodeCounter++;
+        const newId = `node_${this.nodeCounter}`;
+        idMap.set(node.id, newId);
+        remappedNodes.push({ ...node, id: newId, x: node.x + offsetX, y: node.y });
+      } else {
+        remappedNodes.push({ ...node, x: node.x + offsetX, y: node.y });
+      }
+    }
+
+    for (const branch of branches) {
+      let newId = branch.id;
+      let newFrom = branch.fromNodeId;
+      let newTo = branch.toNodeId;
+      if (idMap.has(branch.fromNodeId)) newFrom = idMap.get(branch.fromNodeId)!;
+      if (idMap.has(branch.toNodeId)) newTo = idMap.get(branch.toNodeId)!;
+      const candidateId = `edge_${newFrom}_${newTo}`;
+      if (existingIds.has(candidateId) || candidateId !== branch.id) {
+        newId = candidateId;
+      }
+      remappedBranches.push({ ...branch, id: newId, fromNodeId: newFrom, toNodeId: newTo });
+    }
+
+    loadGraph(this.cy, remappedNodes, remappedBranches);
+    this.updateSelectionState();
+    return { nodesAdded: remappedNodes.length, branchesAdded: remappedBranches.length };
   }
 
   public getSimulationSnapshot(): SimulationSnapshot | null {

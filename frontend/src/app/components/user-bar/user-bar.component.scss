@@ -55,6 +55,13 @@
   border-left: 1px solid var(--border-hairline);
 }
 
+.btn-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border-hairline);
+  margin: 0 4px;
+}
+
 .icon-btn {
   width: 30px;
   height: 30px;

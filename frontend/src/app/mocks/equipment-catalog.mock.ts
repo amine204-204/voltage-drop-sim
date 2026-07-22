@@ -2,7 +2,7 @@ import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../models/catal
 
 export const MOCK_CABLES: CableCatalog[] = [
   {
-    id: 'CU-1.5',
+    id: 'CU-1.5-001',
     name: 'H07RN-F 3G1.5mm² Cu',
     category: 'cable',
     standard: 'NF C 32-102',
@@ -32,7 +32,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-2.5',
+    id: 'CU-2.5-001',
     name: 'H07RN-F 3G2.5mm² Cu',
     category: 'cable',
     standard: 'NF C 32-102',
@@ -62,7 +62,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-4',
+    id: 'CU-4-001',
     name: 'NYY-J 4x4mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -92,7 +92,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-6',
+    id: 'CU-6-001',
     name: 'NYY-J 4x6mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -122,7 +122,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-10',
+    id: 'CU-10-001',
     name: 'NYY-J 4x10mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -152,7 +152,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-16',
+    id: 'CU-16-001',
     name: 'NYY-J 4x16mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -182,7 +182,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-25',
+    id: 'CU-25-001',
     name: 'NYY-J 4x25mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -212,7 +212,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-35',
+    id: 'CU-35-001',
     name: 'NYY-J 4x35mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -242,7 +242,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-50',
+    id: 'CU-50-001',
     name: 'NYY-J 4x50mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -272,7 +272,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-70',
+    id: 'CU-70-001',
     name: 'NYY-J 4x70mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -302,7 +302,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'CU-95',
+    id: 'CU-95-001',
     name: 'NYY-J 4x95mm² Cu',
     category: 'cable',
     standard: 'IEC 60502',
@@ -332,7 +332,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'AL-16',
+    id: 'AL-16-001',
     name: 'NAYY 4x16mm² Al',
     category: 'cable',
     standard: 'DIN VDE 0276',
@@ -362,7 +362,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'AL-25',
+    id: 'AL-25-001',
     name: 'NAYY 4x25mm² Al',
     category: 'cable',
     standard: 'DIN VDE 0276',
@@ -392,7 +392,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'AL-35',
+    id: 'AL-35-001',
     name: 'NAYY 4x35mm² Al',
     category: 'cable',
     standard: 'DIN VDE 0276',
@@ -422,7 +422,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'AL-50',
+    id: 'AL-50-001',
     name: 'NAYY 4x50mm² Al',
     category: 'cable',
     standard: 'DIN VDE 0276',
@@ -452,7 +452,7 @@ export const MOCK_CABLES: CableCatalog[] = [
     ],
   },
   {
-    id: 'AL-70',
+    id: 'AL-70-001',
     name: 'NAYY 4x70mm² Al',
     category: 'cable',
     standard: 'DIN VDE 0276',

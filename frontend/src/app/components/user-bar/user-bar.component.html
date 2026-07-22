@@ -19,6 +19,19 @@
         <app-icon name="file-down" [size]="16"></app-icon>
       </button>
 
+      <span class="btn-separator"></span>
+
+      <button class="icon-btn" (click)="exportProject.emit()" title="Export Graph as JSON">
+        <app-icon name="download" [size]="16"></app-icon>
+      </button>
+
+      <button class="icon-btn" (click)="fileInput.click()" title="Import Graph from JSON">
+        <app-icon name="upload" [size]="16"></app-icon>
+      </button>
+      <input #fileInput type="file" accept=".json" (change)="onImportFileSelected($event)" style="display:none">
+
+      <span class="btn-separator"></span>
+
       <button class="icon-btn" (click)="settingsClicked.emit()" title="Project Settings">
         <app-icon name="gear" [size]="16"></app-icon>
       </button>

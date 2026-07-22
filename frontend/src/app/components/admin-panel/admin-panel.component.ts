@@ -5,10 +5,12 @@ import { AdminService } from '../../services/admin.service';
 import { AuthService } from '../../services/auth.service';
 import { ProjectService } from '../../services/project.service';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
+import { ModalComponent } from '../shared/modal/modal.component';
 import { ConfirmDeleteButtonComponent } from '../shared/confirm-delete-button/confirm-delete-button.component';
 import { IconComponent } from '../shared/icon/icon.component';
 import { UserSummary, CreateUserRequest } from '../../models/admin.model';
 import { CableCatalog } from '../../models/catalog.model';
+import { ComplianceStandard } from '../../models/compliance-standard.model';
 import { ProjectSummary } from '../../models/project.model';
 import { getErrorMessage } from '../../shared/utils/error.utils';
 import { ToastService } from '../../services/toast.service';
@@ -16,24 +18,29 @@ import { ToastService } from '../../services/toast.service';
 @Component({
   selector: 'app-admin-panel',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, DatePipe, IconComponent, PageHeaderComponent, ConfirmDeleteButtonComponent],
+  imports: [NgIf, NgFor, FormsModule, DatePipe, IconComponent, PageHeaderComponent, ModalComponent, ConfirmDeleteButtonComponent],
   templateUrl: './admin-panel.component.html',
   styleUrl: './admin-panel.component.scss'
 })
 export class AdminPanelComponent implements OnInit {
-  public activeTab: 'users' | 'catalog' | 'projects' = 'users';
+  public activeTab: 'users' | 'catalog' | 'projects' | 'standards' = 'users';
 
   public users: UserSummary[] = [];
   public cables: CableCatalog[] = [];
   public projects: ProjectSummary[] = [];
 
-  public showCreateUser = false;
+  public showUserModal = false;
   public newUser: CreateUserRequest = { username: '', email: '', password: '', role: 'ENGINEER' };
   public confirmPassword = '';
 
   public editingCable: CableCatalog | null = null;
   public showCableForm = false;
   public newCable: Partial<CableCatalog> = this.emptyCable();
+
+  public standards: ComplianceStandard[] = [];
+  public showStandardForm = false;
+  public editingStandard: ComplianceStandard | null = null;
+  public newStandard: Partial<ComplianceStandard> = this.emptyStandard();
 
   public loading = true;
   public currentUsername: string | null = null;
@@ -52,11 +59,12 @@ export class AdminPanelComponent implements OnInit {
     this.loadUsers();
   }
 
-  switchTab(tab: 'users' | 'catalog' | 'projects') {
+  switchTab(tab: 'users' | 'catalog' | 'projects' | 'standards') {
     this.activeTab = tab;
     if (tab === 'users' && this.users.length === 0) this.loadUsers();
     if (tab === 'catalog' && this.cables.length === 0) this.loadCables();
     if (tab === 'projects' && this.projects.length === 0) this.loadProjects();
+    if (tab === 'standards' && this.standards.length === 0) this.loadStandards();
   }
 
   // ── Users ──────────────────────────────────────────────────
@@ -69,6 +77,12 @@ export class AdminPanelComponent implements OnInit {
     });
   }
 
+  openNewUserForm() {
+    this.newUser = { username: '', email: '', password: '', role: 'ENGINEER' };
+    this.confirmPassword = '';
+    this.showUserModal = true;
+  }
+
   createUser() {
     if (!this.newUser.username || !this.newUser.email || !this.newUser.password) return;
     if (this.newUser.password !== this.confirmPassword) {
@@ -78,7 +92,7 @@ export class AdminPanelComponent implements OnInit {
     this.adminService.createUser(this.newUser).subscribe({
       next: (user) => {
         this.users.push(user);
-        this.showCreateUser = false;
+        this.showUserModal = false;
         this.newUser = { username: '', email: '', password: '', role: 'ENGINEER' };
         this.confirmPassword = '';
         this.toast.success('User created successfully.');
@@ -188,6 +202,72 @@ export class AdminPanelComponent implements OnInit {
     });
   }
 
+  // ── Compliance Standards ────────────────────────────────────
+
+  loadStandards() {
+    this.loading = true;
+    this.adminService.getComplianceStandards().subscribe({
+      next: (list) => { this.standards = list; this.loading = false; this.cdr.detectChanges(); },
+      error: (err) => { this.loading = false; this.toast.error(getErrorMessage(err)); this.cdr.detectChanges(); }
+    });
+  }
+
+  openNewStandardForm() {
+    this.editingStandard = null;
+    this.newStandard = this.emptyStandard();
+    this.showStandardForm = true;
+  }
+
+  editStandard(standard: ComplianceStandard) {
+    this.editingStandard = standard;
+    this.newStandard = { ...standard };
+    this.showStandardForm = true;
+  }
+
+  saveStandard() {
+    const payload: Partial<ComplianceStandard> = {
+      name: this.newStandard.name,
+      description: this.newStandard.description,
+      minVoltagePu: this.newStandard.minVoltagePu,
+      maxVoltagePu: this.newStandard.maxVoltagePu,
+      active: this.newStandard.active ?? true,
+      defaultStandard: this.newStandard.defaultStandard ?? false
+    };
+
+    if (this.editingStandard) {
+      this.adminService.updateComplianceStandard(this.editingStandard.id, payload as ComplianceStandard).subscribe({
+        next: (updated) => {
+          const idx = this.standards.findIndex(s => s.id === updated.id);
+          if (idx >= 0) this.standards[idx] = updated;
+          this.showStandardForm = false;
+          this.editingStandard = null;
+          this.cdr.detectChanges();
+        },
+        error: (err) => this.toast.error(getErrorMessage(err))
+      });
+    } else {
+      this.adminService.createComplianceStandard(payload).subscribe({
+        next: (created) => {
+          this.standards.push(created);
+          this.showStandardForm = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => this.toast.error(getErrorMessage(err))
+      });
+    }
+  }
+
+  deleteStandard(standard: ComplianceStandard) {
+    this.adminService.deleteComplianceStandard(standard.id).subscribe({
+      next: () => {
+        this.standards = this.standards.filter(s => s.id !== standard.id);
+        this.toast.success('Standard deleted.');
+        this.cdr.detectChanges();
+      },
+      error: (err) => this.toast.error(getErrorMessage(err))
+    });
+  }
+
   // ── Helpers ────────────────────────────────────────────────
 
   private emptyCable(): Partial<CableCatalog> {
@@ -200,6 +280,17 @@ export class AdminPanelComponent implements OnInit {
       physical: { crossSection: '', conductorMaterial: 'CU', insulationMaterial: '', outerDiameterMm: 0 },
       thermal: { ratedTempC: 90, maxShortCircuitTempC: 250 },
       impedanceTable: []
+    };
+  }
+
+  private emptyStandard(): Partial<ComplianceStandard> {
+    return {
+      name: '',
+      description: '',
+      minVoltagePu: 0.90,
+      maxVoltagePu: 1.10,
+      active: true,
+      defaultStandard: false
     };
   }
 }

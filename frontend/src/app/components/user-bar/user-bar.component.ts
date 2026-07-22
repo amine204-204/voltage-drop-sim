@@ -23,6 +23,8 @@ export class UserBarComponent {
   @Output() newProject = new EventEmitter<void>();
   @Output() saveProject = new EventEmitter<void>();
   @Output() saveAsProject = new EventEmitter<void>();
+  @Output() exportProject = new EventEmitter<void>();
+  @Output() importProject = new EventEmitter<File>();
   @Output() deleteProject = new EventEmitter<void>();
   @Output() settingsClicked = new EventEmitter<void>();
 
@@ -49,6 +51,14 @@ export class UserBarComponent {
 
   public goToProfile() {
     this.router.navigate(['/profile']);
+  }
+
+  public onImportFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.importProject.emit(input.files[0]);
+    }
+    input.value = '';
   }
 
   public logout() {
