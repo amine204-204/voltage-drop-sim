@@ -13,6 +13,7 @@ import { LoadPreset } from '../../models/load-preset.model';
 import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
 import { ProjectSummary, Project, ProjectBranch, ProjectSimulationResult } from '../../models/project.model';
 import { ProjectService } from '../../services/project.service';
+import { LoadPresetService } from '../../services/load-presets.service';
 import { ProjectModal } from '../project-modal/project-modal';
 import { UserBarComponent } from '../user-bar/user-bar.component';
 import { IconComponent } from '../shared/icon/icon.component';
@@ -68,6 +69,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     private simulationService: SimulationService,
     private catalogService: CatalogService,
     private projectService: ProjectService,
+    private loadPresetService: LoadPresetService,
     private mockSimulationService: MockSimulationService,
     private toast: ToastService,
     private cdr: ChangeDetectorRef
@@ -117,12 +119,14 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       forkJoin({
         cables: this.catalogService.getCables(),
         transformers: this.catalogService.getTransformers(),
-        switches: this.catalogService.getSwitches()
+        switches: this.catalogService.getSwitches(),
+        presets: this.loadPresetService.getPresets()
       }).subscribe({
         next: (result) => {
           this.cableCatalog = result.cables;
           this.transformerCatalog = result.transformers;
           this.switchCatalog = result.switches;
+          this.loadPresets = result.presets;
           this.isLoadingCatalog = false;
           this.cdr.markForCheck();
           setTimeout(() => this.tryLoadPendingProject());
@@ -132,6 +136,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
           this.cableCatalog = MOCK_CABLES;
           this.transformerCatalog = MOCK_TRANSFORMERS;
           this.switchCatalog = MOCK_SWITCHES;
+          this.loadPresets = LOAD_PRESETS;
           this.isLoadingCatalog = false;
           this.toast.error(this.catalogError + '\n' + getErrorMessage(err));
           this.cdr.markForCheck();

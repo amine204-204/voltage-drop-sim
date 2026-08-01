@@ -20,13 +20,11 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
 jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  secret: ${JWT_SECRET:}
   expiration-ms: 86400000 # 24 hours
   refresh-expiration-ms: 604800000 # 7 days
 
 simulation:
-  grid:
-    nominal-frequency-hz: 50
   math:
     default-power-factor: 0.95
   convergence:
@@ -35,7 +33,7 @@ simulation:
   norms:
     active-norm: en50160
     en50160:
-      min-voltage-pu: 0.9
+      min-voltage-pu: 0.90
       max-voltage-pu: 1.1
   ieee1159:
     instantaneous-sag-max-seconds: 0.5

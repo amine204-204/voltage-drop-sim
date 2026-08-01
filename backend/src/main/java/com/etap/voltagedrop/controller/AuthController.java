@@ -1,13 +1,16 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.dto.auth.AuthResponse;
 import com.etap.voltagedrop.dto.auth.LoginRequest;
 import com.etap.voltagedrop.dto.auth.RefreshTokenRequest;
+import com.etap.voltagedrop.dto.auth.SeedAdminRequest;
 import com.etap.voltagedrop.exception.ConflictException;
 import com.etap.voltagedrop.persistence.entity.UserEntity;
 import com.etap.voltagedrop.service.JwtService;
 import com.etap.voltagedrop.service.RefreshTokenService;
 import com.etap.voltagedrop.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping(ApiPaths.AUTH)
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -48,12 +51,12 @@ public class AuthController {
     }
 
     @PostMapping("/seed-admin")
-    public ResponseEntity<?> seedAdmin() {
+    public ResponseEntity<?> seedAdmin(@Valid @RequestBody SeedAdminRequest request) {
         if (userService.existsByRole(UserEntity.Role.ADMIN)) {
             throw new ConflictException("Admin already exists");
         }
 
-        var admin = userService.createUser("admin", "admin@voltagedrop.local", "admin123", UserEntity.Role.ADMIN);
+        var admin = userService.createUser(request.getUsername(), "admin@voltagedrop.local", request.getPassword(), UserEntity.Role.ADMIN);
         UserEntity user = userService.findByUsername(admin.getUsername()).orElseThrow();
         UserDetails userDetails = userDetailsService.loadUserByUsername(admin.getUsername());
         String token = jwtService.generateToken(userDetails);

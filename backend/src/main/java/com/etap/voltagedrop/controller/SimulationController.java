@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.domain.*;
 import com.etap.voltagedrop.domain.catalog.BranchComponent;
 import com.etap.voltagedrop.domain.norms.CustomNormEvaluator;
@@ -21,7 +22,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/simulations")
+@RequestMapping(ApiPaths.SIMULATIONS)
 @RequiredArgsConstructor
 public class SimulationController {
 
@@ -66,14 +67,6 @@ public class SimulationController {
     private NetworkGraph mapDtoToDomain(SimulationRequestDto dto) {
         NetworkGraph graph = new NetworkGraph();
 
-        double gridNominalVoltage = 230.0;
-        for (SimulationRequestDto.NodeDto nodeDto : dto.getGraph().getNodes()) {
-            if ("SOURCE".equals(nodeDto.getType()) && nodeDto.getNominalVoltage() != null) {
-                gridNominalVoltage = nodeDto.getNominalVoltage();
-                break;
-            }
-        }
-
         for (SimulationRequestDto.NodeDto nodeDto : dto.getGraph().getNodes()) {
             NetworkNode node = new NetworkNode();
             node.setId(nodeDto.getId());
@@ -91,7 +84,6 @@ public class SimulationController {
                 } else if ("CONSTANT_POWER".equals(nodeDto.getLoadType())) {
                     strategy = new ConstantPowerStrategy(
                             nodeDto.getLoadProfile(),
-                            gridNominalVoltage,
                             nodeDto.getCosPhi()
                     );
                 } else {

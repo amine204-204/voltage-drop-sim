@@ -15,8 +15,8 @@ public class PowerConsumer {
     private LoadBehaviorStrategy loadStrategy;
     private double cosPhi;
 
-    public double getCurrentLoadAtStep(double voltageAtNodePu, int timeStep) {
-        return loadStrategy.calculateCurrent(voltageAtNodePu, timeStep);
+    public double getCurrentLoadAtStep(double voltageAtNodePu, double localNominalVoltage, int timeStep) {
+        return loadStrategy.calculateCurrent(voltageAtNodePu, localNominalVoltage, timeStep);
     }
 
     public double calculateSinPhi() {

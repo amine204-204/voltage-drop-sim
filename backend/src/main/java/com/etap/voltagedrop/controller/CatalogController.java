@@ -4,13 +4,14 @@ import com.etap.voltagedrop.catalog.CatalogService;
 import com.etap.voltagedrop.catalog.mongo.CableCatalogDocument;
 import com.etap.voltagedrop.catalog.mongo.SwitchCatalogDocument;
 import com.etap.voltagedrop.catalog.mongo.TransformerCatalogDocument;
+import com.etap.voltagedrop.config.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/catalogs")
+@RequestMapping(ApiPaths.CATALOGS)
 @RequiredArgsConstructor
 public class CatalogController {
     private final CatalogService catalogService;

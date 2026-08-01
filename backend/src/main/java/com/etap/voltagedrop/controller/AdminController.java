@@ -2,6 +2,7 @@ package com.etap.voltagedrop.controller;
 
 import com.etap.voltagedrop.catalog.CatalogService;
 import com.etap.voltagedrop.catalog.mongo.CableCatalogDocument;
+import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.dto.admin.CreateUserRequest;
 import com.etap.voltagedrop.dto.admin.UpdateRoleRequest;
 import com.etap.voltagedrop.dto.admin.UserSummaryDto;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping(ApiPaths.ADMIN)
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminController {

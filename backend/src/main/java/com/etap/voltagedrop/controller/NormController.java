@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.dto.admin.ComplianceStandardDto;
 import com.etap.voltagedrop.service.ComplianceStandardService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/norms")
+@RequestMapping(ApiPaths.NORMS)
 @RequiredArgsConstructor
 public class NormController {
 

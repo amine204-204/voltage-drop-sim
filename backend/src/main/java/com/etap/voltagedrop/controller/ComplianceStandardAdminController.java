@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.dto.admin.ComplianceStandardDto;
 import com.etap.voltagedrop.service.ComplianceStandardService;
 import jakarta.validation.Valid;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/compliance-standards")
+@RequestMapping(ApiPaths.ADMIN_COMPLIANCE_STANDARDS)
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class ComplianceStandardAdminController {

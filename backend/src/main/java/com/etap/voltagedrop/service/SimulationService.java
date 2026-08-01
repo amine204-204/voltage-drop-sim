@@ -79,7 +79,8 @@ public class SimulationService {
 
         if (node.isConsumer()) {
             double voltagePu = node.getWorkingVoltage() / node.getLocalNominalVoltage();
-            totalDownstreamCurrent += node.getConsumerBehavior().getCurrentLoadAtStep(voltagePu, t);
+            totalDownstreamCurrent += node.getConsumerBehavior().getCurrentLoadAtStep(
+                    voltagePu, node.getLocalNominalVoltage(), t);
         }
 
         NetworkBranch incomingBranch = graph.getIncomingBranch(node.getId());

@@ -4,11 +4,16 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,11 +22,24 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtService.class);
+
     @Value("${jwt.secret}")
     private String secretKey;
 
     @Value("${jwt.expiration-ms}")
     private long jwtExpirationMs;
+
+    @PostConstruct
+    void init() {
+        if (secretKey == null || secretKey.isBlank()) {
+            byte[] key = new byte[64];
+            new SecureRandom().nextBytes(key);
+            this.secretKey = Base64.getEncoder().encodeToString(key);
+            log.warn("JWT_SECRET is not set; using a randomly generated secret. "
+                    + "All sessions will be invalidated on application restart.");
+        }
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

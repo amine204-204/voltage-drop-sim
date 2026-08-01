@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.dto.GraphExportDto;
 import com.etap.voltagedrop.dto.ProjectDto;
 import com.etap.voltagedrop.dto.ProjectSummaryDto;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping(ApiPaths.PROJECTS)
 @RequiredArgsConstructor
 public class ProjectController {
 

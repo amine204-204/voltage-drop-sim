@@ -15,10 +15,8 @@ public class NetworkNode {
     private String id;
     private String name;
 
-    // Historical Data
     private List<Double> potentialTimeSeries = new ArrayList<>();
 
-    // Working Memory for FBS Algorithm (not serialized to frontend ideally)
     private double workingVoltage;
     private double localNominalVoltage;
 
@@ -27,7 +25,15 @@ public class NetworkNode {
     @JsonIgnore
     private PowerConsumer consumerBehavior;
 
-    public boolean isSource() { return sourceBehavior != null; }
-    public boolean isConsumer() { return consumerBehavior != null; }
-    public boolean isPureJunction() { return !isSource() && !isConsumer(); }
+    public boolean isSource() {
+        return sourceBehavior != null;
+    }
+
+    public boolean isConsumer() {
+        return consumerBehavior != null;
+    }
+
+    public boolean isPureJunction() {
+        return !isSource() && !isConsumer();
+    }
 }

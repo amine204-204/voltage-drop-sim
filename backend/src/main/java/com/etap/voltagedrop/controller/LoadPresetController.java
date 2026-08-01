@@ -2,13 +2,14 @@ package com.etap.voltagedrop.controller;
 
 import com.etap.voltagedrop.catalog.LoadPresetService;
 import com.etap.voltagedrop.catalog.mongo.LoadPresetDocument;
+import com.etap.voltagedrop.config.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/catalogs")
+@RequestMapping(ApiPaths.CATALOGS)
 @RequiredArgsConstructor
 public class LoadPresetController {
     private final LoadPresetService presetService;

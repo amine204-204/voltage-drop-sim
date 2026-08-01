@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.dto.admin.UserSummaryDto;
 import com.etap.voltagedrop.dto.auth.ChangePasswordRequest;
 import com.etap.voltagedrop.dto.auth.UpdateProfileRequest;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/profile")
+@RequestMapping(ApiPaths.PROFILE)
 @RequiredArgsConstructor
 public class ProfileController {
 
