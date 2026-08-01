@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { UserSummary, CreateUserRequest, UpdateRoleRequest } from '../models/admin.model';
-import { CableCatalog } from '../models/catalog.model';
+import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../models/catalog.model';
 import { ComplianceStandard } from '../models/compliance-standard.model';
 
 @Injectable({ providedIn: 'root' })
@@ -45,6 +45,42 @@ export class AdminService {
 
   deleteCable(id: string): Observable<void> {
     return this.http.delete<void>(`${this.API}/catalogs/${id}`);
+  }
+
+  // ── Transformers ────────────────────────────────────────────
+
+  getAllTransformers(): Observable<TransformerCatalog[]> {
+    return this.http.get<TransformerCatalog[]>(`${this.API}/catalogs/transformers`);
+  }
+
+  createTransformer(transformer: Partial<TransformerCatalog>): Observable<TransformerCatalog> {
+    return this.http.post<TransformerCatalog>(`${this.API}/catalogs/transformers`, transformer);
+  }
+
+  updateTransformer(id: string, transformer: TransformerCatalog): Observable<TransformerCatalog> {
+    return this.http.put<TransformerCatalog>(`${this.API}/catalogs/transformers/${id}`, transformer);
+  }
+
+  deleteTransformer(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.API}/catalogs/transformers/${id}`);
+  }
+
+  // ── Switches ────────────────────────────────────────────────
+
+  getAllSwitches(): Observable<SwitchCatalog[]> {
+    return this.http.get<SwitchCatalog[]>(`${this.API}/catalogs/switches`);
+  }
+
+  createSwitch(sw: Partial<SwitchCatalog>): Observable<SwitchCatalog> {
+    return this.http.post<SwitchCatalog>(`${this.API}/catalogs/switches`, sw);
+  }
+
+  updateSwitch(id: string, sw: SwitchCatalog): Observable<SwitchCatalog> {
+    return this.http.put<SwitchCatalog>(`${this.API}/catalogs/switches/${id}`, sw);
+  }
+
+  deleteSwitch(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.API}/catalogs/switches/${id}`);
   }
 
   // ── Compliance Standards ────────────────────────────────────

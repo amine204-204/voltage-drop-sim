@@ -1,0 +1,38 @@
+<div class="section">
+  <div class="section-header">
+    <h2>All Projects ({{ projects.length }})</h2>
+    <div class="header-actions">
+      <div class="search-box">
+        <app-icon name="search" [size]="14"></app-icon>
+        <input [(ngModel)]="searchText" placeholder="Search projects..." />
+      </div>
+    </div>
+  </div>
+
+  <table class="data-table" *ngIf="projects.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Owner</th>
+        <th>Updated</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of filteredProjects">
+        <td class="mono">{{ p.id }}</td>
+        <td>{{ p.name }}</td>
+        <td>{{ p.description || '—' }}</td>
+        <td class="mono">{{ p.ownerId ?? '—' }}</td>
+        <td class="mono">{{ p.updatedAt | date:'short' }}</td>
+        <td>
+          <app-confirm-delete-button title="Delete project" (confirm)="deleteProject(p)"></app-confirm-delete-button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="loading-msg" *ngIf="loading">Loading projects...</p>
+  <p class="empty-msg" *ngIf="projects.length === 0 && !loading">No projects found.</p>
+</div>

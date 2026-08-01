@@ -94,6 +94,14 @@ public class CatalogService {
         return cableRepo.findAll();
     }
 
+    public List<TransformerCatalogDocument> listAllTransformersAdmin() {
+        return transformerRepo.findAll();
+    }
+
+    public List<SwitchCatalogDocument> listAllSwitchesAdmin() {
+        return switchRepo.findAll();
+    }
+
     public CableCatalogDocument getCableDetail(String id) {
         return cableRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cable not found: " + id));
@@ -116,6 +124,46 @@ public class CatalogService {
             return false;
         }
         cableRepo.deleteById(id);
+        return true;
+    }
+
+    public TransformerCatalogDocument createTransformer(TransformerCatalogDocument transformer) {
+        return transformerRepo.save(transformer);
+    }
+
+    public TransformerCatalogDocument updateTransformer(String id, TransformerCatalogDocument transformer) {
+        if (!transformerRepo.existsById(id)) {
+            throw new ResourceNotFoundException("Transformer not found: " + id);
+        }
+        transformer.setId(id);
+        return transformerRepo.save(transformer);
+    }
+
+    public boolean deleteTransformer(String id) {
+        if (!transformerRepo.existsById(id)) {
+            return false;
+        }
+        transformerRepo.deleteById(id);
+        return true;
+    }
+
+    public SwitchCatalogDocument createSwitch(SwitchCatalogDocument sw) {
+        return switchRepo.save(sw);
+    }
+
+    public SwitchCatalogDocument updateSwitch(String id, SwitchCatalogDocument sw) {
+        if (!switchRepo.existsById(id)) {
+            throw new ResourceNotFoundException("Switch not found: " + id);
+        }
+        sw.setId(id);
+        return switchRepo.save(sw);
+    }
+
+    public boolean deleteSwitch(String id) {
+        if (!switchRepo.existsById(id)) {
+            return false;
+        }
+        switchRepo.deleteById(id);
         return true;
     }
 

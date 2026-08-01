@@ -1,0 +1,42 @@
+<div class="section">
+  <div class="section-header">
+    <h2>Switch Catalog ({{ switches.length }})</h2>
+    <div class="header-actions">
+      <div class="search-box">
+        <app-icon name="search" [size]="14"></app-icon>
+        <input [(ngModel)]="searchText" placeholder="Search switches..." />
+      </div>
+      <button class="icon-btn add-btn primary" (click)="openNewForm()" title="New Switch">+</button>
+    </div>
+  </div>
+
+  <table class="data-table" *ngIf="switches.length > 0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Standard</th>
+        <th>Rated (A)</th>
+        <th>Breaking (kA)</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of filteredSwitches">
+        <td>{{ s.name }}</td>
+        <td>{{ s.standard }}</td>
+        <td class="mono">{{ s.electrical.ratedCurrentA }}</td>
+        <td class="mono">{{ s.electrical.breakingCapacity }}</td>
+        <td class="row-actions">
+          <button class="icon-btn" (click)="editSwitch(s)" title="Edit">
+            <app-icon name="pencil" [size]="14"></app-icon>
+          </button>
+          <app-confirm-delete-button title="Delete switch" (confirm)="deleteSwitch(s)"></app-confirm-delete-button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="loading-msg" *ngIf="loading">Loading switches...</p>
+  <p class="empty-msg" *ngIf="switches.length === 0 && !loading">No switches in catalog.</p>
+</div>
+
+<app-switch-form-modal *ngIf="showForm" [sw]="editingSwitch" (save)="saveSwitch($event)" (close)="showForm = false"></app-switch-form-modal>
