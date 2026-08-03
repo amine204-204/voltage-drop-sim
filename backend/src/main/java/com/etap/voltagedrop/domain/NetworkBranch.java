@@ -18,7 +18,6 @@ public class NetworkBranch {
     private String name;
     private String fromNodeId;
     private String toNodeId;
-    private double lengthInKm;
 
     private BranchComponent component;
 

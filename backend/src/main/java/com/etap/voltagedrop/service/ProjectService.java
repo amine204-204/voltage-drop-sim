@@ -149,7 +149,9 @@ public class ProjectService {
             b.setName(branch.getName());
             b.setFromNodeId(branch.getFromNodeId());
             b.setToNodeId(branch.getToNodeId());
-            b.setLengthInKm(branch.getLengthInKm());
+            if ("CABLE".equals(branch.getBranchType())) {
+                b.setLengthInKm(branch.getLengthInKm());
+            }
             b.setBranchType(branch.getBranchType());
             b.setCatalogId(branch.getCatalogId());
             b.setClosed(branch.getClosed());
@@ -188,7 +190,9 @@ public class ProjectService {
             b.setName(branch.getName());
             b.setFromNodeId(branch.getFromNodeId());
             b.setToNodeId(branch.getToNodeId());
-            b.setLengthInKm(branch.getLengthInKm());
+            if ("CABLE".equals(branch.getBranchType())) {
+                b.setLengthInKm(branch.getLengthInKm());
+            }
             b.setBranchType(branch.getBranchType());
             b.setCatalogId(branch.getCatalogId());
             b.setClosed(branch.getClosed());
@@ -250,7 +254,9 @@ public class ProjectService {
                 branch.setName(branchDto.getName());
                 branch.setFromNodeId(branchDto.getFromNodeId());
                 branch.setToNodeId(branchDto.getToNodeId());
-                branch.setLengthInKm(branchDto.getLengthInKm());
+                if (branchDto.getLengthInKm() != null) {
+                    branch.setLengthInKm(branchDto.getLengthInKm());
+                }
                 branch.setBranchType(branchDto.getBranchType());
                 branch.setCatalogId(branchDto.getCatalogId());
                 branch.setComponentCrossSection(branchDto.getComponentCrossSection());
@@ -267,6 +273,8 @@ public class ProjectService {
                     : new SimulationResultEntity();
             simResult.setRunAt(LocalDateTime.now());
             simResult.setProject(project);
+            simResult.setMinLimitPu(dto.getSimulationResult().getMinLimitPu());
+            simResult.setMaxLimitPu(dto.getSimulationResult().getMaxLimitPu());
 
             List<NodeResultEntity> nodesResults = new ArrayList<>();
             if (dto.getSimulationResult().getNodesResults() != null) {
@@ -350,7 +358,9 @@ public class ProjectService {
             b.setName(branch.getName());
             b.setFromNodeId(branch.getFromNodeId());
             b.setToNodeId(branch.getToNodeId());
-            b.setLengthInKm(branch.getLengthInKm());
+            if ("CABLE".equals(branch.getBranchType())) {
+                b.setLengthInKm(branch.getLengthInKm());
+            }
             b.setBranchType(branch.getBranchType());
             b.setCatalogId(branch.getCatalogId());
             b.setComponentCrossSection(branch.getComponentCrossSection());
@@ -361,7 +371,9 @@ public class ProjectService {
 
         if (p.getSimulationResult() != null) {
             ProjectDto.SimulationResultDto sr = new ProjectDto.SimulationResultDto();
-            
+            sr.setMinLimitPu(p.getSimulationResult().getMinLimitPu());
+            sr.setMaxLimitPu(p.getSimulationResult().getMaxLimitPu());
+
             sr.setNodesResults(p.getSimulationResult().getNodesResults().stream().map(nr -> {
                 ProjectDto.NodeResultDto nrDto = new ProjectDto.NodeResultDto();
                 nrDto.setNodeId(nr.getNodeId());

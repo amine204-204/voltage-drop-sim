@@ -49,9 +49,10 @@ class SimulationServiceTest {
         branch.setId("BR1");
         branch.setFromNodeId("SRC");
         branch.setToNodeId("LOAD");
-        branch.setLengthInKm(1.0); // 1 km
-        // Cable: 1 Ohm/km resistance, 0 reactance
-        branch.setComponent(new CableSpec("16mm2", "CU", 1.0, 0.0));
+        // Cable: 1 Ohm/km resistance, 0 reactance, 1 km
+        CableSpec cable = new CableSpec("16mm2", "CU", 1.0, 0.0);
+        cable.setLengthInKm(1.0);
+        branch.setComponent(cable);
 
         testGraph.addNode(sourceNode);
         testGraph.addNode(loadNode);
@@ -104,7 +105,9 @@ class SimulationServiceTest {
 
     @Test
     void testNormViolation_TriggersIeee1159Event() {
-        branch.setComponent(new CableSpec("TerribleCable", "AL", 10.0, 0.0)); // 10 Ohms!
+        CableSpec terribleCable = new CableSpec("TerribleCable", "AL", 10.0, 0.0); // 10 Ohms!
+        terribleCable.setLengthInKm(1.0);
+        branch.setComponent(terribleCable);
         En50160NormEvaluator norm = new En50160NormEvaluator(new SimulationProperties());
 
         simulationService.runChronologicalSimulation(testGraph, 1, 1.0, norm);
@@ -151,7 +154,6 @@ class SimulationServiceTest {
         txBranch.setId("TX1");
         txBranch.setFromNodeId("SRC");
         txBranch.setToNodeId("SEC");
-        txBranch.setLengthInKm(0.0);
         txBranch.setComponent(new TransformerSpec(4.0, 100.0, 20000.0, 400.0, 300.0, 1800.0));
 
         graph.addNode(source);
@@ -189,14 +191,14 @@ class SimulationServiceTest {
         cableToBus.setId("BR_CABLE");
         cableToBus.setFromNodeId("SRC");
         cableToBus.setToNodeId("BUS");
-        cableToBus.setLengthInKm(0.1);
-        cableToBus.setComponent(new CableSpec("16", "CU", 1.0, 0.0));
+        CableSpec cable = new CableSpec("16", "CU", 1.0, 0.0);
+        cable.setLengthInKm(0.1);
+        cableToBus.setComponent(cable);
 
         NetworkBranch openSwitch = new NetworkBranch();
         openSwitch.setId("BR_SWITCH");
         openSwitch.setFromNodeId("BUS");
         openSwitch.setToNodeId("LOAD");
-        openSwitch.setLengthInKm(0.0);
         openSwitch.setComponent(new SwitchSpec(false, 100.0, "10kA"));
 
         graph.addNode(source);

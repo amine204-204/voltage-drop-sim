@@ -103,7 +103,7 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
           ctx.lineTo(chart.chartArea.right, yMin);
           ctx.stroke();
           ctx.fillStyle = getCssVar('--status-danger', '#e74c3c');
-          ctx.fillText(`Min Limit (${minVoltage}V)`, chart.chartArea.right - 120, yMin - 5);
+          ctx.fillText(`Min Limit (${minVoltage.toFixed(2)}V)`, chart.chartArea.right - 120, yMin - 5);
 
           const yMax = yAxis.getPixelForValue(maxVoltage);
           ctx.strokeStyle = getCssVar('--accent', '#f39c12');
@@ -112,7 +112,7 @@ export class VoltageChartModal implements AfterViewInit, OnDestroy {
           ctx.lineTo(chart.chartArea.right, yMax);
           ctx.stroke();
           ctx.fillStyle = getCssVar('--accent', '#f39c12');
-          ctx.fillText(`Max Limit (${maxVoltage}V)`, chart.chartArea.right - 120, yMax - 5);
+          ctx.fillText(`Max Limit (${maxVoltage.toFixed(2)}V)`, chart.chartArea.right - 120, yMax - 5);
 
           ctx.restore();
         }

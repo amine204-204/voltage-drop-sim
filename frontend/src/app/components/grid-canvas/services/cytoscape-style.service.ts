@@ -108,19 +108,19 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge',
       style: {
         'width': 3,
-        'line-color': '#5A6A7A', // var(--edge-color)
+        'line-color': '#7A8CA0', // var(--edge-color)
         'line-opacity': 0.8,
         'curve-style': 'bezier',
         'control-point-step-size': 40,
 
         'target-arrow-shape': 'triangle',
-        'target-arrow-color': '#5A6A7A',
+        'target-arrow-color': '#7A8CA0',
         'target-arrow-width': 8,
         'arrow-scale': 0.8,
 
         'label': 'data(lengthLabel)',
         'font-size': '8px',
-        'color': '#545C68', // var(--text-tertiary)
+        'color': '#8891A0', // var(--text-secondary)
         'text-background-color': '#12161C', // var(--bg-canvas)
         'text-background-opacity': 0.9,
         'text-background-padding': '2px',
@@ -140,15 +140,6 @@ export function getCytoscapeStyles(): any[] {
         'background-blacken': -0.1,
       } as any
     },
-    {
-      selector: 'edge:selected',
-      style: {
-        'line-color': '#E8A33D',
-        'target-arrow-color': '#E8A33D',
-        'width': 4,
-        'line-opacity': 1,
-      } as any
-    },
 
     // === HOVER ===
     {
@@ -164,25 +155,6 @@ export function getCytoscapeStyles(): any[] {
       style: {
         'line-color': 'rgba(232, 163, 61, 0.14)',
         'width': 4,
-      } as any
-    },
-
-    // === SIMULATION STATES ===
-    {
-      selector: 'edge.sim-ok',
-      style: {
-        'line-color': '#3FBF7F', // var(--status-ok)
-        'target-arrow-color': '#3FBF7F',
-        'line-opacity': 0.9,
-      } as any
-    },
-    {
-      selector: 'edge.sim-violation',
-      style: {
-        'line-color': '#E8615D', // var(--status-danger)
-        'target-arrow-color': '#E8615D',
-        'width': 5,
-        'line-opacity': 1,
       } as any
     },
 
@@ -225,6 +197,40 @@ export function getCytoscapeStyles(): any[] {
         'line-dash-pattern': [4, 4],
       } as any
     },
+
+    // === SIMULATION STATES ===
+    // Kept last so they win over :selected and branch-type rules (equal specificity, order decides)
+    {
+      selector: 'edge.sim-ok',
+      style: {
+        'line-color': '#3FBF7F', // var(--status-ok)
+        'target-arrow-color': '#3FBF7F',
+        'width': 4,
+        'line-opacity': 0.9,
+      } as any
+    },
+    {
+      selector: 'edge.sim-violation',
+      style: {
+        'line-color': '#E8615D', // var(--status-danger)
+        'target-arrow-color': '#E8615D',
+        'width': 5,
+        'line-opacity': 1,
+      } as any
+    },
+
+    // === SELECTED EDGE ===
+    // Kept last so selection highlight wins over branch-type and sim classes while selected;
+    // sim colors (classes) return automatically on deselect.
+    {
+      selector: 'edge:selected',
+      style: {
+        'line-color': '#E8A33D',
+        'target-arrow-color': '#E8A33D',
+        'width': 4,
+        'line-opacity': 1,
+      } as any
+    },
   ];
 }
 
@@ -235,8 +241,7 @@ export function syncCytoscapeTheme(cy: Core): void {
   const accentDim = getCssVar('--accent-dim', 'rgba(232, 163, 61, 0.14)');
   const accent = getCssVar('--accent', '#E8A33D');
   const dataCyan = getCssVar('--data-cyan', '#4FB8D0');
-  const edgeColor = getCssVar('--edge-color', '#5A6A7A');
-  const textTertiary = getCssVar('--text-tertiary', '#545C68');
+  const edgeColor = getCssVar('--edge-color', '#7A8CA0');
   const bgCanvas = getCssVar('--bg-canvas', '#12161C');
   const accentStrong = getCssVar('--accent-strong', '#F4B75A');
   const statusOk = getCssVar('--status-ok', '#3FBF7F');
@@ -264,17 +269,12 @@ export function syncCytoscapeTheme(cy: Core): void {
   style.selector('edge').style({
     'line-color': edgeColor,
     'target-arrow-color': edgeColor,
-    'color': textTertiary,
+    'color': textSecondary,
     'text-background-color': bgCanvas,
   } as any);
 
   style.selector('node:selected').style({
     'border-color': accent,
-  } as any);
-
-  style.selector('edge:selected').style({
-    'line-color': accent,
-    'target-arrow-color': accent,
   } as any);
 
   style.selector('node:active').style({
@@ -293,6 +293,11 @@ export function syncCytoscapeTheme(cy: Core): void {
   style.selector('edge.sim-violation').style({
     'line-color': statusDanger,
     'target-arrow-color': statusDanger,
+  } as any);
+
+  style.selector('edge:selected').style({
+    'line-color': accent,
+    'target-arrow-color': accent,
   } as any);
 
   style.update();

@@ -28,19 +28,19 @@ public class ComplianceStandardService {
     }
 
     public ComplianceStandardDto findByName(String name) {
-        return repository.findByName(name)
+        return repository.findByNameIgnoreCase(name)
                 .map(ComplianceStandardDto::fromEntity)
                 .orElseThrow(() -> new IllegalArgumentException("Compliance standard not found: " + name));
     }
 
     public ComplianceStandardEntity findEntityByName(String name) {
-        return repository.findByName(name)
+        return repository.findByNameIgnoreCase(name)
                 .orElseThrow(() -> new IllegalArgumentException("Compliance standard not found: " + name));
     }
 
     @Transactional
     public ComplianceStandardDto create(String name, String description, double minPu, double maxPu, boolean active, boolean isDefault) {
-        if (repository.existsByName(name)) {
+        if (repository.existsByNameIgnoreCase(name)) {
             throw new IllegalArgumentException("A compliance standard with name '" + name + "' already exists.");
         }
 
@@ -64,7 +64,7 @@ public class ComplianceStandardService {
         ComplianceStandardEntity entity = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Compliance standard not found with id: " + id));
 
-        if (!entity.getName().equals(name) && repository.existsByName(name)) {
+        if (!entity.getName().equalsIgnoreCase(name) && repository.existsByNameIgnoreCase(name)) {
             throw new IllegalArgumentException("A compliance standard with name '" + name + "' already exists.");
         }
 

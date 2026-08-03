@@ -107,7 +107,6 @@ public class SimulationController {
             branch.setName(branchDto.getName());
             branch.setFromNodeId(branchDto.getFromNodeId());
             branch.setToNodeId(branchDto.getToNodeId());
-            branch.setLengthInKm(branchDto.getLengthInKm());
 
             BranchComponent component = branchComponentFactory.create(branchDto);
             branch.setComponent(component);

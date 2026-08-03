@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
@@ -48,7 +49,8 @@ public class ProjectDto {
         private String name;
         private String fromNodeId;
         private String toNodeId;
-        private double lengthInKm;
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private Double lengthInKm;
         private String branchType;
         private String catalogId;
         private String componentCrossSection;
@@ -61,6 +63,8 @@ public class ProjectDto {
     public static class SimulationResultDto {
         private List<NodeResultDto> nodesResults;
         private List<BranchResultDto> branchesResults;
+        private Double minLimitPu;
+        private Double maxLimitPu;
     }
 
     @Getter

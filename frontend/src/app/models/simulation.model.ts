@@ -33,7 +33,7 @@ export interface BranchDto {
   name: string;
   fromNodeId: string;
   toNodeId: string;
-  lengthInKm: number;
+  lengthInKm?: number;
   branchType?: BranchType;
   catalogId?: string;
   componentCrossSection: string;

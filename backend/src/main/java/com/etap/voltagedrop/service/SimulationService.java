@@ -103,7 +103,6 @@ public class SimulationService {
             double newChildVoltage = branch.getComponent().accept(
                     new VoltageDropVisitor(
                             branch.getWorkingCurrent(),
-                            branch.getLengthInKm(),
                             node.getWorkingVoltage(),
                             props.getMath().getDefaultPowerFactor()
                     )

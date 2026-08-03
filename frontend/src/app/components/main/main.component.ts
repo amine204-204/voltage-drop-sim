@@ -20,6 +20,8 @@ import { IconComponent } from '../shared/icon/icon.component';
 import { SettingsModalComponent, ProjectSettings } from '../settings-modal/settings-modal.component';
 import { getErrorMessage } from '../../shared/utils/error.utils';
 import { ToastService } from '../../services/toast.service';
+import { NormService } from '../../services/norm.service';
+import { ComplianceStandard } from '../../models/compliance-standard.model';
 import { environment } from '../../../environments/environment';
 import { GraphExport, GraphExportBranch } from '../../models/graph-export.model';
 
@@ -42,11 +44,14 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   public selectedNormType: string = 'en50160';
   public customMinPu: number = 0.90;
   public customMaxPu: number = 1.10;
+  public runMinLimitPu: number = 0.90;
+  public runMaxLimitPu: number = 1.10;
 
   public cableCatalog: CableCatalog[] = [];
   public transformerCatalog: TransformerCatalog[] = [];
   public switchCatalog: SwitchCatalog[] = [];
   public loadPresets: LoadPreset[] = [];
+  private standards: ComplianceStandard[] = [];
 
   public projects: ProjectSummary[] = [];
   public selectedProjectId: number | null = null;
@@ -71,6 +76,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     private projectService: ProjectService,
     private loadPresetService: LoadPresetService,
     private mockSimulationService: MockSimulationService,
+    private normService: NormService,
     private toast: ToastService,
     private cdr: ChangeDetectorRef
   ) { }
@@ -98,6 +104,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit() {
     this.loadProjectsList();
+    this.loadStandards();
 
     const storedId = sessionStorage.getItem('currentProjectId');
     if (storedId !== null) {
@@ -196,6 +203,40 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     return environment.useMocks ? this.mockSimulationService : this.simulationService;
   }
 
+  public get effectiveMinPu(): number {
+    if (this.selectedNormType === 'custom') return this.customMinPu;
+    const standard = this.standards.find(s => s.name.toLowerCase() === this.selectedNormType.toLowerCase());
+    return standard ? standard.minVoltagePu : 0.90;
+  }
+
+  public get effectiveMaxPu(): number {
+    if (this.selectedNormType === 'custom') return this.customMaxPu;
+    const standard = this.standards.find(s => s.name.toLowerCase() === this.selectedNormType.toLowerCase());
+    return standard ? standard.maxVoltagePu : 1.10;
+  }
+
+  private loadStandards() {
+    this.normService.getActiveStandards().subscribe({
+      next: (list) => {
+        this.standards = list;
+        this.resolveSelectedNorm();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.standards = [];
+      }
+    });
+  }
+
+  private resolveSelectedNorm() {
+    if (this.selectedNormType === 'custom' || this.standards.length === 0) return;
+    const matches = this.standards.some(s => s.name.toLowerCase() === this.selectedNormType.toLowerCase());
+    if (!matches) {
+      const def = this.standards.find(s => s.defaultStandard) || this.standards[0];
+      this.selectedNormType = def.name;
+    }
+  }
+
   public onRunClicked(settings: SimulationSettings) {
     this.isSimulating = true;
     this.cdr.markForCheck();
@@ -234,6 +275,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
           this.gridCanvas.applySimulationResults(mergedResponse, settings.deltaTimeSeconds);
 
+          this.runMinLimitPu = this.effectiveMinPu;
+          this.runMaxLimitPu = this.effectiveMaxPu;
           this.maxSimulationSteps = settings.totalTimeSteps;
           this.currentStep = 0;
           this.isSimulationLoaded = true;
@@ -272,7 +315,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
     let simulationResult: ProjectSimulationResult | undefined = undefined;
     if (this.isSimulationLoaded) {
-      simulationResult = this.gridCanvas.getSimulationSnapshot() ?? undefined;
+      const snapshot = this.gridCanvas.getSimulationSnapshot();
+      simulationResult = snapshot ? { ...snapshot, minLimitPu: this.runMinLimitPu, maxLimitPu: this.runMaxLimitPu } : undefined;
     }
 
     return {
@@ -297,6 +341,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       this.isSimulationLoaded = false;
       this.currentStep = 0;
       this.deleteConfirmStep = false;
+      this.runMinLimitPu = 0.90;
+      this.runMaxLimitPu = 1.10;
       this.cdr.markForCheck();
       return;
     }
@@ -313,6 +359,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
           this.customMinPu = project.customMinPu || 0.90;
           this.customMaxPu = project.customMaxPu || 1.10;
         }
+        this.runMinLimitPu = project.simulationResult?.minLimitPu ?? this.effectiveMinPu;
+        this.runMaxLimitPu = project.simulationResult?.maxLimitPu ?? this.effectiveMaxPu;
 
         this.gridCanvas.loadProjectGraph(
           project.nodes,
@@ -384,16 +432,19 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
         x: n.x,
         y: n.y
       })),
-      branches: canvasGraph.branches.map(b => ({
-        id: b.id,
-        name: b.name,
-        fromNodeId: b.fromNodeId,
-        toNodeId: b.toNodeId,
-        lengthInKm: b.lengthInKm,
-        branchType: b.branchType,
-        catalogId: b.catalogId,
-        closed: b.closed
-      }))
+      branches: canvasGraph.branches.map(b => {
+        const isCable = !b.branchType || b.branchType === 'CABLE';
+        return {
+          id: b.id,
+          name: b.name,
+          fromNodeId: b.fromNodeId,
+          toNodeId: b.toNodeId,
+          ...(isCable ? { lengthInKm: b.lengthInKm } : {}),
+          branchType: b.branchType,
+          catalogId: b.catalogId,
+          closed: b.closed
+        };
+      })
     };
     const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -410,18 +461,21 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private resolveCatalogSpecs(branches: GraphExportBranch[]): ProjectBranch[] {
     return branches.map(b => {
+      const isCable = !b.branchType || b.branchType === 'CABLE';
       const resolved: ProjectBranch = {
         id: b.id,
         name: b.name,
         fromNodeId: b.fromNodeId,
         toNodeId: b.toNodeId,
-        lengthInKm: b.lengthInKm,
         branchType: b.branchType,
         catalogId: b.catalogId,
         componentCrossSection: '',
         componentMaterial: '',
         closed: b.closed
       };
+      if (isCable) {
+        resolved.lengthInKm = b.lengthInKm;
+      }
       if (b.catalogId) {
         const cable = this.cableCatalog.find(c => c.id === b.catalogId);
         if (cable) {
@@ -502,6 +556,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedNormType = settings.selectedNormType;
     this.customMinPu = settings.customMinPu;
     this.customMaxPu = settings.customMaxPu;
+    this.loadStandards();
 
     if (this.selectedProjectId !== null) {
       const payload = this.getSavePayload(settings.name, settings.description);
@@ -532,7 +587,10 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedNormType = 'en50160';
     this.customMinPu = 0.90;
     this.customMaxPu = 1.10;
+    this.runMinLimitPu = 0.90;
+    this.runMaxLimitPu = 1.10;
     this.deleteConfirmStep = false;
+    this.resolveSelectedNorm();
 
     this.cdr.markForCheck();
   }

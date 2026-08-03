@@ -8,7 +8,7 @@ export interface ProjectGraph {
 }
 
 export interface SimulationSnapshot {
-  nodesResults: { nodeId: string; potentialTimeSeries: number[] }[];
+  nodesResults: { nodeId: string; potentialTimeSeries: number[]; localNominalVoltage?: number }[];
   branchesResults: {
     branchId: string;
     currentTimeSeries: number[];
@@ -39,18 +39,22 @@ export function getProjectGraph(cy: Core): ProjectGraph {
 
   const branches: ProjectBranch[] = cy.edges().map(edge => {
     const data = edge.data();
-    return {
+    const branchType = data.branchType || 'CABLE';
+    const branch: ProjectBranch = {
       id: data.id,
-      name: data.name || `${data.branchType || 'Cable'} ${data.source}-${data.target}`,
+      name: data.name || `${branchType} ${data.source}-${data.target}`,
       fromNodeId: data.source,
       toNodeId: data.target,
-      lengthInKm: data.lengthInKm || 0.1,
-      branchType: data.branchType || 'CABLE',
+      branchType,
       catalogId: data.catalogId || null,
       componentCrossSection: data.componentCrossSection || '16mm2',
       componentMaterial: data.componentMaterial || 'CU',
       closed: data.closed
     };
+    if (branchType === 'CABLE') {
+      branch.lengthInKm = data.lengthInKm || 0.1;
+    }
+    return branch;
   });
 
   return { nodes, branches };
@@ -82,21 +86,28 @@ export function loadProjectGraph(cy: Core, nodes: ProjectNode[], branches: Proje
   });
 
   branches.forEach(branch => {
-    cy.add({
-      data: {
-        id: branch.id,
-        name: branch.name,
-        source: branch.fromNodeId,
-        target: branch.toNodeId,
-        lengthInKm: branch.lengthInKm,
-        lengthLabel: `${branch.lengthInKm} km`,
-        branchType: branch.branchType || 'CABLE',
-        catalogId: branch.catalogId,
-        componentCrossSection: branch.componentCrossSection,
-        componentMaterial: branch.componentMaterial,
-        closed: branch.closed
-      }
-    });
+    const isCable = !branch.branchType || branch.branchType === 'CABLE';
+    const isSwitch = branch.branchType === 'SWITCH';
+
+    const data: Record<string, any> = {
+      id: branch.id,
+      name: branch.name,
+      source: branch.fromNodeId,
+      target: branch.toNodeId,
+      branchType: branch.branchType || 'CABLE',
+      catalogId: branch.catalogId,
+      componentCrossSection: branch.componentCrossSection,
+      componentMaterial: branch.componentMaterial,
+      closed: branch.closed
+    };
+    if (isCable) {
+      data['lengthInKm'] = branch.lengthInKm;
+      data['lengthLabel'] = `${branch.lengthInKm} km`;
+    } else if (isSwitch) {
+      data['lengthLabel'] = branch.closed === false ? 'Open' : 'Closed';
+    }
+
+    cy.add({ data });
   });
 
   cy.fit(undefined, 50);
@@ -117,7 +128,8 @@ export function getSimulationSnapshot(cy: Core): SimulationSnapshot | null {
     const simData = cyNode?.data('simulationData');
     return {
       nodeId: node.id,
-      potentialTimeSeries: simData ? simData.potentialTimeSeries : []
+      potentialTimeSeries: simData ? simData.potentialTimeSeries : [],
+      localNominalVoltage: simData?.localNominalVoltage
     };
   });
 
@@ -145,7 +157,8 @@ export function mapStoredResultToResponse(storedResult: ProjectSimulationResult)
   return {
     nodes: storedResult.nodesResults.map(nr => ({
       id: nr.nodeId,
-      potentialTimeSeries: nr.potentialTimeSeries
+      potentialTimeSeries: nr.potentialTimeSeries,
+      localNominalVoltage: nr.localNominalVoltage
     })),
     branches: storedResult.branchesResults.map(br => ({
       id: br.branchId,

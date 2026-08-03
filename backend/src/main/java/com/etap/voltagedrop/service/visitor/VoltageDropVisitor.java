@@ -10,14 +10,13 @@ import lombok.RequiredArgsConstructor;
 public class VoltageDropVisitor implements BranchVisitor<Double> {
 
     private final double current;
-    private final double lengthInKm;
     private final double parentVoltage;
     private final double cosPhi;
 
     @Override
     public Double visitCable(CableSpec cable) {
-        double r = cable.getResistancePerKm() * lengthInKm;
-        double x = cable.getReactancePerKm() * lengthInKm;
+        double r = cable.getResistancePerKm() * cable.getLengthInKm();
+        double x = cable.getReactancePerKm() * cable.getLengthInKm();
         return computeVoltageDrop(r, x);
     }
 

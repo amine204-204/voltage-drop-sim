@@ -1,5 +1,6 @@
 package com.etap.voltagedrop.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.List;
@@ -33,7 +34,8 @@ public class GraphExportDto {
         private String name;
         private String fromNodeId;
         private String toNodeId;
-        private double lengthInKm;
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private Double lengthInKm;
         private String branchType;
         private String catalogId;
         private Boolean closed;

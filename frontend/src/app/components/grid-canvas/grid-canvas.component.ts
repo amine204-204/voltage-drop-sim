@@ -104,6 +104,9 @@ export class GridCanvas implements AfterViewInit {
   ngAfterViewInit(): void {
     this.initCanvas();
     this.initialized = true;
+    if (this.cy) {
+      syncCytoscapeTheme(this.cy);
+    }
     requestAnimationFrame(() => this.cy?.resize());
   }
 
@@ -164,7 +167,7 @@ export class GridCanvas implements AfterViewInit {
 
       this.selectedElementData = baseData;
       if (el.isNode()) {
-        this.chartNominalVoltage = getNominalVoltageForNode(this.cy, el.id());
+        this.chartNominalVoltage = getNominalVoltageForNode(this.cy, el.id(), this.transformerCatalogItems);
       }
     } else {
       this.selectedElementData = null;
@@ -377,6 +380,10 @@ export class GridCanvas implements AfterViewInit {
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
     if (event.code === 'Space' && !this.isSpacePressed) {
+      const tagName = (event.target as HTMLElement).tagName;
+      if (tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA') {
+        return;
+      }
       this.isSpacePressed = true;
       if (this.cy) {
         this.cy.userPanningEnabled(true);

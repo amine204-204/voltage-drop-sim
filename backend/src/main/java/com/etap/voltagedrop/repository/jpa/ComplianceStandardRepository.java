@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ComplianceStandardRepository extends JpaRepository<ComplianceStandardEntity, Long> {
-    Optional<ComplianceStandardEntity> findByName(String name);
+    Optional<ComplianceStandardEntity> findByNameIgnoreCase(String name);
     Optional<ComplianceStandardEntity> findByDefaultStandardTrue();
     List<ComplianceStandardEntity> findByActiveTrue();
-    boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 }

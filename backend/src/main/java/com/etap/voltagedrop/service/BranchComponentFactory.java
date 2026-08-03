@@ -2,6 +2,7 @@ package com.etap.voltagedrop.service;
 
 import com.etap.voltagedrop.catalog.CatalogService;
 import com.etap.voltagedrop.domain.catalog.BranchComponent;
+import com.etap.voltagedrop.domain.catalog.CableSpec;
 import com.etap.voltagedrop.domain.catalog.SwitchSpec;
 import com.etap.voltagedrop.dto.SimulationRequestDto;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +22,18 @@ public class BranchComponentFactory {
         }
 
         return switch (branchType) {
-            case "CABLE" -> catalogService.getCable(
-                    branchDto.getCatalogId(),
-                    branchDto.getComponentCrossSection(),
-                    branchDto.getComponentMaterial()
-            );
+            case "CABLE" -> {
+                CableSpec cable = catalogService.getCable(
+                        branchDto.getCatalogId(),
+                        branchDto.getComponentCrossSection(),
+                        branchDto.getComponentMaterial()
+                );
+                Double lengthInKm = branchDto.getLengthInKm();
+                if (lengthInKm != null) {
+                    cable.setLengthInKm(lengthInKm);
+                }
+                yield cable;
+            }
             case "TRANSFORMER" -> catalogService.getTransformer(branchDto.getCatalogId());
             case "SWITCH" -> catalogService.getSwitch(
                     branchDto.getCatalogId(),

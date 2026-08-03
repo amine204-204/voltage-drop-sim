@@ -1,37 +1,16 @@
 import { Core } from 'cytoscape';
 import { SimulationResponseDto } from '../../../models/simulation.model';
-import { getCssVar } from '../../../services/theme.service';
 
 export function applySimulationResults(cy: Core, response: SimulationResponseDto): void {
-  const statusDanger = getCssVar('--status-danger', '#E8615D');
-  const statusOk = getCssVar('--status-ok', '#3FBF7F');
-
   cy.elements().forEach((el: any) => { el.removeData('simulationData'); });
-  cy.edges().forEach(edge => {
-    edge.style('line-color', '');
-    edge.style('target-arrow-color', '');
-    edge.style('width', '');
-  });
+  cy.edges().removeClass('sim-ok sim-violation');
 
   response.branches.forEach(branch => {
     const cyEdge = cy.$('#' + branch.id);
 
     if (cyEdge.length > 0) {
       const initialStatus = branch.statusTimeSeries[0];
-
-      if (initialStatus === 'VIOLATION') {
-        cyEdge.style({
-          'line-color': statusDanger,
-          'target-arrow-color': statusDanger,
-          'width': 6
-        });
-      } else {
-        cyEdge.style({
-          'line-color': statusOk,
-          'target-arrow-color': statusOk,
-          'width': 4
-        });
-      }
+      cyEdge.addClass(initialStatus === 'VIOLATION' ? 'sim-violation' : 'sim-ok');
 
       cyEdge.data('simulationData', branch);
     }
@@ -49,29 +28,13 @@ export function applySimulationResults(cy: Core, response: SimulationResponseDto
 }
 
 export function updateTimeStep(cy: Core, step: number): void {
-  const statusDanger = getCssVar('--status-danger', '#E8615D');
-  const statusOk = getCssVar('--status-ok', '#3FBF7F');
+  cy.edges().removeClass('sim-ok sim-violation');
 
   cy.edges().forEach(edge => {
     const simData = edge.data('simulationData');
     if (simData && simData.statusTimeSeries) {
       const status = simData.statusTimeSeries[step];
-
-      if (status === 'VIOLATION') {
-        edge.style({
-          'line-color': statusDanger,
-          'target-arrow-color': statusDanger,
-          'width': 5,
-          'line-opacity': 1,
-        });
-      } else {
-        edge.style({
-          'line-color': statusOk,
-          'target-arrow-color': statusOk,
-          'width': 3,
-          'line-opacity': 0.9,
-        });
-      }
+      edge.addClass(status === 'VIOLATION' ? 'sim-violation' : 'sim-ok');
     }
   });
 }

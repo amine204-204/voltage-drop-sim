@@ -1,5 +1,6 @@
 import { Core } from 'cytoscape';
 import { NodeType, LoadType, BranchType } from '../../../models/simulation.model';
+import { TransformerCatalog } from '../../../models/catalog.model';
 
 export interface IslandNode {
   id: string;
@@ -16,7 +17,7 @@ export interface IslandBranch {
   name: string;
   fromNodeId: string;
   toNodeId: string;
-  lengthInKm: number;
+  lengthInKm?: number;
   branchType: BranchType;
   catalogId?: string;
   componentCrossSection: string;
@@ -43,17 +44,20 @@ export function getIslands(cy: Core): Island[] {
   const allEdges: IslandBranch[] = cy.edges().map((edge: any) => {
     const data = edge.data();
     const branchType: BranchType = data.branchType || 'CABLE';
-    return {
+    const branch: IslandBranch = {
       id: data.id,
       name: data.name || `${branchType} ${data.source}-${data.target}`,
       fromNodeId: data.source, toNodeId: data.target,
-      lengthInKm: data.lengthInKm || 0.1,
       branchType,
       catalogId: data.catalogId || undefined,
       componentCrossSection: data.componentCrossSection || '16mm2',
       componentMaterial: data.componentMaterial || 'CU',
       closed: data.closed
     };
+    if (branchType === 'CABLE') {
+      branch.lengthInKm = data.lengthInKm || 0.1;
+    }
+    return branch;
   });
 
   const adjacency = new Map<string, string[]>();
@@ -94,7 +98,7 @@ export function getIslands(cy: Core): Island[] {
   return islands;
 }
 
-export function getNominalVoltageForNode(cy: Core, nodeId: string): number {
+export function getNominalVoltageForNode(cy: Core, nodeId: string, transformerCatalog?: TransformerCatalog[]): number {
   const node = cy.$('#' + nodeId);
   if (node.length) {
     const simData = node.data('simulationData');
@@ -120,6 +124,13 @@ export function getNominalVoltageForNode(cy: Core, nodeId: string): number {
 
     const incomingEdge = cy.edges(`[target = "${currentId}"]`).first();
     if (!incomingEdge.length) break;
+
+    if (incomingEdge.data('branchType') === 'TRANSFORMER') {
+      const catalog = transformerCatalog?.find(t => t.id === incomingEdge.data('catalogId'));
+      if (catalog?.electrical?.secondaryVoltageV) {
+        return catalog.electrical.secondaryVoltageV;
+      }
+    }
 
     currentId = incomingEdge.source().id();
   }

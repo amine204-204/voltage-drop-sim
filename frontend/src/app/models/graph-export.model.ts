@@ -17,7 +17,7 @@ export interface GraphExportBranch {
   name: string;
   fromNodeId: string;
   toNodeId: string;
-  lengthInKm: number;
+  lengthInKm?: number;
   branchType?: string;
   catalogId?: string;
   closed?: boolean;

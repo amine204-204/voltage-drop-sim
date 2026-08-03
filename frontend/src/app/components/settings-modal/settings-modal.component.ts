@@ -43,7 +43,9 @@ export class SettingsModalComponent implements OnInit {
       next: (list) => {
         this.standards = list;
         this.loading = false;
-        if (!this.selectedNormType && list.length > 0) {
+        const matches = this.selectedNormType === 'custom'
+          || list.some(s => s.name.toLowerCase() === this.selectedNormType.toLowerCase());
+        if (!matches && list.length > 0) {
           const def = list.find(s => s.defaultStandard) || list[0];
           this.selectedNormType = def.name;
         }

@@ -19,13 +19,15 @@ class VoltageDropVisitorTest {
         @Test
         @DisplayName("cable drop increases with length")
         void cableDropIncreasesWithLength() {
-            CableSpec cable = new CableSpec("16", "CU", 1.15, 0.08);
+            CableSpec shortCable = new CableSpec("16", "CU", 1.15, 0.08);
+            shortCable.setLengthInKm(1.0);
 
-            VoltageDropVisitor shortVisitor = new VoltageDropVisitor(10.0, 1.0, 230.0, 0.9);
-            double voltageAt1km = cable.accept(shortVisitor);
+            CableSpec longCable = new CableSpec("16", "CU", 1.15, 0.08);
+            longCable.setLengthInKm(2.0);
 
-            VoltageDropVisitor longVisitor = new VoltageDropVisitor(10.0, 2.0, 230.0, 0.9);
-            double voltageAt2km = cable.accept(longVisitor);
+            VoltageDropVisitor visitor = new VoltageDropVisitor(10.0, 230.0, 0.9);
+            double voltageAt1km = shortCable.accept(visitor);
+            double voltageAt2km = longCable.accept(visitor);
 
             assertTrue(voltageAt2km < voltageAt1km,
                     "Voltage at 2km should be lower than at 1km");
@@ -35,11 +37,12 @@ class VoltageDropVisitorTest {
         @DisplayName("cable drop increases with current")
         void cableDropIncreasesWithCurrent() {
             CableSpec cable = new CableSpec("16", "CU", 1.0, 0.0);
+            cable.setLengthInKm(1.0);
 
-            VoltageDropVisitor lowCurrent = new VoltageDropVisitor(5.0, 1.0, 230.0, 0.95);
+            VoltageDropVisitor lowCurrent = new VoltageDropVisitor(5.0, 230.0, 0.95);
             double voltageLow = cable.accept(lowCurrent);
 
-            VoltageDropVisitor highCurrent = new VoltageDropVisitor(20.0, 1.0, 230.0, 0.95);
+            VoltageDropVisitor highCurrent = new VoltageDropVisitor(20.0, 230.0, 0.95);
             double voltageHigh = cable.accept(highCurrent);
 
             assertTrue(voltageHigh < voltageLow,
@@ -50,8 +53,9 @@ class VoltageDropVisitorTest {
         @DisplayName("zero-reactance cable matches simplified formula")
         void zeroReactanceCable() {
             CableSpec cable = new CableSpec("16", "CU", 1.0, 0.0);
+            cable.setLengthInKm(1.0);
 
-            VoltageDropVisitor visitor = new VoltageDropVisitor(10.0, 1.0, 230.0, 0.95);
+            VoltageDropVisitor visitor = new VoltageDropVisitor(10.0, 230.0, 0.95);
             double vr = cable.accept(visitor);
 
             double expected = Math.sqrt(
@@ -71,7 +75,7 @@ class VoltageDropVisitorTest {
         @DisplayName("transformer applies turns ratio to secondary voltage")
         void transformerAppliesTurnsRatio() {
             TransformerSpec tx = new TransformerSpec(4.0, 100.0, 20000.0, 400.0, 300.0, 1800.0);
-            VoltageDropVisitor visitor = new VoltageDropVisitor(50.0, 0.0, 20000.0, 0.9);
+            VoltageDropVisitor visitor = new VoltageDropVisitor(50.0, 20000.0, 0.9);
 
             double secondaryV = tx.accept(visitor);
 
@@ -83,7 +87,7 @@ class VoltageDropVisitorTest {
         @DisplayName("transformer with zero current outputs nominal secondary voltage")
         void transformerZeroCurrent() {
             TransformerSpec tx = new TransformerSpec(4.0, 100.0, 20000.0, 400.0, 300.0, 1800.0);
-            VoltageDropVisitor visitor = new VoltageDropVisitor(0.0, 0.0, 20000.0, 0.9);
+            VoltageDropVisitor visitor = new VoltageDropVisitor(0.0, 20000.0, 0.9);
 
             double secondaryV = tx.accept(visitor);
 
@@ -100,7 +104,7 @@ class VoltageDropVisitorTest {
         @DisplayName("closed switch produces negligible drop")
         void closedSwitchNegligibleDrop() {
             SwitchSpec sw = new SwitchSpec(true, 100.0, "10kA");
-            VoltageDropVisitor visitor = new VoltageDropVisitor(10.0, 0.0, 230.0, 0.9);
+            VoltageDropVisitor visitor = new VoltageDropVisitor(10.0, 230.0, 0.9);
 
             double vr = sw.accept(visitor);
 
@@ -111,7 +115,7 @@ class VoltageDropVisitorTest {
         @DisplayName("open switch throws IllegalStateException")
         void openSwitchThrows() {
             SwitchSpec sw = new SwitchSpec(false, 100.0, "10kA");
-            VoltageDropVisitor visitor = new VoltageDropVisitor(10.0, 0.0, 230.0, 0.9);
+            VoltageDropVisitor visitor = new VoltageDropVisitor(10.0, 230.0, 0.9);
 
             assertThrows(IllegalStateException.class, () -> sw.accept(visitor),
                     "Open switch should throw — forward sweep should have skipped it");

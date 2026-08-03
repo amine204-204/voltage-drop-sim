@@ -17,4 +17,8 @@ export class NormService {
     }
     return this.cached$;
   }
+
+  invalidateStandards(): void {
+    this.cached$ = null;
+  }
 }

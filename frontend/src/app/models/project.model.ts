@@ -29,7 +29,7 @@ export interface ProjectBranch {
   name: string;
   fromNodeId: string;
   toNodeId: string;
-  lengthInKm: number;
+  lengthInKm?: number;
   branchType?: string;
   catalogId?: string;
   componentCrossSection: string;
@@ -40,6 +40,7 @@ export interface ProjectBranch {
 export interface ProjectNodeResult {
   nodeId: string;
   potentialTimeSeries: number[];
+  localNominalVoltage?: number;
 }
 
 export interface ProjectBranchResult {
@@ -53,6 +54,8 @@ export interface ProjectBranchResult {
 export interface ProjectSimulationResult {
   nodesResults: ProjectNodeResult[];
   branchesResults: ProjectBranchResult[];
+  minLimitPu?: number;
+  maxLimitPu?: number;
 }
 
 export interface Project {

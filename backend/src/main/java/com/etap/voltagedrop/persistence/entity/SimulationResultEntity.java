@@ -27,6 +27,10 @@ public class SimulationResultEntity {
 
     private LocalDateTime runAt;
 
+    private Double minLimitPu;
+
+    private Double maxLimitPu;
+
     @OneToMany(mappedBy = "simulationResult", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NodeResultEntity> nodesResults = new ArrayList<>();
 

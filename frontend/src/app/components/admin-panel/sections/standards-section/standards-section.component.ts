@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../services/admin.service';
+import { NormService } from '../../../../services/norm.service';
 import { ToastService } from '../../../../services/toast.service';
 import { getErrorMessage } from '../../../../shared/utils/error.utils';
 import { ComplianceStandard } from '../../../../models/compliance-standard.model';
@@ -25,6 +26,7 @@ export class StandardsSectionComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
+    private normService: NormService,
     private toast: ToastService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -66,6 +68,7 @@ export class StandardsSectionComponent implements OnInit {
         next: (updated) => {
           const idx = this.standards.findIndex(s => s.id === updated.id);
           if (idx >= 0) this.standards[idx] = updated;
+          this.normService.invalidateStandards();
           this.showForm = false;
           this.editingStandard = null;
           this.cdr.detectChanges();
@@ -76,6 +79,7 @@ export class StandardsSectionComponent implements OnInit {
       this.adminService.createComplianceStandard(standard).subscribe({
         next: (created) => {
           this.standards.push(created);
+          this.normService.invalidateStandards();
           this.showForm = false;
           this.cdr.detectChanges();
         },
@@ -88,6 +92,7 @@ export class StandardsSectionComponent implements OnInit {
     this.adminService.deleteComplianceStandard(standard.id).subscribe({
       next: () => {
         this.standards = this.standards.filter(s => s.id !== standard.id);
+        this.normService.invalidateStandards();
         this.toast.success('Standard deleted.');
         this.cdr.detectChanges();
       },

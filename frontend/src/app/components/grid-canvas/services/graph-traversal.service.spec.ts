@@ -133,4 +133,35 @@ describe('getNominalVoltageForNode', () => {
 
     expect(getNominalVoltageForNode(cy, 'n2')).toBe(230);
   });
+
+  it('returns transformer secondary voltage when crossing a TRANSFORMER', () => {
+    const cy = createCy([
+      { data: { id: 'n1', label: 'Station 20kV', type: 'SOURCE', nominalVoltage: 20000 } },
+      { data: { id: 'n2', label: 'Bus 400V', type: 'JUNCTION' } },
+      { data: { id: 'n3', label: 'Load 1', type: 'CONSUMER' } },
+      { data: { id: 'e1', source: 'n1', target: 'n2', branchType: 'TRANSFORMER', catalogId: 'xf-1' } },
+      { data: { id: 'e2', source: 'n2', target: 'n3', lengthInKm: 0.1, componentCrossSection: '16mm2', componentMaterial: 'CU' } },
+    ]);
+
+    const catalog = [{
+      id: 'xf-1',
+      name: 'TX 630 kVA',
+      category: 'transformer' as const,
+      standard: 'EN 50588',
+      active: true,
+      electrical: { ratedPowerKva: 630, primaryVoltageV: 20000, secondaryVoltageV: 400, impedancePercent: 4, noLoadLossW: 650, loadLossW: 6000 }
+    }];
+
+    expect(getNominalVoltageForNode(cy, 'n3', catalog)).toBe(400);
+  });
+
+  it('ignores unknown transformer catalogId and walks to SOURCE', () => {
+    const cy = createCy([
+      { data: { id: 'n1', label: 'Station 20kV', type: 'SOURCE', nominalVoltage: 20000 } },
+      { data: { id: 'n2', label: 'Load 1', type: 'CONSUMER' } },
+      { data: { id: 'e1', source: 'n1', target: 'n2', branchType: 'TRANSFORMER', catalogId: 'missing' } },
+    ]);
+
+    expect(getNominalVoltageForNode(cy, 'n2')).toBe(20000);
+  });
 });
