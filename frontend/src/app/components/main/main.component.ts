@@ -242,6 +242,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
 
     try {
+      this.gridCanvas.resampleLoadProfiles(settings.totalTimeSteps, settings.deltaTimeSeconds);
       const islands = this.gridCanvas.getIslands();
 
       const simlatableIslands = islands.filter(island =>
@@ -299,6 +300,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public onDeltaTimeChanged(deltaTime: number) {
     this.deltaTime = deltaTime;
+    this.gridCanvas.resampleLoadProfiles(this.maxSimulationSteps, deltaTime);
   }
 
   public onCurrentStepChanged(step: number) {
@@ -308,6 +310,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public onMaxStepsChanged(maxSteps: number) {
     this.maxSimulationSteps = maxSteps;
+    this.gridCanvas.resampleLoadProfiles(maxSteps, this.deltaTime);
   }
 
   private getSavePayload(name: string, description: string): Project {

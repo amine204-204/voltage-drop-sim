@@ -377,6 +377,22 @@ export class GridCanvas implements AfterViewInit {
     return getIslands(this.cy);
   }
 
+  /* Control points are the source of truth: re-derives every consumer's sampled loadProfile for the current
+     sim configuration, so the stored array never goes stale when totalTimeSteps/deltaTime change. */
+  public resampleLoadProfiles(totalTimeSteps: number, deltaTimeSeconds: number) {
+    if (!this.cy) return;
+    this.cy.nodes().forEach((node: any) => {
+      const data = node.data();
+      const controlPoints: ControlPoint[] | undefined = data.loadProfileControlPoints;
+      if (!Array.isArray(controlPoints) || controlPoints.length === 0) return;
+      const profile = LoadProfileEditor.getProfileFromControlPoints(controlPoints, totalTimeSteps, deltaTimeSeconds, 1);
+      node.data('loadProfile', profile);
+      if (this.selectedElementData && this.selectedElementData.id === data.id) {
+        this.selectedElementData.loadProfile = profile;
+      }
+    });
+  }
+
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
     if (event.code === 'Space' && !this.isSpacePressed) {

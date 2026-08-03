@@ -20,9 +20,9 @@
 
             <line *ngFor="let grid of xGridData" [attr.x1]="grid.percent" y1="0" [attr.x2]="grid.percent" y2="100" stroke="var(--grid-line)" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
 
-            <polyline [attr.points]="svgPath" fill="none" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+            <path [attr.d]="svgPath" fill="none" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
 
-            <polygon *ngIf="svgPath" [attr.points]="svgPath + ' 100,100 0,100'" [attr.fill]="accentFill" stroke="none"/>
+            <path *ngIf="svgPath" [attr.d]="svgPath + ' L 100,100 L 0,100 Z'" [attr.fill]="accentFill" stroke="none"/>
 
             <g *ngFor="let point of points; let i = index">
             <rect
