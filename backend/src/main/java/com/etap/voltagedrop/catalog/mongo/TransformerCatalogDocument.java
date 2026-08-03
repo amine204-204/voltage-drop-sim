@@ -16,6 +16,8 @@ public class TransformerCatalogDocument {
 
     private ElectricalProperties electrical;
 
+    private TapChangerProperties tapChanger;
+
     @Data
     public static class ElectricalProperties {
         private double impedancePercent;
@@ -24,5 +26,11 @@ public class TransformerCatalogDocument {
         private double secondaryVoltageV;
         private double noLoadLossW;
         private double loadLossW;
+    }
+
+    @Data
+    public static class TapChangerProperties {
+        private int steps;
+        private double stepVoltagePercent;
     }
 }

@@ -1,6 +1,7 @@
 // com.etap.voltagedrop.catalog.mongo
 package com.etap.voltagedrop.catalog.mongo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -48,7 +49,9 @@ public class CableCatalogDocument {
     @Data
     public static class ImpedanceEntry {
         private double tempC;
+        @JsonProperty("rOhmKm")
         private double rOhmKm;
+        @JsonProperty("xOhmKm")
         private double xOhmKm;
     }
 }

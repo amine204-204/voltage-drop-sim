@@ -22,10 +22,8 @@ public class NetworkBranch {
 
     private BranchComponent component;
 
-    // Working Memory for FBS Algorithm
     private double workingCurrent;
 
-    // Historical Data (To be sent to Angular)
     private List<Double> currentTimeSeries = new ArrayList<>();
     private List<Double> dropPercentTimeSeries = new ArrayList<>();
     private List<SimulationStatus> statusTimeSeries = new ArrayList<>();

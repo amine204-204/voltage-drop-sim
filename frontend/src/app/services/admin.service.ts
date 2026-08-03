@@ -4,6 +4,14 @@ import { Observable } from 'rxjs';
 import { UserSummary, CreateUserRequest, UpdateRoleRequest } from '../models/admin.model';
 import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../models/catalog.model';
 import { ComplianceStandard } from '../models/compliance-standard.model';
+import {
+  CatalogImportField,
+  CatalogImportPreview,
+  CatalogImportType,
+  ImportCommitRequest,
+  ImportCommitResult,
+  ImportHeadersResponse
+} from '../models/import.model';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -99,5 +107,42 @@ export class AdminService {
 
   deleteComplianceStandard(id: number): Observable<void> {
     return this.http.delete<void>(`${this.API}/compliance-standards/${id}`);
+  }
+
+  // ── Catalog Import ──────────────────────────────────────────
+
+  getImportFields(type: CatalogImportType): Observable<CatalogImportField[]> {
+    return this.http.get<CatalogImportField[]>(`${this.API}/catalogs/import/fields`, {
+      params: { type }
+    });
+  }
+
+  getImportHeaders(file: File): Observable<ImportHeadersResponse> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<ImportHeadersResponse>(`${this.API}/catalogs/import/headers`, form);
+  }
+
+  previewImport(type: CatalogImportType, file: File, mapping: Record<string, string>): Observable<CatalogImportPreview> {
+    const form = new FormData();
+    form.append('file', file);
+    const params: { type: string; mapping?: string } = { type };
+    if (Object.keys(mapping).length > 0) {
+      params.mapping = JSON.stringify(mapping);
+    }
+    return this.http.post<CatalogImportPreview>(`${this.API}/catalogs/import/preview`, form, { params });
+  }
+
+  commitImport(request: ImportCommitRequest): Observable<ImportCommitResult> {
+    return this.http.post<ImportCommitResult>(`${this.API}/catalogs/import/commit`, request);
+  }
+
+  // ── Catalog Export ──────────────────────────────────────────
+
+  exportCatalog(type: CatalogImportType, format: 'json' | 'excel'): Observable<Blob> {
+    return this.http.get(`${this.API}/catalogs/export`, {
+      params: { type, format },
+      responseType: 'blob'
+    });
   }
 }

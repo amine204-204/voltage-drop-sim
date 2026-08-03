@@ -8,11 +8,13 @@ import { CableCatalog } from '../../../../models/catalog.model';
 import { ConfirmDeleteButtonComponent } from '../../../shared/confirm-delete-button/confirm-delete-button.component';
 import { IconComponent } from '../../../shared/icon/icon.component';
 import { CableFormModalComponent } from '../../modals/cable-form-modal/cable-form-modal.component';
+import { CatalogImportModalComponent } from '../../modals/catalog-import-modal/catalog-import-modal.component';
+import { CatalogExportButtonsComponent } from '../../shared/catalog-export-buttons/catalog-export-buttons.component';
 
 @Component({
   selector: 'app-cable-catalog-section',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, CableFormModalComponent],
+  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, CableFormModalComponent, CatalogImportModalComponent, CatalogExportButtonsComponent],
   templateUrl: './cable-catalog-section.component.html',
   styleUrl: './cable-catalog-section.component.scss'
 })
@@ -21,6 +23,7 @@ export class CableCatalogSectionComponent implements OnInit {
   public loading = false;
   public searchText = '';
   public showForm = false;
+  public showImport = false;
   public editingCable: CableCatalog | null = null;
 
   constructor(
@@ -54,6 +57,10 @@ export class CableCatalogSectionComponent implements OnInit {
   openNewForm() {
     this.editingCable = null;
     this.showForm = true;
+  }
+
+  openImport() {
+    this.showImport = true;
   }
 
   editCable(cable: CableCatalog) {

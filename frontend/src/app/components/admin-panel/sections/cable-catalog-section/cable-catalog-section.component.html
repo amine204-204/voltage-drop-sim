@@ -6,6 +6,10 @@
         <app-icon name="search" [size]="14"></app-icon>
         <input [(ngModel)]="searchText" placeholder="Search cables..." />
       </div>
+      <button class="icon-btn" (click)="openImport()" title="Import from JSON / Excel">
+        <app-icon name="upload" [size]="14"></app-icon>
+      </button>
+      <app-catalog-export-buttons type="CABLE"></app-catalog-export-buttons>
       <button class="icon-btn add-btn primary" (click)="openNewForm()" title="New Cable">+</button>
     </div>
   </div>
@@ -46,3 +50,4 @@
 </div>
 
 <app-cable-form-modal *ngIf="showForm" [cable]="editingCable" (save)="saveCable($event)" (close)="showForm = false"></app-cable-form-modal>
+<app-catalog-import-modal *ngIf="showImport" type="CABLE" (imported)="loadCables()" (close)="showImport = false"></app-catalog-import-modal>

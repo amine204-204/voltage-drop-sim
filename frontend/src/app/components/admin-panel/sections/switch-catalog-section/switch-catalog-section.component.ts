@@ -8,11 +8,13 @@ import { SwitchCatalog } from '../../../../models/catalog.model';
 import { ConfirmDeleteButtonComponent } from '../../../shared/confirm-delete-button/confirm-delete-button.component';
 import { IconComponent } from '../../../shared/icon/icon.component';
 import { SwitchFormModalComponent } from '../../modals/switch-form-modal/switch-form-modal.component';
+import { CatalogImportModalComponent } from '../../modals/catalog-import-modal/catalog-import-modal.component';
+import { CatalogExportButtonsComponent } from '../../shared/catalog-export-buttons/catalog-export-buttons.component';
 
 @Component({
   selector: 'app-switch-catalog-section',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, SwitchFormModalComponent],
+  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, SwitchFormModalComponent, CatalogImportModalComponent, CatalogExportButtonsComponent],
   templateUrl: './switch-catalog-section.component.html',
   styleUrl: './switch-catalog-section.component.scss'
 })
@@ -21,6 +23,7 @@ export class SwitchCatalogSectionComponent implements OnInit {
   public loading = false;
   public searchText = '';
   public showForm = false;
+  public showImport = false;
   public editingSwitch: SwitchCatalog | null = null;
 
   constructor(
@@ -54,6 +57,10 @@ export class SwitchCatalogSectionComponent implements OnInit {
   openNewForm() {
     this.editingSwitch = null;
     this.showForm = true;
+  }
+
+  openImport() {
+    this.showImport = true;
   }
 
   editSwitch(sw: SwitchCatalog) {

@@ -6,6 +6,10 @@
         <app-icon name="search" [size]="14"></app-icon>
         <input [(ngModel)]="searchText" placeholder="Search transformers..." />
       </div>
+      <button class="icon-btn" (click)="openImport()" title="Import from JSON / Excel">
+        <app-icon name="upload" [size]="14"></app-icon>
+      </button>
+      <app-catalog-export-buttons type="TRANSFORMER"></app-catalog-export-buttons>
       <button class="icon-btn add-btn primary" (click)="openNewForm()" title="New Transformer">+</button>
     </div>
   </div>
@@ -44,3 +48,4 @@
 </div>
 
 <app-transformer-form-modal *ngIf="showForm" [transformer]="editingTransformer" (save)="saveTransformer($event)" (close)="showForm = false"></app-transformer-form-modal>
+<app-catalog-import-modal *ngIf="showImport" type="TRANSFORMER" (imported)="loadTransformers()" (close)="showImport = false"></app-catalog-import-modal>

@@ -8,11 +8,13 @@ import { TransformerCatalog } from '../../../../models/catalog.model';
 import { ConfirmDeleteButtonComponent } from '../../../shared/confirm-delete-button/confirm-delete-button.component';
 import { IconComponent } from '../../../shared/icon/icon.component';
 import { TransformerFormModalComponent } from '../../modals/transformer-form-modal/transformer-form-modal.component';
+import { CatalogImportModalComponent } from '../../modals/catalog-import-modal/catalog-import-modal.component';
+import { CatalogExportButtonsComponent } from '../../shared/catalog-export-buttons/catalog-export-buttons.component';
 
 @Component({
   selector: 'app-transformer-catalog-section',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, TransformerFormModalComponent],
+  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, TransformerFormModalComponent, CatalogImportModalComponent, CatalogExportButtonsComponent],
   templateUrl: './transformer-catalog-section.component.html',
   styleUrl: './transformer-catalog-section.component.scss'
 })
@@ -21,6 +23,7 @@ export class TransformerCatalogSectionComponent implements OnInit {
   public loading = false;
   public searchText = '';
   public showForm = false;
+  public showImport = false;
   public editingTransformer: TransformerCatalog | null = null;
 
   constructor(
@@ -53,6 +56,10 @@ export class TransformerCatalogSectionComponent implements OnInit {
   openNewForm() {
     this.editingTransformer = null;
     this.showForm = true;
+  }
+
+  openImport() {
+    this.showImport = true;
   }
 
   editTransformer(transformer: TransformerCatalog) {
