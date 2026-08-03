@@ -1,22 +1,65 @@
 <div class="top-bar">
   <div class="settings-group">
+    <label>Duration:</label>
+    <div class="value-input">
+      <input type="number" [ngModel]="durationSeconds" (ngModelChange)="durationChanged.emit($event)" min="1" step="60">
+      <span class="unit">s</span>
+    </div>
+  </div>
+
+  <div class="settings-group">
     <label>Steps:</label>
     <input type="number" [ngModel]="maxSteps" (ngModelChange)="maxStepsChanged.emit($event)" min="1">
   </div>
 
   <div class="settings-group">
-    <label>Δt (sec):</label>
-    <input type="number" [ngModel]="deltaTime" (ngModelChange)="deltaTimeChanged.emit($event)" step="0.01" min="0.01">
+    <label>Δt:</label>
+    <span class="derived-value" [class.invalid]="!isDeltaTimeValid" title="Computed as Duration / Steps">
+      <ng-container *ngIf="deltaTimeValue !== null; else emptyDt">{{ deltaTimeText }}<span
+          class="unit-s">s</span></ng-container>
+      <ng-template #emptyDt>—</ng-template>
+    </span>
   </div>
 
   <div class="playback-group" *ngIf="isSimulationLoaded">
-    <label>Step:</label>
+    <div class="playback-controls">
+      <button class="playback-btn" (click)="toStartClicked.emit()" title="Go to start" [disabled]="isSimulating">
+        <app-icon name="rewind" [size]="14"></app-icon>
+      </button>
+      <button class="playback-btn" (click)="stepBackClicked.emit()" title="Previous step" [disabled]="isSimulating">
+        <app-icon name="skip-back" [size]="14"></app-icon>
+      </button>
+      <button class="playback-btn primary" (click)="playPauseClicked.emit()" title="Play / Pause"
+        [disabled]="isSimulating">
+        <app-icon [name]="isPlaying ? 'pause' : 'play'" [size]="14"></app-icon>
+      </button>
+      <button class="playback-btn" (click)="stepForwardClicked.emit()" title="Next step" [disabled]="isSimulating">
+        <app-icon name="skip-forward" [size]="14"></app-icon>
+      </button>
+      <button class="playback-btn" (click)="toEndClicked.emit()" title="Go to end" [disabled]="isSimulating">
+        <app-icon name="fast-forward" [size]="14"></app-icon>
+      </button>
+      <button class="playback-btn" [class.active]="isRepeat" (click)="repeatToggled.emit()" title="Repeat"
+        [disabled]="isSimulating">
+        <app-icon name="repeat" [size]="14"></app-icon>
+      </button>
+    </div>
+
     <input type="range" [min]="0" [max]="maxSteps - 1" [value]="currentStep" (input)="onSliderChange($event)"
       class="slider">
-    <span class="step-display">{{ currentStep }} / {{ maxSteps - 1 }}</span>
+    <span class="time-display">{{ currentTimeText }} : {{ totalTimeText }}</span>
+
+    <label>Speed:</label>
+    <select [ngModel]="playbackSpeed" (ngModelChange)="playbackSpeedChanged.emit($event)" [disabled]="isSimulating">
+      <option [ngValue]="0.25">0.25×</option>
+      <option [ngValue]="0.5">0.5×</option>
+      <option [ngValue]="1">1×</option>
+      <option [ngValue]="2">2×</option>
+      <option [ngValue]="4">4×</option>
+    </select>
   </div>
 
-  <button class="run-btn" (click)="onRun()" [disabled]="isSimulating">
+  <button class="run-btn" (click)="onRun()" [disabled]="isSimulating || !isDeltaTimeValid">
     {{ isSimulating ? 'RUNNING...' : '▶ RUN' }}
   </button>
 

@@ -170,6 +170,42 @@ import { NgSwitch, NgSwitchCase } from '@angular/common';
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </ng-container>
+
+        <ng-container *ngSwitchCase="'play'">
+          <polygon points="6 3 20 12 6 21 6 3"/>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'pause'">
+          <rect x="14" y="4" width="4" height="16" rx="1"/>
+          <rect x="6" y="4" width="4" height="16" rx="1"/>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'skip-back'">
+          <polygon points="19 20 9 12 19 4 19 20"/>
+          <line x1="5" y1="19" x2="5" y2="5"/>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'skip-forward'">
+          <polygon points="5 4 15 12 5 20 5 4"/>
+          <line x1="19" y1="5" x2="19" y2="19"/>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'rewind'">
+          <polygon points="11 19 2 12 11 5 11 19"/>
+          <polygon points="22 19 13 12 22 5 22 19"/>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'fast-forward'">
+          <polygon points="13 19 22 12 13 5 13 19"/>
+          <polygon points="2 19 11 12 2 5 2 19"/>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'repeat'">
+          <polyline points="17 1 21 5 17 9"/>
+          <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <polyline points="7 23 3 19 7 15"/>
+          <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </ng-container>
       </ng-container>
     </svg>
   `,

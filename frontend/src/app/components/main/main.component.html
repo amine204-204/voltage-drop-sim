@@ -20,14 +20,26 @@
 
   <app-simulation-top-bar
     [maxSteps]="maxSimulationSteps"
-    [deltaTime]="deltaTime"
+    [durationSeconds]="durationSeconds"
     [isSimulationLoaded]="isSimulationLoaded"
     [isSimulating]="isSimulating"
     [currentStep]="currentStep"
+    [isPlaying]="isPlaying"
+    [isRepeat]="isRepeat"
+    [playbackSpeed]="playbackSpeed"
+    [simulationDeltaTimeSeconds]="simulationDeltaTimeSeconds"
+    [simulationTotalTimeSeconds]="simulationTotalTimeSeconds"
     (runClicked)="onRunClicked($event)"
-    (deltaTimeChanged)="onDeltaTimeChanged($event)"
+    (durationChanged)="onDurationChanged($event)"
     (maxStepsChanged)="onMaxStepsChanged($event)"
-    (currentStepChanged)="onCurrentStepChanged($event)">
+    (currentStepChanged)="onCurrentStepChanged($event)"
+    (playPauseClicked)="onPlayPauseClicked()"
+    (stepBackClicked)="onStepBackClicked()"
+    (stepForwardClicked)="onStepForwardClicked()"
+    (toStartClicked)="onToStartClicked()"
+    (toEndClicked)="onToEndClicked()"
+    (repeatToggled)="onRepeatToggled()"
+    (playbackSpeedChanged)="onPlaybackSpeedChanged($event)">
   </app-simulation-top-bar>
   
    <div class="canvas-drop-zone"

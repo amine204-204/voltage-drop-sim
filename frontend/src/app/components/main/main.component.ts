@@ -1,6 +1,6 @@
 import { Component, ViewChild, ChangeDetectorRef, ChangeDetectionStrategy, OnInit, OnDestroy, AfterViewInit, HostListener } from '@angular/core';
 import { GridCanvas } from '../grid-canvas/grid-canvas.component';
-import { SimulationTopBar, SimulationSettings } from '../simulation-top-bar/simulation-top-bar.component';
+import { SimulationTopBar, SimulationSettings, MIN_DELTA_TIME_SECONDS, MAX_DELTA_TIME_SECONDS } from '../simulation-top-bar/simulation-top-bar.component';
 import { SimulationService } from '../../services/simulation.service';
 import { MockSimulationService } from '../../mocks/mock-simulation.service';
 import { SimulationRequestDto, SimulationResponseDto } from '../../models/simulation.model';
@@ -38,9 +38,16 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(GridCanvas) gridCanvas!: GridCanvas;
 
   public maxSimulationSteps: number = 10;
-  public deltaTime: number = 1;
+  public durationSeconds: number = 3600;
+  public deltaTime: number = 360;
   public currentStep: number = 0;
   public isSimulationLoaded: boolean = false;
+  public simulationDeltaTimeSeconds: number | null = null;
+  public simulationTotalTimeSeconds: number | null = null;
+  public isPlaying: boolean = false;
+  public isRepeat: boolean = false;
+  public playbackSpeed: number = 1;
+  private playbackTimer: number | undefined;
   public selectedNormType: string = 'en50160';
   public customMinPu: number = 0.90;
   public customMaxPu: number = 1.10;
@@ -98,6 +105,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.pausePlayback();
     this.saveScratchpad();
   }
 
@@ -238,6 +246,12 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onRunClicked(settings: SimulationSettings) {
+    this.pausePlayback();
+    if (!this.isDeltaTimeWithinRange()) {
+      this.toast.error(`Invalid simulation settings: Δt must be between ${MIN_DELTA_TIME_SECONDS} s and ${MAX_DELTA_TIME_SECONDS} s.`);
+      this.cdr.markForCheck();
+      return;
+    }
     this.isSimulating = true;
     this.cdr.markForCheck();
 
@@ -282,6 +296,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
           this.currentStep = 0;
           this.isSimulationLoaded = true;
           this.isSimulating = false;
+          this.simulationDeltaTimeSeconds = settings.deltaTimeSeconds;
+          this.simulationTotalTimeSeconds = settings.totalTimeSteps * settings.deltaTimeSeconds;
           this.cdr.markForCheck();
         },
         error: (err) => {
@@ -298,19 +314,132 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  public onDeltaTimeChanged(deltaTime: number) {
-    this.deltaTime = deltaTime;
-    this.gridCanvas.resampleLoadProfiles(this.maxSimulationSteps, deltaTime);
+  public onDurationChanged(durationSeconds: number) {
+    this.durationSeconds = durationSeconds;
+    this.recomputeDeltaTime();
   }
 
   public onCurrentStepChanged(step: number) {
+    this.pausePlayback();
     this.currentStep = step;
     this.gridCanvas.updateTimeStep(step);
   }
 
+  public onPlayPauseClicked() {
+    if (this.isPlaying) {
+      this.pausePlayback();
+      return;
+    }
+    if (!this.isSimulationLoaded || this.isSimulating) return;
+
+    if (this.currentStep >= this.lastStep()) {
+      this.setStep(0);
+    }
+    this.isPlaying = true;
+    this.restartPlaybackTimer();
+    this.cdr.markForCheck();
+  }
+
+  public onStepBackClicked() {
+    this.pausePlayback();
+    this.setStep(this.currentStep - 1);
+  }
+
+  public onStepForwardClicked() {
+    this.pausePlayback();
+    this.setStep(this.currentStep + 1);
+  }
+
+  public onToStartClicked() {
+    this.pausePlayback();
+    this.setStep(0);
+  }
+
+  public onToEndClicked() {
+    this.pausePlayback();
+    this.setStep(this.lastStep());
+  }
+
+  public onRepeatToggled() {
+    this.isRepeat = !this.isRepeat;
+    this.cdr.markForCheck();
+  }
+
+  public onPlaybackSpeedChanged(speed: number) {
+    this.playbackSpeed = speed;
+    if (this.isPlaying) {
+      this.restartPlaybackTimer();
+    }
+  }
+
+  private restartPlaybackTimer() {
+    if (this.playbackTimer !== undefined) {
+      window.clearInterval(this.playbackTimer);
+    }
+    this.playbackTimer = window.setInterval(() => this.tickPlayback(), this.playbackDelayMs());
+  }
+
+  /* x1 = real time: each simulation step lasts deltaTimeSeconds of wall-clock time. */
+  private playbackDelayMs(): number {
+    return (this.deltaTime / this.playbackSpeed) * 1000;
+  }
+
+  private tickPlayback() {
+    const next = this.currentStep + 1;
+    if (next > this.lastStep()) {
+      if (this.isRepeat) {
+        this.setStep(0);
+        return;
+      }
+      this.setStep(this.lastStep());
+      this.pausePlayback();
+      return;
+    }
+    this.setStep(next);
+  }
+
+  private pausePlayback() {
+    if (this.playbackTimer !== undefined) {
+      window.clearInterval(this.playbackTimer);
+      this.playbackTimer = undefined;
+    }
+    if (this.isPlaying) {
+      this.isPlaying = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private setStep(step: number) {
+    const last = Math.max(0, this.lastStep());
+    this.currentStep = Math.min(Math.max(step, 0), last);
+    this.gridCanvas.updateTimeStep(this.currentStep);
+    this.cdr.markForCheck();
+  }
+
+  private lastStep(): number {
+    return this.maxSimulationSteps - 1;
+  }
+
   public onMaxStepsChanged(maxSteps: number) {
     this.maxSimulationSteps = maxSteps;
-    this.gridCanvas.resampleLoadProfiles(maxSteps, this.deltaTime);
+    this.recomputeDeltaTime();
+  }
+
+  private recomputeDeltaTime() {
+    this.deltaTime = this.maxSimulationSteps > 0
+      ? Math.round((this.durationSeconds / this.maxSimulationSteps) * 100) / 100
+      : 0;
+    this.gridCanvas.resampleLoadProfiles(this.maxSimulationSteps, this.deltaTime);
+    if (this.currentStep > this.lastStep()) {
+      this.setStep(this.lastStep());
+    }
+    if (this.isPlaying) {
+      this.restartPlaybackTimer();
+    }
+  }
+
+  private isDeltaTimeWithinRange(): boolean {
+    return this.deltaTime >= MIN_DELTA_TIME_SECONDS && this.deltaTime <= MAX_DELTA_TIME_SECONDS;
   }
 
   private getSavePayload(name: string, description: string): Project {
@@ -338,11 +467,14 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public onProjectSelected(id: number | null) {
     if (id === null) {
+      this.pausePlayback();
       this.selectedProjectId = null;
       sessionStorage.removeItem('currentProjectId');
       this.gridCanvas.clearCanvas();
       this.isSimulationLoaded = false;
       this.currentStep = 0;
+      this.simulationDeltaTimeSeconds = null;
+      this.simulationTotalTimeSeconds = null;
       this.deleteConfirmStep = false;
       this.runMinLimitPu = 0.90;
       this.runMaxLimitPu = 1.10;
@@ -351,12 +483,16 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     sessionStorage.setItem('currentProjectId', String(id));
+    this.pausePlayback();
     this.projectService.getProject(id).subscribe({
       next: (project) => {
         this.selectedProjectId = project.id || null;
         this.maxSimulationSteps = project.totalTimeSteps;
         this.deltaTime = project.deltaTimeSeconds;
+        this.durationSeconds = project.deltaTimeSeconds * project.totalTimeSteps;
         this.currentStep = 0;
+        this.simulationDeltaTimeSeconds = project.deltaTimeSeconds;
+        this.simulationTotalTimeSeconds = project.deltaTimeSeconds * project.totalTimeSteps;
         this.selectedNormType = project.selectedNormType;
         if (project.selectedNormType === 'custom') {
           this.customMinPu = project.customMinPu || 0.90;
@@ -581,6 +717,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onNewClicked() {
+    this.pausePlayback();
     this.selectedProjectId = null;
     sessionStorage.removeItem('currentProjectId');
     this.clearScratchpad();
