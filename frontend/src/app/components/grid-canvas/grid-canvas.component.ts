@@ -6,6 +6,7 @@ import { IconComponent } from '../shared/icon/icon.component';
 import { NgIf } from '@angular/common';
 import { LoadProfileEditor } from '../load-profile-editor/load-profile-editor.component';
 import { ControlPoint } from '../load-profile-editor/load-profile-editor.component';
+import { SimulationReportPanel, ReportIssue } from '../simulation-report-panel/simulation-report-panel.component';
 import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
 import { MOCK_CABLES, MOCK_TRANSFORMERS } from '../../mocks/equipment-catalog.mock';
 import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/catalog.model';
@@ -22,7 +23,7 @@ import { formatNum } from '../../shared/utils/format.utils';
 @Component({
   selector: 'app-grid-canvas',
   standalone: true,
-  imports: [PropertyPanel, VoltageChartModal, LoadProfileEditor, IconComponent, NgIf],
+  imports: [PropertyPanel, VoltageChartModal, LoadProfileEditor, SimulationReportPanel, IconComponent, NgIf],
   templateUrl: './grid-canvas.component.html',
   styleUrl: './grid-canvas.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -53,6 +54,7 @@ export class GridCanvas implements AfterViewInit {
 
   public currentSimulationStep: number = 0;
   private simulationResult: SimulationResponseDto | null = null;
+  private cachedReportIssues: ReportIssue[] = [];
 
   public get isResultsMode(): boolean {
     return this.simulationResult !== null;
@@ -61,11 +63,46 @@ export class GridCanvas implements AfterViewInit {
   public showChartModal: boolean = false;
   public chartNominalVoltage: number = 230;
   public showProfileEditor: boolean = false;
+  public showReportPanel: boolean = false;
+
+  @Output() seekStep = new EventEmitter<number>();
 
   public selectedPresetId: string = '';
 
   public get isEmpty(): boolean {
     return this.cy ? this.cy.nodes().length === 0 : true;
+  }
+
+  public get reportIssues(): ReportIssue[] {
+    return this.cachedReportIssues;
+  }
+
+  private buildReportIssues(): ReportIssue[] {
+    if (!this.simulationResult || !this.cy) return [];
+    const issues: ReportIssue[] = [];
+
+    for (const branch of this.simulationResult.branches) {
+      const branchEl = this.cy.$('#' + branch.id);
+      const branchName = branchEl.data('name') || branch.id;
+      const targetNodeId = branchEl.data('target') || '';
+      const nodeEl = targetNodeId ? this.cy.$('#' + targetNodeId) : undefined;
+      const nodeName = (nodeEl && nodeEl.data('label')) || targetNodeId;
+
+      for (const ev of branch.powerQualityEvents || []) {
+        issues.push({
+          branchId: branch.id,
+          branchName,
+          nodeId: targetNodeId,
+          nodeName,
+          classification: ev.classification,
+          startTimeStep: ev.startTimeStep,
+          endTimeStep: ev.endTimeStep,
+          worstMagnitudePu: ev.worstMagnitudePu
+        });
+      }
+    }
+
+    return issues;
   }
 
   public hasElements(): boolean {
@@ -459,6 +496,8 @@ export class GridCanvas implements AfterViewInit {
     this.cy.autoungrabify(true);
 
     this.cy.elements().unselect();
+    this.cachedReportIssues = this.buildReportIssues();
+    this.showReportPanel = this.cachedReportIssues.length > 0;
     this.updateSelectionState();
   }
 
@@ -478,6 +517,37 @@ export class GridCanvas implements AfterViewInit {
 
     updateSimTimeStep(this.cy, step);
     this.updateSelectionState();
+  }
+
+  public onReportEventClicked(issue: ReportIssue) {
+    if (!this.cy) return;
+
+    const branchEl = this.cy.$('#' + issue.branchId);
+    if (!branchEl.length) return;
+    const nodeEl = this.cy.$('#' + issue.nodeId);
+
+    const focus = this.cy.collection();
+    if (branchEl.length) focus.merge(branchEl);
+    if (nodeEl.length) focus.merge(nodeEl);
+
+    this.cy.elements().unselect();
+    branchEl.select();
+
+    focus.addClass('report-focus');
+    setTimeout(() => {
+      if (this.cy) focus.removeClass('report-focus');
+    }, 1600);
+
+    if (focus.length) {
+      this.cy.animate({ fit: { eles: focus, padding: 80 }, duration: 250 });
+    }
+
+    if (this.isResultsMode) {
+      this.updateTimeStep(issue.startTimeStep);
+      this.seekStep.emit(issue.startTimeStep);
+    }
+
+    this.cdr.markForCheck();
   }
 
   public onProfileSaved(result: { profile: number[]; controlPoints: ControlPoint[] }) {
@@ -505,7 +575,9 @@ export class GridCanvas implements AfterViewInit {
     this.selectedElementData = null;
     this.selectedElementType = '';
     this.simulationResult = null;
+    this.cachedReportIssues = [];
     this.currentTool = 'pointer';
+    this.showReportPanel = false;
     this.cdr.markForCheck();
   }
 

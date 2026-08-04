@@ -59,7 +59,8 @@
       [cableCatalogItems]="cableCatalog"
       [transformerCatalogItems]="transformerCatalog"
       [switchCatalogItems]="switchCatalog"
-      [loadPresets]="loadPresets">
+      [loadPresets]="loadPresets"
+      (seekStep)="onSeekStep($event)">
     </app-grid-canvas>
     <div class="drop-overlay" *ngIf="isDragOver">
       <div class="drop-overlay-content">

@@ -219,6 +219,28 @@ export function getCytoscapeStyles(): any[] {
       } as any
     },
 
+    // === REPORT FOCUS ===
+    // Transient emphasis applied when an issue is clicked in the report panel.
+    {
+      selector: 'node.report-focus',
+      style: {
+        'border-width': 4,
+        'border-color': '#4FB8D0', // var(--data-cyan)
+        'border-opacity': 1,
+        'transition-property': 'border-color, border-width',
+        'transition-duration': '0.3s',
+      } as any
+    },
+    {
+      selector: 'edge.report-focus',
+      style: {
+        'line-color': '#4FB8D0', // var(--data-cyan)
+        'target-arrow-color': '#4FB8D0',
+        'width': 6,
+        'line-opacity': 1,
+      } as any
+    },
+
     // === SELECTED EDGE ===
     // Kept last so selection highlight wins over branch-type and sim classes while selected;
     // sim colors (classes) return automatically on deselect.
@@ -293,6 +315,15 @@ export function syncCytoscapeTheme(cy: Core): void {
   style.selector('edge.sim-violation').style({
     'line-color': statusDanger,
     'target-arrow-color': statusDanger,
+  } as any);
+
+  style.selector('node.report-focus').style({
+    'border-color': dataCyan,
+  } as any);
+
+  style.selector('edge.report-focus').style({
+    'line-color': dataCyan,
+    'target-arrow-color': dataCyan,
   } as any);
 
   style.selector('edge:selected').style({

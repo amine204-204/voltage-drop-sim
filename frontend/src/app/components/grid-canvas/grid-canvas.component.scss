@@ -206,6 +206,41 @@
   transform: scale(0.95);
 }
 
+/* ── Report Panel ───────────────────────────────────── */
+
+.report-panel-slot {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 20;
+}
+
+.report-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: var(--bg-panel-raised);
+    color: var(--text-primary);
+  }
+
+  &.has-issues {
+    color: var(--status-danger);
+    border-color: var(--status-danger);
+    background: var(--status-danger-bg);
+  }
+}
+
 /* ── Status Bar ──────────────────────────────────────── */
 
 .status-bar {

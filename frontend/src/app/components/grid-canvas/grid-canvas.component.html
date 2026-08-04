@@ -62,6 +62,12 @@
           <app-icon name="fit-to-screen" [size]="16"></app-icon>
         </button>
       </div>
+
+      <div class="report-panel-slot" *ngIf="showReportPanel">
+        <app-simulation-report-panel [issues]="reportIssues" [deltaTime]="deltaTime" [stale]="!isResultsMode"
+          (issueClicked)="onReportEventClicked($event)" (close)="showReportPanel = false">
+        </app-simulation-report-panel>
+      </div>
     </div>
 
     <div class="status-bar">
@@ -73,9 +79,17 @@
       <span class="status-item">{{ nodeCount }} nodes</span>
       <span class="status-divider"></span>
       <span class="status-item">{{ edgeCount }} branches</span>
+      <span class="status-divider"></span>
+      <span class="status-item">
+        <button class="report-toggle" [class.has-issues]="isResultsMode && reportIssues.length > 0"
+          (click)="showReportPanel = !showReportPanel" title="Toggle power quality report">
+          <app-icon name="alert" [size]="12"></app-icon>
+          Issues ({{ reportIssues.length }})
+        </button>
+      </span>
       <span class="status-spacer"></span>
-      <span class="status-item status-hint" *ngIf="isSpacePressed">Panning — release Space to stop</span>
-      <span class="status-item status-hint status-lock" *ngIf="isResultsMode">Results mode — canvas is read-only</span>
+      <span class="status-item status-hint" *ngIf="isSpacePressed">Panning.. Release Space to stop</span>
+      <span class="status-item status-hint status-lock" *ngIf="isResultsMode">Read-only mode</span>
       <span class="status-item mono">{{ zoomPercent }}%</span>
     </div>
   </div>
@@ -98,8 +112,7 @@
     [initialControlPoints]="selectedElementData.loadProfileControlPoints || null" [totalSteps]="maxSimulationSteps + 1"
     [deltaTime]="deltaTime" [maxLoadValue]="100"
     [loadUnit]="selectedElementData.loadType === 'CONSTANT_POWER' ? 'W' : 'A'" [readOnly]="isResultsMode"
-    (save)="onProfileSaved($event)"
-    (close)="showProfileEditor = false">
+    (save)="onProfileSaved($event)" (close)="showProfileEditor = false">
   </app-load-profile-editor>
 
 </div>

@@ -295,6 +295,16 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
           this.gridCanvas.applySimulationResults(mergedResponse, settings.deltaTimeSeconds);
 
+          const violations = responses.reduce(
+            (sum, r) => sum + r.branches.reduce((s, b) => s + (b.powerQualityEvents ? b.powerQualityEvents.length : 0), 0),
+            0
+          );
+          if (violations > 0) {
+            this.toast.info(`${violations} power quality violation(s) found! Check the Issues panel for more details.`);
+          } else {
+            this.toast.success('Simulation complete! No power quality violations.');
+          }
+
           this.runMinLimitPu = this.effectiveMinPu;
           this.runMaxLimitPu = this.effectiveMaxPu;
           this.maxSimulationSteps = settings.totalTimeSteps;
@@ -327,6 +337,12 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isSimulating = false;
     this.cdr.markForCheck();
     this.toast.info('Simulation canceled.');
+  }
+
+  public onSeekStep(step: number) {
+    this.pausePlayback();
+    this.currentStep = Math.min(Math.max(step, 0), this.lastStep());
+    this.cdr.markForCheck();
   }
 
   public onBackToEditClicked() {
@@ -801,11 +817,11 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   public onModalSave(result: { name: string; description: string }) {
     this.modalError = '';
     const payload = this.getSavePayload(result.name, result.description);
-      this.projectService.createProject(payload).subscribe({
-        next: (saved) => {
-          this.showProjectModal = false;
-          this.clearScratchpad();
-          this.toast.success('Project created successfully!');
+    this.projectService.createProject(payload).subscribe({
+      next: (saved) => {
+        this.showProjectModal = false;
+        this.clearScratchpad();
+        this.toast.success('Project created successfully!');
         this.selectedProjectId = saved.id || null;
         this.loadProjectsList();
 
