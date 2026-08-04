@@ -24,8 +24,8 @@
     <tbody>
       <tr *ngFor="let standard of filteredStandards">
         <td>{{ standard.name }}</td>
-        <td class="mono">{{ standard.minVoltagePu }}</td>
-        <td class="mono">{{ standard.maxVoltagePu }}</td>
+        <td class="mono">{{ standard.minVoltagePu | num }}</td>
+        <td class="mono">{{ standard.maxVoltagePu | num }}</td>
         <td>{{ standard.active ? '✓' : '—' }}</td>
         <td>{{ standard.defaultStandard ? '✓' : '—' }}</td>
         <td class="row-actions">

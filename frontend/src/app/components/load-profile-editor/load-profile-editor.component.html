@@ -1,61 +1,27 @@
-<app-modal title="Edit Load Curve" width="850px" (close)="close.emit()">
+<app-modal [title]="readOnly ? 'View Load Curve' : 'Edit Load Curve'" width="850px" (close)="close.emit()">
 
-    <div class="instructions">
+    <div class="instructions" *ngIf="!readOnly">
       <span>Click to add a point</span>
       <span>Drag a point to reshape the curve</span>
       <span>Right-click a point to delete it</span>
     </div>
-
-    <div class="svg-wrapper" (click)="addPoint($event)">
-
-        <div class="y-axis-labels">
-        <span *ngFor="let grid of yGridData" class="axis-label" [style.bottom.%]="grid.percent">
-          {{grid.label}}
-        </span>
-      </div>
-        <div class="graph-area">
-            <svg #svgCanvas style="overflow: hidden;" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-
-            <line *ngFor="let grid of yGridData" x1="0" [attr.y1]="grid.percent" x2="100" [attr.y2]="grid.percent" stroke="var(--grid-line-strong)" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
-
-            <line *ngFor="let grid of xGridData" [attr.x1]="grid.percent" y1="0" [attr.x2]="grid.percent" y2="100" stroke="var(--grid-line)" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
-
-            <path [attr.d]="svgPath" fill="none" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
-
-            <path *ngIf="svgPath" [attr.d]="svgPath + ' L 100,100 L 0,100 Z'" [attr.fill]="accentFill" stroke="none"/>
-
-            <g *ngFor="let point of points; let i = index">
-            <rect
-                [attr.x]="getScreenX(point) - pointRadiusX"
-                [attr.y]="100 - (getScreenY(point) + pointRadiusY)"
-                [attr.width]="pointRadiusX * 2"
-                [attr.height]="pointRadiusY * 2"
-                [attr.rx]="pointRadiusX"
-                [attr.ry]="pointRadiusY"
-                fill="var(--accent)"
-                stroke="var(--bg-panel)"
-                stroke-width="0.8"
-                vector-effect="non-scaling-stroke"
-                (mousedown)="onPointMouseDown($event, i)"
-                (contextmenu)="removePoint($event, i)"
-                style="cursor: grab;"
-            />
-            </g>
-            </svg>
-        </div>
-
-
-        <div class="x-axis-spacer"></div>
-        <div class="x-axis-labels">
-            <span *ngFor="let grid of xGridData" class="axis-label" [style.left.%]="grid.percent">
-            {{grid.instant | number:'1.0-2'}}s
-            </span>
-        </div>
+    <div class="instructions read-only-hint" *ngIf="readOnly">
+      <span>View only</span>
     </div>
 
+    <app-profile-curve-canvas
+        [initialPoints]="points"
+        [totalDuration]="totalDuration"
+        [maxLoadValue]="baselineMaxLoadValue"
+        [loadUnit]="loadUnit"
+        [readOnly]="readOnly"
+        (pointsChange)="onPointsChange($event)">
+    </app-profile-curve-canvas>
+
     <div class="modal-footer">
-      <button class="cancel-btn" (click)="close.emit()">Cancel</button>
-      <button class="save-btn" (click)="applyAndClose()">Sample &amp; Apply Curve</button>
+      <button class="cancel-btn" *ngIf="!readOnly" (click)="close.emit()">Cancel</button>
+      <button class="save-btn" *ngIf="!readOnly" (click)="applyAndClose()">Sample &amp; Apply Curve</button>
+      <button class="save-btn" *ngIf="readOnly" (click)="close.emit()">Close</button>
     </div>
 
 </app-modal>

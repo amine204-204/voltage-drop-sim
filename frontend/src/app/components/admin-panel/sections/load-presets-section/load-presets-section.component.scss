@@ -1,0 +1,21 @@
+@use '../../shared/admin-section.scss';
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preset-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.preset-desc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

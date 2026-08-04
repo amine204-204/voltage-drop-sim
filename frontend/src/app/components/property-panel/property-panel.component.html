@@ -8,13 +8,13 @@
       <span class="result-label">Voltage:</span>
       <span class="result-value"
         [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
-        {{ elementData.simulationData.potentialTimeSeries[simulationStep]?.toFixed(2) }} V
+        {{ elementData.simulationData.potentialTimeSeries[simulationStep] | num }} V
       </span>
     </div>
 
     <div class="result-row" *ngIf="elementType === 'edge'">
       <span class="result-label">Current:</span>
-      <span class="result-value">{{ elementData.simulationData.currentTimeSeries?.[simulationStep]?.toFixed(2) }}
+      <span class="result-value">{{ elementData.simulationData.currentTimeSeries?.[simulationStep] | num }}
         A</span>
     </div>
 
@@ -22,7 +22,7 @@
       <span class="result-label">Voltage Drop:</span>
       <span class="result-value"
         [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
-        {{ elementData.simulationData.dropPercentTimeSeries?.[simulationStep]?.toFixed(2) }} %
+        {{ elementData.simulationData.dropPercentTimeSeries?.[simulationStep] | num }} %
       </span>
     </div>
 
@@ -39,7 +39,7 @@
       <ul>
         <li *ngFor="let event of elementData.simulationData.powerQualityEvents">
           <strong>{{ event.classification }}</strong> (Steps {{ event.startTimeStep }} to {{ event.endTimeStep }})
-          <br><small>Worst: {{ (event.worstMagnitudePu * 100).toFixed(1) }}% Pu</small>
+          <br><small>Worst: {{ event.worstMagnitudePu * 100 | num }}% Pu</small>
         </li>
       </ul>
     </div>
@@ -53,28 +53,31 @@
 
   <div class="form-group">
     <label>Name</label>
-    <input type="text" [value]="elementData.label" (input)="onPropertyChange('label', $any($event.target).value)">
+    <input type="text" [value]="elementData.label" (input)="onPropertyChange('label', $any($event.target).value)"
+      [disabled]="readOnly">
   </div>
 
   <div *ngIf="elementData.type === 'SOURCE'">
     <div class="form-group">
       <label>Nominal Voltage (V)</label>
       <input type="number" [value]="elementData.nominalVoltage"
-        (input)="onPropertyChange('nominalVoltage', $any($event.target).value)">
+        (input)="onPropertyChange('nominalVoltage', $any($event.target).value)" [disabled]="readOnly">
     </div>
   </div>
 
   <div *ngIf="elementData.type === 'CONSUMER'">
     <div class="form-group">
       <label>Load Type</label>
-      <select [value]="elementData.loadType" (change)="onPropertyChange('loadType', $any($event.target).value)">
+      <select [value]="elementData.loadType" (change)="onPropertyChange('loadType', $any($event.target).value)"
+        [disabled]="readOnly">
         <option value="CONSTANT_CURRENT">Constant Current (A)</option>
         <option value="CONSTANT_POWER">Constant Power (W)</option>
       </select>
     </div>
     <div class="form-group">
       <label>Load Preset</label>
-      <select [(ngModel)]="elementData.selectedPresetId" (ngModelChange)="onLoadPresetSelect($event)">
+      <select [(ngModel)]="elementData.selectedPresetId" (ngModelChange)="onLoadPresetSelect($event)"
+        [disabled]="readOnly">
         <option value="null">Custom</option>
         <option *ngFor="let preset of filteredLoadPresets" [value]="preset.id">{{ preset.name }}</option>
       </select>
@@ -88,7 +91,7 @@
     <div class="form-group">
       <label>Power Factor (cosPhi)</label>
       <input type="number" step="0.01" [(ngModel)]="elementData.cosPhi"
-        (ngModelChange)="onPropertyChange('cosPhi', $event)">
+        (ngModelChange)="onPropertyChange('cosPhi', $event)" [disabled]="readOnly">
     </div>
   </div>
 
@@ -96,12 +99,12 @@
     <div class="form-group">
       <label>Length (km)</label>
       <input type="number" step="0.01" [(ngModel)]="elementData.lengthInKm"
-        (ngModelChange)="onPropertyChange('lengthInKm', $event)">
+        (ngModelChange)="onPropertyChange('lengthInKm', $event)" [disabled]="readOnly">
     </div>
 
     <div class="form-group">
       <label>Equipment Catalog</label>
-      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)">
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)" [disabled]="readOnly">
         <option *ngFor="let item of cableCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
       </select>
     </div>
@@ -121,7 +124,7 @@
   <div *ngIf="elementType === 'edge' && isTransformer">
     <div class="form-group">
       <label>Transformer Catalog</label>
-      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)">
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)" [disabled]="readOnly">
         <option value="null">Select transformer...</option>
         <option *ngFor="let item of transformerCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
       </select>
@@ -129,19 +132,19 @@
 
     <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
       <label>Rated Power</label>
-      <input type="text" [disabled]="true" [value]="selectedTransformer?.electrical?.ratedPowerKva + ' kVA'">
+      <input type="text" [disabled]="true" [value]="(selectedTransformer?.electrical?.ratedPowerKva | num) + ' kVA'">
     </div>
     <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
       <label>Primary / Secondary</label>
       <input type="text" [disabled]="true"
-        [value]="selectedTransformer?.electrical?.primaryVoltageV + 'V / ' + selectedTransformer?.electrical?.secondaryVoltageV + 'V'">
+        [value]="(selectedTransformer?.electrical?.primaryVoltageV | num) + 'V / ' + (selectedTransformer?.electrical?.secondaryVoltageV | num) + 'V'">
     </div>
   </div>
 
   <div *ngIf="elementType === 'edge' && isSwitch">
     <div class="form-group">
       <label>Switch Catalog</label>
-      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)">
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)" [disabled]="readOnly">
         <option value="null">Select switch...</option>
         <option *ngFor="let item of switchCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
       </select>
@@ -149,14 +152,14 @@
 
     <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
       <label>Rated Current</label>
-      <input type="text" [disabled]="true" [value]="selectedSwitch?.electrical?.ratedCurrentA + ' A'">
+      <input type="text" [disabled]="true" [value]="(selectedSwitch?.electrical?.ratedCurrentA | num) + ' A'">
     </div>
 
     <div class="form-group">
       <label>State</label>
       <div class="switch-toggle">
-        <button [class.active]="elementData.closed" (click)="onSwitchToggle(true)">Closed</button>
-        <button [class.active]="!elementData.closed" (click)="onSwitchToggle(false)">Open</button>
+        <button [class.active]="elementData.closed" (click)="onSwitchToggle(true)" [disabled]="readOnly">Closed</button>
+        <button [class.active]="!elementData.closed" (click)="onSwitchToggle(false)" [disabled]="readOnly">Open</button>
       </div>
     </div>
   </div>

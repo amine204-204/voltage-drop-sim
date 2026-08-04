@@ -28,7 +28,7 @@
       <tr *ngFor="let s of filteredSwitches">
         <td>{{ s.name }}</td>
         <td>{{ s.standard }}</td>
-        <td class="mono">{{ s.electrical.ratedCurrentA }}</td>
+        <td class="mono">{{ s.electrical.ratedCurrentA | num }}</td>
         <td class="mono">{{ s.electrical.breakingCapacity }}</td>
         <td class="row-actions">
           <button class="icon-btn" (click)="editSwitch(s)" title="Edit">
@@ -45,3 +45,4 @@
 
 <app-switch-form-modal *ngIf="showForm" [sw]="editingSwitch" (save)="saveSwitch($event)" (close)="showForm = false"></app-switch-form-modal>
 <app-catalog-import-modal *ngIf="showImport" type="SWITCH" (imported)="loadSwitches()" (close)="showImport = false"></app-catalog-import-modal>
+<app-catalog-references-modal *ngIf="blockedItem" [itemName]="blockedItem.name" [itemType]="blockedItem.type" [references]="blockedReferences" (close)="blockedItem = null"></app-catalog-references-modal>

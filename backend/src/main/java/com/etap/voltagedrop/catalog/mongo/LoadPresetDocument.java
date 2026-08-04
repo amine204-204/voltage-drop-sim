@@ -16,6 +16,7 @@ public class LoadPresetDocument {
     private String loadType;
     private double cosPhi;
     private String unit;
+    private double durationSeconds = 86400;
     private List<ControlPoint> defaultProfile;
     private boolean active;
 

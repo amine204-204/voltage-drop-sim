@@ -37,6 +37,11 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-dim);
     }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 
   .derived-value {
@@ -110,8 +115,14 @@
   }
 }
 
-.run-btn {
+.run-container {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.run-btn {
   background-color: var(--status-ok);
   color: var(--text-on-accent);
   border: none;
@@ -132,6 +143,41 @@
 
   &:active {
     transform: scale(0.97);
+  }
+
+  &.invalid {
+    background-color: var(--bg-input);
+    color: var(--status-danger);
+    border: 1px solid var(--status-danger);
+
+    &:hover:not(:disabled) {
+      background-color: var(--status-danger-bg);
+      box-shadow: 0 0 0 3px var(--status-danger-bg);
+      filter: none;
+    }
+  }
+
+  &.cancel {
+    background-color: var(--status-danger);
+    color: var(--text-on-accent);
+
+    &:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 0 3px var(--status-danger-bg);
+      transform: scale(1.03);
+    }
+  }
+
+  &.edit-mode {
+    background-color: var(--bg-panel-raised);
+    color: var(--text-primary);
+    border: 1px solid var(--border-hairline);
+
+    &:hover {
+      background-color: var(--bg-input);
+      box-shadow: 0 0 0 3px var(--border-hairline-soft);
+      transform: scale(1.03);
+    }
   }
 }
 

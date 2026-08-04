@@ -10,7 +10,9 @@ import com.etap.voltagedrop.domain.catalog.BranchComponent;
 import com.etap.voltagedrop.domain.catalog.CableSpec;
 import com.etap.voltagedrop.domain.catalog.SwitchSpec;
 import com.etap.voltagedrop.domain.catalog.TransformerSpec;
+import com.etap.voltagedrop.dto.admin.CatalogUsageDto;
 import com.etap.voltagedrop.exception.ResourceNotFoundException;
+import com.etap.voltagedrop.repository.jpa.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,7 @@ public class CatalogService {
     private final CableCatalogRepository cableRepo;
     private final TransformerCatalogRepository transformerRepo;
     private final SwitchCatalogRepository switchRepo;
+    private final ProjectRepository projectRepository;
 
     public CableSpec getCable(String catalogId, String crossSection, String material) {
         CableCatalogDocument doc = null;
@@ -120,11 +123,17 @@ public class CatalogService {
     }
 
     public boolean deleteCable(String id) {
-        if (!cableRepo.existsById(id)) {
+        CableCatalogDocument doc = cableRepo.findById(id).orElse(null);
+        if (doc == null) {
             return false;
         }
+        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "cable", doc.getName());
         cableRepo.deleteById(id);
         return true;
+    }
+
+    public CatalogUsageDto getCableUsage(String id) {
+        return CatalogUsageDto.fromRows(projectRepository.countBranchReferencesByCatalogId(id));
     }
 
     public TransformerCatalogDocument createTransformer(TransformerCatalogDocument transformer) {
@@ -140,11 +149,17 @@ public class CatalogService {
     }
 
     public boolean deleteTransformer(String id) {
-        if (!transformerRepo.existsById(id)) {
+        TransformerCatalogDocument doc = transformerRepo.findById(id).orElse(null);
+        if (doc == null) {
             return false;
         }
+        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "transformer", doc.getName());
         transformerRepo.deleteById(id);
         return true;
+    }
+
+    public CatalogUsageDto getTransformerUsage(String id) {
+        return CatalogUsageDto.fromRows(projectRepository.countBranchReferencesByCatalogId(id));
     }
 
     public SwitchCatalogDocument createSwitch(SwitchCatalogDocument sw) {
@@ -160,11 +175,17 @@ public class CatalogService {
     }
 
     public boolean deleteSwitch(String id) {
-        if (!switchRepo.existsById(id)) {
+        SwitchCatalogDocument doc = switchRepo.findById(id).orElse(null);
+        if (doc == null) {
             return false;
         }
+        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "switch", doc.getName());
         switchRepo.deleteById(id);
         return true;
+    }
+
+    public CatalogUsageDto getSwitchUsage(String id) {
+        return CatalogUsageDto.fromRows(projectRepository.countBranchReferencesByCatalogId(id));
     }
 
     public double getImpedanceAtTemp(String id, double tempC) {

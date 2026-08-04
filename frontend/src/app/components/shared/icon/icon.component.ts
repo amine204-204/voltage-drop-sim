@@ -206,6 +206,10 @@ import { NgSwitch, NgSwitchCase } from '@angular/common';
           <polyline points="7 23 3 19 7 15"/>
           <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
         </ng-container>
+
+        <ng-container *ngSwitchCase="'activity'">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </ng-container>
       </ng-container>
     </svg>
   `,

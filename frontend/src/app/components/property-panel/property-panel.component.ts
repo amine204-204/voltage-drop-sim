@@ -6,6 +6,7 @@ import { MOCK_CABLES, MOCK_TRANSFORMERS } from '../../mocks/equipment-catalog.mo
 import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/catalog.model';
 import { LoadPreset } from '../../models/load-preset.model';
 import { LoadProfileEditor } from '../load-profile-editor/load-profile-editor.component';
+import { NumPipe } from '../../shared/pipes/format-number.pipe';
 import { NodeType, LoadType, BranchType } from '../../models/simulation.model';
 
 export interface CytoscapeElementData {
@@ -32,7 +33,7 @@ export interface CytoscapeElementData {
 @Component({
   selector: 'app-property-panel',
   standalone: true,
-  imports: [FormsModule, NgIf, NgFor],
+  imports: [FormsModule, NgIf, NgFor, NumPipe],
   templateUrl: './property-panel.component.html',
   styleUrl: './property-panel.component.scss'
 })
@@ -46,6 +47,7 @@ export class PropertyPanel {
   @Input() transformerCatalogItems: TransformerCatalog[] = MOCK_TRANSFORMERS;
   @Input() switchCatalogItems: SwitchCatalog[] = [];
   @Input() loadPresets: LoadPreset[] = LOAD_PRESETS;
+  @Input() readOnly: boolean = false;
 
   @Output() propertyChanged = new EventEmitter<{property: string, value: any}>();
   @Output() openChart = new EventEmitter<void>();

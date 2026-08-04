@@ -32,6 +32,8 @@ public class ProjectEntity {
     private String selectedNormType;
     private Double customMinPu;
     private Double customMaxPu;
+    private Double minDeltaTimeSeconds;
+    private Double maxDeltaTimeSeconds;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectNodeEntity> nodes = new ArrayList<>();

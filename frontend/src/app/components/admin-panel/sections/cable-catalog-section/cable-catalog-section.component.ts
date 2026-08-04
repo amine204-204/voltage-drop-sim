@@ -4,17 +4,20 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../../services/admin.service';
 import { ToastService } from '../../../../services/toast.service';
 import { getErrorMessage } from '../../../../shared/utils/error.utils';
+import { NumPipe } from '../../../../shared/pipes/format-number.pipe';
 import { CableCatalog } from '../../../../models/catalog.model';
+import { ProjectReference } from '../../../../models/admin.model';
 import { ConfirmDeleteButtonComponent } from '../../../shared/confirm-delete-button/confirm-delete-button.component';
 import { IconComponent } from '../../../shared/icon/icon.component';
 import { CableFormModalComponent } from '../../modals/cable-form-modal/cable-form-modal.component';
 import { CatalogImportModalComponent } from '../../modals/catalog-import-modal/catalog-import-modal.component';
 import { CatalogExportButtonsComponent } from '../../shared/catalog-export-buttons/catalog-export-buttons.component';
+import { CatalogReferencesModalComponent } from '../../shared/catalog-references-modal/catalog-references-modal.component';
 
 @Component({
   selector: 'app-cable-catalog-section',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, CableFormModalComponent, CatalogImportModalComponent, CatalogExportButtonsComponent],
+  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, CableFormModalComponent, CatalogImportModalComponent, CatalogExportButtonsComponent, CatalogReferencesModalComponent, NumPipe],
   templateUrl: './cable-catalog-section.component.html',
   styleUrl: './cable-catalog-section.component.scss'
 })
@@ -25,6 +28,8 @@ export class CableCatalogSectionComponent implements OnInit {
   public showForm = false;
   public showImport = false;
   public editingCable: CableCatalog | null = null;
+  public blockedItem: { name: string; type: 'cable' | 'transformer' | 'switch' } | null = null;
+  public blockedReferences: ProjectReference[] = [];
 
   constructor(
     private adminService: AdminService,
@@ -93,11 +98,22 @@ export class CableCatalogSectionComponent implements OnInit {
   }
 
   deleteCable(cable: CableCatalog) {
-    this.adminService.deleteCable(cable.id).subscribe({
-      next: () => {
-        this.cables = this.cables.filter(c => c.id !== cable.id);
-        this.toast.success('Cable deleted.');
-        this.cdr.detectChanges();
+    this.adminService.getCableUsage(cable.id).subscribe({
+      next: (usage) => {
+        if (usage.projects.length > 0) {
+          this.blockedItem = { name: cable.name, type: 'cable' };
+          this.blockedReferences = usage.projects;
+          this.cdr.detectChanges();
+          return;
+        }
+        this.adminService.deleteCable(cable.id).subscribe({
+          next: () => {
+            this.cables = this.cables.filter(c => c.id !== cable.id);
+            this.toast.success('Cable deleted.');
+            this.cdr.detectChanges();
+          },
+          error: (err) => this.toast.error(getErrorMessage(err))
+        });
       },
       error: (err) => this.toast.error(getErrorMessage(err))
     });

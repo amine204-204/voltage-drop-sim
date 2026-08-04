@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { UserSummary, CreateUserRequest, UpdateRoleRequest } from '../models/admin.model';
+import { UserSummary, CreateUserRequest, UpdateRoleRequest, CatalogUsage } from '../models/admin.model';
 import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../models/catalog.model';
+import { LoadPreset } from '../models/load-preset.model';
 import { ComplianceStandard } from '../models/compliance-standard.model';
 import {
   CatalogImportField,
@@ -55,6 +56,10 @@ export class AdminService {
     return this.http.delete<void>(`${this.API}/catalogs/${id}`);
   }
 
+  getCableUsage(id: string): Observable<CatalogUsage> {
+    return this.http.get<CatalogUsage>(`${this.API}/catalogs/${id}/usage`);
+  }
+
   // ── Transformers ────────────────────────────────────────────
 
   getAllTransformers(): Observable<TransformerCatalog[]> {
@@ -73,6 +78,10 @@ export class AdminService {
     return this.http.delete<void>(`${this.API}/catalogs/transformers/${id}`);
   }
 
+  getTransformerUsage(id: string): Observable<CatalogUsage> {
+    return this.http.get<CatalogUsage>(`${this.API}/catalogs/transformers/${id}/usage`);
+  }
+
   // ── Switches ────────────────────────────────────────────────
 
   getAllSwitches(): Observable<SwitchCatalog[]> {
@@ -89,6 +98,32 @@ export class AdminService {
 
   deleteSwitch(id: string): Observable<void> {
     return this.http.delete<void>(`${this.API}/catalogs/switches/${id}`);
+  }
+
+  getSwitchUsage(id: string): Observable<CatalogUsage> {
+    return this.http.get<CatalogUsage>(`${this.API}/catalogs/switches/${id}/usage`);
+  }
+
+  // ── Load Presets ────────────────────────────────────────────
+
+  getAllLoadPresets(): Observable<LoadPreset[]> {
+    return this.http.get<LoadPreset[]>(`${this.API}/catalogs/load-presets`);
+  }
+
+  createLoadPreset(preset: Partial<LoadPreset>): Observable<LoadPreset> {
+    return this.http.post<LoadPreset>(`${this.API}/catalogs/load-presets`, preset);
+  }
+
+  updateLoadPreset(id: string, preset: LoadPreset): Observable<LoadPreset> {
+    return this.http.put<LoadPreset>(`${this.API}/catalogs/load-presets/${id}`, preset);
+  }
+
+  deleteLoadPreset(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.API}/catalogs/load-presets/${id}`);
+  }
+
+  getLoadPresetUsage(id: string): Observable<CatalogUsage> {
+    return this.http.get<CatalogUsage>(`${this.API}/catalogs/load-presets/${id}/usage`);
   }
 
   // ── Compliance Standards ────────────────────────────────────

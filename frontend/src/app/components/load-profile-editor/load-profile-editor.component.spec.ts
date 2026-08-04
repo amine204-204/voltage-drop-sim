@@ -30,6 +30,27 @@ describe('LoadProfileEditor.getProfileFromControlPoints', () => {
     expect(result[9]).toBeCloseTo(100, 0);
   });
 
+  it('holds the last point value for every sample after the last control point', () => {
+    const points: ControlPoint[] = [
+      { time: 0, value: 5 },
+      { time: 4, value: 30 },
+      { time: 8, value: 12 },
+    ];
+    const result = LoadProfileEditor.getProfileFromControlPoints(points, 10, 1, 100);
+    expect(result[8]).toBeCloseTo(12, 0);
+    expect(result[9]).toBeCloseTo(12, 0);
+  });
+
+  it('holds the first point value for every sample before the first control point', () => {
+    const points: ControlPoint[] = [
+      { time: 2, value: 40 },
+      { time: 9, value: 10 },
+    ];
+    const result = LoadProfileEditor.getProfileFromControlPoints(points, 10, 1, 100);
+    expect(result[0]).toBeCloseTo(40, 0);
+    expect(result[1]).toBeCloseTo(40, 0);
+  });
+
   it('handles single step', () => {
     const points: ControlPoint[] = [
       { time: 0, value: 42 },
@@ -180,49 +201,6 @@ describe('LoadProfileEditor.getProfileFromControlPoints', () => {
     expect(clipped[1]).toEqual({ time: 9, value: 30 });
   });
 
-  it('drags the first point on the y axis only', () => {
-    const editor = new LoadProfileEditor();
-    editor.points = [
-      { time: 0, value: 5 },
-      { time: 4.5, value: 50 },
-      { time: 9, value: 20 },
-    ];
-    editor.totalSteps = 10;
-    editor.deltaTime = 1;
-    editor.maxLoadValue = 100;
-    editor.svgCanvas = {
-      nativeElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) },
-    } as any;
-
-    editor.onPointMouseDown({ preventDefault: () => {} } as any, 0);
-    expect(editor.isDragging).toBe(true);
-    expect(editor.dragIndex).toBe(0);
-
-    editor.onMouseMove({ clientX: 50, clientY: 25, movementY: 0 } as any);
-    expect(editor.points[0].time).toBe(0);
-    expect(editor.points[0].value).toBeCloseTo(75, 0);
-  });
-
-  it('drags the last point on the y axis only', () => {
-    const editor = new LoadProfileEditor();
-    editor.points = [
-      { time: 0, value: 5 },
-      { time: 4.5, value: 50 },
-      { time: 9, value: 20 },
-    ];
-    editor.totalSteps = 10;
-    editor.deltaTime = 1;
-    editor.maxLoadValue = 100;
-    editor.svgCanvas = {
-      nativeElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) },
-    } as any;
-
-    editor.onPointMouseDown({ preventDefault: () => {} } as any, 2);
-    editor.onMouseMove({ clientX: 50, clientY: 75, movementY: 0 } as any);
-    expect(editor.points[2].time).toBe(9);
-    expect(editor.points[2].value).toBeCloseTo(25, 0);
-  });
-
   it('re-emits the full preset on a pristine apply, even when the sim is shorter than the preset', () => {
     const editor = new LoadProfileEditor();
     editor.totalSteps = 10;
@@ -265,13 +243,14 @@ describe('LoadProfileEditor.getProfileFromControlPoints', () => {
       { time: 22, value: 12 },
       { time: 24, value: 5 },
     ];
-    editor.svgCanvas = {
-      nativeElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) },
-    } as any;
     editor.ngOnChanges();
 
-    editor.onPointMouseDown({ preventDefault: () => {} } as any, 1);
-    editor.onMouseMove({ clientX: 100 / 3, clientY: 50, movementY: 0 } as any);
+    editor.onPointsChange([
+      { time: 0, value: 5 },
+      { time: 3, value: 50 },
+      { time: 6, value: 25 },
+      { time: 9, value: 15 },
+    ]);
 
     let emitted: { profile: number[]; controlPoints: ControlPoint[] } | null = null;
     editor.save.subscribe(result => (emitted = result));
@@ -301,13 +280,14 @@ describe('LoadProfileEditor.getProfileFromControlPoints', () => {
       { time: 22, value: 12 },
       { time: 24, value: 5 },
     ];
-    editor.svgCanvas = {
-      nativeElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) },
-    } as any;
     editor.ngOnChanges();
 
-    editor.onPointMouseDown({ preventDefault: () => {} } as any, 3);
-    editor.onMouseMove({ clientX: 50, clientY: 50, movementY: 0 } as any);
+    editor.onPointsChange([
+      { time: 0, value: 5 },
+      { time: 3, value: 8 },
+      { time: 6, value: 25 },
+      { time: 9, value: 50 },
+    ]);
 
     let emitted: { profile: number[]; controlPoints: ControlPoint[] } | null = null;
     editor.save.subscribe(result => (emitted = result));

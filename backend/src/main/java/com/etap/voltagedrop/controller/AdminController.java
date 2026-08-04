@@ -1,11 +1,14 @@
 package com.etap.voltagedrop.controller;
 
 import com.etap.voltagedrop.catalog.CatalogService;
+import com.etap.voltagedrop.catalog.LoadPresetService;
 import com.etap.voltagedrop.catalog.mongo.CableCatalogDocument;
+import com.etap.voltagedrop.catalog.mongo.LoadPresetDocument;
 import com.etap.voltagedrop.catalog.mongo.SwitchCatalogDocument;
 import com.etap.voltagedrop.catalog.mongo.TransformerCatalogDocument;
 import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.dto.admin.CreateUserRequest;
+import com.etap.voltagedrop.dto.admin.CatalogUsageDto;
 import com.etap.voltagedrop.dto.admin.UpdateRoleRequest;
 import com.etap.voltagedrop.dto.admin.UserSummaryDto;
 import com.etap.voltagedrop.exception.ConflictException;
@@ -26,6 +29,7 @@ public class AdminController {
 
     private final UserService userService;
     private final CatalogService catalogService;
+    private final LoadPresetService loadPresetService;
 
     @GetMapping("/users")
     public List<UserSummaryDto> listUsers() {
@@ -88,6 +92,11 @@ public class AdminController {
                 : ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/catalogs/{id}/usage")
+    public CatalogUsageDto getCableUsage(@PathVariable String id) {
+        return catalogService.getCableUsage(id);
+    }
+
     @GetMapping("/catalogs/transformers")
     public List<TransformerCatalogDocument> listAllTransformers() {
         return catalogService.listAllTransformersAdmin();
@@ -110,6 +119,11 @@ public class AdminController {
                 : ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/catalogs/transformers/{id}/usage")
+    public CatalogUsageDto getTransformerUsage(@PathVariable String id) {
+        return catalogService.getTransformerUsage(id);
+    }
+
     @GetMapping("/catalogs/switches")
     public List<SwitchCatalogDocument> listAllSwitches() {
         return catalogService.listAllSwitchesAdmin();
@@ -130,5 +144,37 @@ public class AdminController {
         return catalogService.deleteSwitch(id)
                 ? ResponseEntity.ok().build()
                 : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/catalogs/switches/{id}/usage")
+    public CatalogUsageDto getSwitchUsage(@PathVariable String id) {
+        return catalogService.getSwitchUsage(id);
+    }
+
+    @GetMapping("/catalogs/load-presets")
+    public List<LoadPresetDocument> listAllLoadPresets() {
+        return loadPresetService.listAllPresetsAdmin();
+    }
+
+    @PostMapping("/catalogs/load-presets")
+    public LoadPresetDocument createLoadPreset(@RequestBody LoadPresetDocument preset) {
+        return loadPresetService.createPreset(preset);
+    }
+
+    @PutMapping("/catalogs/load-presets/{id}")
+    public LoadPresetDocument updateLoadPreset(@PathVariable String id, @RequestBody LoadPresetDocument preset) {
+        return loadPresetService.updatePreset(id, preset);
+    }
+
+    @DeleteMapping("/catalogs/load-presets/{id}")
+    public ResponseEntity<Void> deleteLoadPreset(@PathVariable String id) {
+        return loadPresetService.deletePreset(id)
+                ? ResponseEntity.ok().build()
+                : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/catalogs/load-presets/{id}/usage")
+    public CatalogUsageDto getLoadPresetUsage(@PathVariable String id) {
+        return loadPresetService.getPresetUsage(id);
     }
 }

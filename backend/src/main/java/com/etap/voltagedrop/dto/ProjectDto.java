@@ -19,6 +19,8 @@ public class ProjectDto {
     private String selectedNormType;
     private Double customMinPu;
     private Double customMaxPu;
+    private Double minDeltaTimeSeconds;
+    private Double maxDeltaTimeSeconds;
 
     private List<NodeDto> nodes;
     private List<BranchDto> branches;

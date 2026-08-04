@@ -30,10 +30,10 @@
       <tr *ngFor="let t of filteredTransformers">
         <td>{{ t.name }}</td>
         <td>{{ t.standard }}</td>
-        <td class="mono">{{ t.electrical.ratedPowerKva }}</td>
-        <td class="mono">{{ t.electrical.primaryVoltageV }}</td>
-        <td class="mono">{{ t.electrical.secondaryVoltageV }}</td>
-        <td class="mono">{{ t.electrical.impedancePercent }}</td>
+        <td class="mono">{{ t.electrical.ratedPowerKva | num }}</td>
+        <td class="mono">{{ t.electrical.primaryVoltageV | num }}</td>
+        <td class="mono">{{ t.electrical.secondaryVoltageV | num }}</td>
+        <td class="mono">{{ t.electrical.impedancePercent | num }}</td>
         <td class="row-actions">
           <button class="icon-btn" (click)="editTransformer(t)" title="Edit">
             <app-icon name="pencil" [size]="14"></app-icon>
@@ -49,3 +49,4 @@
 
 <app-transformer-form-modal *ngIf="showForm" [transformer]="editingTransformer" (save)="saveTransformer($event)" (close)="showForm = false"></app-transformer-form-modal>
 <app-catalog-import-modal *ngIf="showImport" type="TRANSFORMER" (imported)="loadTransformers()" (close)="showImport = false"></app-catalog-import-modal>
+<app-catalog-references-modal *ngIf="blockedItem" [itemName]="blockedItem.name" [itemType]="blockedItem.type" [references]="blockedReferences" (close)="blockedItem = null"></app-catalog-references-modal>

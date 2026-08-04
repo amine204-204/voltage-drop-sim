@@ -1,0 +1,50 @@
+<div class="section">
+  <div class="section-header">
+    <h2>Load Presets ({{ presets.length }})</h2>
+    <div class="header-actions">
+      <div class="search-box">
+        <app-icon name="search" [size]="14"></app-icon>
+        <input [(ngModel)]="searchText" placeholder="Search presets..." />
+      </div>
+      <button class="icon-btn add-btn primary" (click)="openNewForm()" title="New Load Preset">+</button>
+    </div>
+  </div>
+
+  <table class="data-table" *ngIf="presets.length > 0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>cos φ</th>
+        <th>Unit</th>
+        <th>Points</th>
+        <th>Duration</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of filteredPresets">
+        <td>
+          <div class="preset-name">{{ p.name }}</div>
+          <div class="preset-desc">{{ p.description }}</div>
+        </td>
+        <td>{{ p.loadType === 'CONSTANT_CURRENT' ? 'Constant Current' : 'Constant Power' }}</td>
+        <td class="mono">{{ p.cosPhi | num }}</td>
+        <td class="mono">{{ p.unit }}</td>
+        <td class="mono">{{ p.defaultProfile?.length ?? 0 }}</td>
+        <td class="mono">{{ p.durationSeconds | num }} s</td>
+        <td class="row-actions">
+          <button class="icon-btn" (click)="editPreset(p)" title="Edit">
+            <app-icon name="pencil" [size]="14"></app-icon>
+          </button>
+          <app-confirm-delete-button title="Delete load preset" (confirm)="deletePreset(p)"></app-confirm-delete-button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="loading-msg" *ngIf="loading">Loading load presets...</p>
+  <p class="empty-msg" *ngIf="presets.length === 0 && !loading">No load presets in catalog.</p>
+</div>
+
+<app-preset-form-modal *ngIf="showForm" [preset]="editingPreset" (save)="savePreset($event)" (close)="showForm = false"></app-preset-form-modal>
+<app-catalog-references-modal *ngIf="blockedItem" [itemName]="blockedItem.name" [itemType]="blockedItem.type" [references]="blockedReferences" (close)="blockedItem = null"></app-catalog-references-modal>

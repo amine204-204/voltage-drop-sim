@@ -225,6 +225,8 @@ public class ProjectService {
         project.setSelectedNormType(dto.getSelectedNormType());
         project.setCustomMinPu(dto.getCustomMinPu());
         project.setCustomMaxPu(dto.getCustomMaxPu());
+        project.setMinDeltaTimeSeconds(dto.getMinDeltaTimeSeconds());
+        project.setMaxDeltaTimeSeconds(dto.getMaxDeltaTimeSeconds());
 
         List<ProjectNodeEntity> nodes = new ArrayList<>();
         if (dto.getNodes() != null) {
@@ -333,6 +335,8 @@ public class ProjectService {
         dto.setSelectedNormType(p.getSelectedNormType());
         dto.setCustomMinPu(p.getCustomMinPu());
         dto.setCustomMaxPu(p.getCustomMaxPu());
+        dto.setMinDeltaTimeSeconds(p.getMinDeltaTimeSeconds());
+        dto.setMaxDeltaTimeSeconds(p.getMaxDeltaTimeSeconds());
         dto.setCreatedAt(p.getCreatedAt());
         dto.setUpdatedAt(p.getUpdatedAt());
 

@@ -32,7 +32,7 @@ export function updateTimeStep(cy: Core, step: number): void {
 
   cy.edges().forEach(edge => {
     const simData = edge.data('simulationData');
-    if (simData && simData.statusTimeSeries) {
+    if (simData && simData.statusTimeSeries && step < simData.statusTimeSeries.length) {
       const status = simData.statusTimeSeries[step];
       edge.addClass(status === 'VIOLATION' ? 'sim-violation' : 'sim-ok');
     }

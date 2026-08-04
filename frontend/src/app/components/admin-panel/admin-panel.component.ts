@@ -7,9 +7,10 @@ import { StandardsSectionComponent } from './sections/standards-section/standard
 import { CableCatalogSectionComponent } from './sections/cable-catalog-section/cable-catalog-section.component';
 import { TransformerCatalogSectionComponent } from './sections/transformer-catalog-section/transformer-catalog-section.component';
 import { SwitchCatalogSectionComponent } from './sections/switch-catalog-section/switch-catalog-section.component';
+import { LoadPresetsSectionComponent } from './sections/load-presets-section/load-presets-section.component';
 import { ProjectsSectionComponent } from './sections/projects-section/projects-section.component';
 
-type SectionId = 'cables' | 'transformers' | 'switches' | 'users' | 'standards' | 'projects';
+type SectionId = 'cables' | 'transformers' | 'switches' | 'loadPresets' | 'users' | 'standards' | 'projects';
 
 interface SidebarGroup {
   label: string;
@@ -29,6 +30,7 @@ interface SidebarGroup {
     CableCatalogSectionComponent,
     TransformerCatalogSectionComponent,
     SwitchCatalogSectionComponent,
+    LoadPresetsSectionComponent,
     ProjectsSectionComponent
   ],
   templateUrl: './admin-panel.component.html',
@@ -43,7 +45,8 @@ export class AdminPanelComponent {
       items: [
         { id: 'cables', label: 'Cables', icon: 'cable' },
         { id: 'transformers', label: 'Transformers', icon: 'transformer' },
-        { id: 'switches', label: 'Switches', icon: 'switch' }
+        { id: 'switches', label: 'Switches', icon: 'switch' },
+        { id: 'loadPresets', label: 'Load Presets', icon: 'activity' }
       ]
     },
     {

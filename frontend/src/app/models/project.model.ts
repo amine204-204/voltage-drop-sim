@@ -68,6 +68,8 @@ export interface Project {
   selectedNormType: string;
   customMinPu?: number;
   customMaxPu?: number;
+  minDeltaTimeSeconds?: number;
+  maxDeltaTimeSeconds?: number;
   nodes: ProjectNode[];
   branches: ProjectBranch[];
   simulationResult?: ProjectSimulationResult;

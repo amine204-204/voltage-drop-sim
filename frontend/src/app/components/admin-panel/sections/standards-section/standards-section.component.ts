@@ -5,6 +5,7 @@ import { AdminService } from '../../../../services/admin.service';
 import { NormService } from '../../../../services/norm.service';
 import { ToastService } from '../../../../services/toast.service';
 import { getErrorMessage } from '../../../../shared/utils/error.utils';
+import { NumPipe } from '../../../../shared/pipes/format-number.pipe';
 import { ComplianceStandard } from '../../../../models/compliance-standard.model';
 import { ConfirmDeleteButtonComponent } from '../../../shared/confirm-delete-button/confirm-delete-button.component';
 import { IconComponent } from '../../../shared/icon/icon.component';
@@ -13,7 +14,7 @@ import { StandardFormModalComponent } from '../../modals/standard-form-modal/sta
 @Component({
   selector: 'app-standards-section',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, StandardFormModalComponent],
+  imports: [NgIf, NgFor, FormsModule, IconComponent, ConfirmDeleteButtonComponent, StandardFormModalComponent, NumPipe],
   templateUrl: './standards-section.component.html',
   styleUrl: './standards-section.component.scss'
 })

@@ -17,6 +17,7 @@ import { getCytoscapeStyles, syncCytoscapeTheme } from './services/cytoscape-sty
 import { getIslands, getNominalVoltageForNode, Island } from './services/graph-traversal.service';
 import { applySimulationResults as applySimResults, updateTimeStep as updateSimTimeStep } from './services/simulation-render.service';
 import { getProjectGraph, loadProjectGraph as loadGraph, getSimulationSnapshot as getSnapshot, SimulationSnapshot, mapStoredResultToResponse } from './services/project-graph.service';
+import { formatNum } from '../../shared/utils/format.utils';
 
 @Component({
   selector: 'app-grid-canvas',
@@ -52,6 +53,10 @@ export class GridCanvas implements AfterViewInit {
 
   public currentSimulationStep: number = 0;
   private simulationResult: SimulationResponseDto | null = null;
+
+  public get isResultsMode(): boolean {
+    return this.simulationResult !== null;
+  }
 
   public showChartModal: boolean = false;
   public chartNominalVoltage: number = 230;
@@ -187,6 +192,7 @@ export class GridCanvas implements AfterViewInit {
   }
 
   private handleCanvasTap(event: EventObject) {
+    if (this.isResultsMode && this.currentTool !== 'pointer') return;
     const target = event.target;
 
     if (target === this.cy) {
@@ -229,12 +235,13 @@ export class GridCanvas implements AfterViewInit {
   }
 
   public onPropertyUpdated(event: { property: string, value: any }) {
+    if (this.isResultsMode) return;
     if (!this.selectedElementData || !this.cy) return;
 
     this.updateSelectedElementProperty(event.property, event.value);
 
     if (event.property === 'lengthInKm') {
-      this.updateSelectedElementProperty('lengthLabel', `${event.value} km`);
+      this.updateSelectedElementProperty('lengthLabel', `${formatNum(event.value)} km`);
     }
 
     this.cdr.markForCheck();
@@ -337,6 +344,7 @@ export class GridCanvas implements AfterViewInit {
   }
 
   public selectTool(tool: string) {
+    if (this.isResultsMode && tool !== 'pointer') return;
     this.currentTool = tool;
     if (this.edgeSourceNode) {
       this.edgeSourceNode.style({ 'border-width': 0 });
@@ -414,6 +422,8 @@ export class GridCanvas implements AfterViewInit {
         return;
       }
 
+      if (this.isResultsMode) return;
+
       if (this.cy?.$(':selected').length) {
         event.preventDefault();
         this.cy.$(':selected').remove();
@@ -443,8 +453,22 @@ export class GridCanvas implements AfterViewInit {
     this.simulationResult = response;
     this.currentSimulationStep = 0;
     this.deltaTime = deltaTimeSeconds;
+    this.currentTool = 'pointer';
+    this.edgeSourceNode?.style({ 'border-width': 0 });
+    this.edgeSourceNode = null;
+    this.cy.autoungrabify(true);
 
     this.cy.elements().unselect();
+    this.updateSelectionState();
+  }
+
+  public clearSimulationResults() {
+    if (!this.cy) return;
+    this.cy.elements().forEach((el: any) => { el.removeData('simulationData'); });
+    this.cy.edges().removeClass('sim-ok sim-violation');
+    this.cy.autoungrabify(false);
+    this.simulationResult = null;
+    this.currentSimulationStep = 0;
     this.updateSelectionState();
   }
 
@@ -457,6 +481,7 @@ export class GridCanvas implements AfterViewInit {
   }
 
   public onProfileSaved(result: { profile: number[]; controlPoints: ControlPoint[] }) {
+    if (this.isResultsMode) return;
     if (!this.selectedElementData) return;
 
     this.selectedElementData.loadProfile = result.profile;
@@ -475,10 +500,12 @@ export class GridCanvas implements AfterViewInit {
   public clearCanvas() {
     if (!this.cy) return;
     this.cy.elements().remove();
+    this.cy.autoungrabify(false);
     this.nodeCounter = 0;
     this.selectedElementData = null;
     this.selectedElementType = '';
     this.simulationResult = null;
+    this.currentTool = 'pointer';
     this.cdr.markForCheck();
   }
 

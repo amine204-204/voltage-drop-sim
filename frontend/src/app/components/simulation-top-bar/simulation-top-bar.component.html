@@ -2,14 +2,16 @@
   <div class="settings-group">
     <label>Duration:</label>
     <div class="value-input">
-      <input type="number" [ngModel]="durationSeconds" (ngModelChange)="durationChanged.emit($event)" min="1" step="60">
+      <input type="number" [ngModel]="durationSeconds" (ngModelChange)="durationChanged.emit($event)" min="1" step="1"
+        [disabled]="isSimulating || isSimulationLoaded">
       <span class="unit">s</span>
     </div>
   </div>
 
   <div class="settings-group">
     <label>Steps:</label>
-    <input type="number" [ngModel]="maxSteps" (ngModelChange)="maxStepsChanged.emit($event)" min="1">
+    <input type="number" [ngModel]="maxSteps" (ngModelChange)="maxStepsChanged.emit($event)" min="1"
+      [disabled]="isSimulating || isSimulationLoaded">
   </div>
 
   <div class="settings-group">
@@ -45,7 +47,7 @@
       </button>
     </div>
 
-    <input type="range" [min]="0" [max]="maxSteps - 1" [value]="currentStep" (input)="onSliderChange($event)"
+    <input type="range" [min]="0" [max]="maxSteps" [value]="currentStep" (input)="onSliderChange($event)"
       class="slider">
     <span class="time-display">{{ currentTimeText }} : {{ totalTimeText }}</span>
 
@@ -59,9 +61,10 @@
     </select>
   </div>
 
-  <button class="run-btn" (click)="onRun()" [disabled]="isSimulating || !isDeltaTimeValid">
-    {{ isSimulating ? 'RUNNING...' : '▶ RUN' }}
-  </button>
-
-
+  <div class="run-container">
+    <button class="run-btn" [class.cancel]="isSimulating" [class.edit-mode]="isSimulationLoaded && !isSimulating"
+      [class.invalid]="!isDeltaTimeValid && !isSimulationLoaded" (click)="onPrimaryAction()" [title]="runButtonTitle">
+      {{ isSimulating ? 'CANCEL' : (isSimulationLoaded ? 'BACK TO EDIT' : '▶ RUN') }}
+    </button>
+  </div>
 </div>

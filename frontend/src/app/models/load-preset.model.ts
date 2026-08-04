@@ -7,5 +7,11 @@ export interface LoadPreset {
   loadType: 'CONSTANT_CURRENT' | 'CONSTANT_POWER';
   cosPhi: number;
   unit: string;
-  defaultProfile: ControlPoint[]; 
+  defaultProfile: ControlPoint[];
+  durationSeconds: number;
+}
+
+export interface PresetCurveDraft {
+  controlPoints: ControlPoint[];
+  durationSeconds: number;
 }

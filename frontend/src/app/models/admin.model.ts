@@ -15,3 +15,12 @@ export interface CreateUserRequest {
 export interface UpdateRoleRequest {
   role: string;
 }
+
+export interface ProjectReference {
+  projectName: string;
+  branchCount: number;
+}
+
+export interface CatalogUsage {
+  projects: ProjectReference[];
+}

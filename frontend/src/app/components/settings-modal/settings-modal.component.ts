@@ -11,6 +11,8 @@ export interface ProjectSettings {
   selectedNormType: string;
   customMinPu: number;
   customMaxPu: number;
+  minDeltaTimeSeconds: number;
+  maxDeltaTimeSeconds: number;
 }
 
 @Component({
@@ -26,6 +28,8 @@ export class SettingsModalComponent implements OnInit {
   @Input() selectedNormType: string = '';
   @Input() customMinPu: number = 0.90;
   @Input() customMaxPu: number = 1.10;
+  @Input() minDeltaTimeSeconds: number = 1;
+  @Input() maxDeltaTimeSeconds: number = 3600;
   @Input() hasProject: boolean = false;
 
   @Output() settingsChange = new EventEmitter<ProjectSettings>();
@@ -33,6 +37,7 @@ export class SettingsModalComponent implements OnInit {
 
   public standards: ComplianceStandard[] = [];
   public nameError: string = '';
+  public deltaTimeRangeError: string = '';
   public loading: boolean = true;
 
   constructor(private normService: NormService) {}
@@ -58,8 +63,13 @@ export class SettingsModalComponent implements OnInit {
 
   public submit() {
     this.nameError = '';
+    this.deltaTimeRangeError = '';
     if (this.hasProject && !this.name.trim()) {
       this.nameError = 'Project name cannot be empty.';
+      return;
+    }
+    if (this.minDeltaTimeSeconds <= 0 || this.maxDeltaTimeSeconds <= this.minDeltaTimeSeconds) {
+      this.deltaTimeRangeError = 'Max Δt must be greater than Min Δt (both > 0).';
       return;
     }
     this.settingsChange.emit({
@@ -67,7 +77,9 @@ export class SettingsModalComponent implements OnInit {
       description: this.description.trim(),
       selectedNormType: this.selectedNormType,
       customMinPu: this.selectedNormType === 'custom' ? this.customMinPu : 0.90,
-      customMaxPu: this.selectedNormType === 'custom' ? this.customMaxPu : 1.10
+      customMaxPu: this.selectedNormType === 'custom' ? this.customMaxPu : 1.10,
+      minDeltaTimeSeconds: this.minDeltaTimeSeconds,
+      maxDeltaTimeSeconds: this.maxDeltaTimeSeconds
     });
   }
 }

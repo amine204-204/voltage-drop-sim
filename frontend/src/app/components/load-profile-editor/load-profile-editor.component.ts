@@ -1,25 +1,20 @@
-import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, HostListener } from '@angular/core';
-import { NgIf, NgFor, DecimalPipe } from '@angular/common';
+import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
+import { NgIf } from '@angular/common';
 import { ModalComponent } from '../shared/modal/modal.component';
-import { getCssVar } from '../../services/theme.service';
+import { ProfileCurveCanvas, ControlPoint } from '../profile-curve-canvas/profile-curve-canvas.component';
 
 /* ControlPoint in absolute values (time, value), not percentages or step indices */
 /* Control point times are user/preset-authored and absolute — kept points are never rewritten to fit the sim axis */
-export interface ControlPoint {
-  time: number;
-  value: number;
-}
+export type { ControlPoint } from '../profile-curve-canvas/profile-curve-canvas.component';
 
 @Component({
   selector: 'app-load-profile-editor',
   standalone: true,
-  imports: [NgIf, NgFor, DecimalPipe, ModalComponent],
+  imports: [ModalComponent, ProfileCurveCanvas, NgIf],
   templateUrl: './load-profile-editor.component.html',
   styleUrl: './load-profile-editor.component.scss'
 })
-export class LoadProfileEditor implements AfterViewInit {
-
-  public accentFill: string = 'rgba(232, 163, 61, 0.12)';
+export class LoadProfileEditor implements OnChanges {
 
   @Input() totalSteps: number = 10;
   @Input() deltaTime: number = 1; // seconds per step
@@ -27,277 +22,66 @@ export class LoadProfileEditor implements AfterViewInit {
   @Input() initialProfile: number[] = [];
   @Input() initialControlPoints: ControlPoint[] | null = null;
   @Input() loadUnit: string = 'A';
+  @Input() readOnly: boolean = false;
 
   @Output() save = new EventEmitter<{ profile: number[]; controlPoints: ControlPoint[] }>();
   @Output() close = new EventEmitter<void>();
 
+  public totalDuration: number = 1;
+
+  /* Clipped working set mirrored from the canvas (points within [0, totalDuration]) */
   public points: ControlPoint[] = [
     { time: 0, value: 0 },
     { time: 9, value: 0 }
   ];
 
-  public isDragging: boolean = false;
-  public dragIndex: number = -1;
-
   /* Full (unclipped) points as loaded. Stored curves are always the full, authored profile;
      edits are merged back on top of the untouched tail so the sim duration never destroys data. */
   private originalPoints: ControlPoint[] | null = null;
+  private sourcePoints: ControlPoint[] | null = null;
   private isDirty: boolean = false;
 
-  public svgPath: string = '';
-
-  public pointRadiusX: number = 0;
-  public pointRadiusY: number = 0;
-
-  @ViewChild('svgCanvas') svgCanvas!: ElementRef;
-
-  constructor() {
-    this.updateCurve();
-    this.readAccentFill();
-  }
-
-  private readAccentFill() {
-    this.accentFill = getCssVar('--accent-dim', this.accentFill);
-  }
-
-  ngAfterViewInit() {
-    setTimeout(() => {
-      this.updatePointRadius();
-    }, 0);
-
-    this.updateCurve();
-  }
+  public baselineMaxLoadValue: number = 100;
 
   ngOnChanges() {
-    const totalDuration = this.getTotalDuration();
+    this.totalDuration = this.getTotalDuration();
 
     if (this.initialControlPoints && this.initialControlPoints.length > 0) {
       this.originalPoints = this.initialControlPoints.map(p => ({ ...p }));
-      this.points = LoadProfileEditor.clipControlPoints(this.initialControlPoints, totalDuration);
+      this.points = LoadProfileEditor.clipControlPoints(this.initialControlPoints, this.totalDuration);
     } else if (this.initialProfile && this.initialProfile.length > 0) {
       this.points = this.initialProfile.map((value, i) => ({
-        time: this.initialProfile.length <= 1 ? 0 : (i / (this.initialProfile.length - 1)) * totalDuration,
+        time: this.initialProfile.length <= 1 ? 0 : (i / (this.initialProfile.length - 1)) * this.totalDuration,
         value
       }));
       this.originalPoints = this.points.map(p => ({ ...p }));
     } else {
-      this.points = [{ time: 0, value: 0 }, { time: totalDuration, value: 0 }];
+      this.points = [{ time: 0, value: 0 }, { time: this.totalDuration, value: 0 }];
       this.originalPoints = this.points.map(p => ({ ...p }));
     }
     this.isDirty = false;
+    this.sourcePoints = null;
 
     const initialMax = Math.max(...this.points.map(p => p.value), 10);
-    if (this.maxLoadValue < initialMax) {
-      this.maxLoadValue = initialMax;
-    }
-
-    this.updatePointRadius();
-    this.updateCurve();
+    this.baselineMaxLoadValue = Math.max(this.maxLoadValue, initialMax);
   }
 
   private getTotalDuration(): number {
     return Math.max((this.totalSteps - 1) * this.deltaTime, 0.0001);
   }
 
-  private timeToScreenX(time: number): number {
-    return (time / this.getTotalDuration()) * 100;
-  }
-
-  private screenXToTime(xPct: number): number {
-    return (xPct / 100) * this.getTotalDuration();
-  }
-
-  private valueToScreenY(value: number): number {
-    const scale = this.maxLoadValue > 0 ? this.maxLoadValue : 1;
-    return (value / scale) * 100;
-  }
-
-  private screenYToValue(yPct: number): number {
-    const scale = this.maxLoadValue > 0 ? this.maxLoadValue : 1;
-    return (yPct / 100) * scale;
-  }
-
-  public getScreenX(point: ControlPoint): number {
-    return this.timeToScreenX(point.time);
-  }
-
-  public getScreenY(point: ControlPoint): number {
-    return this.valueToScreenY(point.value);
-  }
-
-  @HostListener('window:resize')
-  onResize() {
-    this.updatePointRadius();
-  }
-
-  private updatePointRadius() {
-    if (!this.svgCanvas) return;
-    const rect = this.svgCanvas.nativeElement.getBoundingClientRect();
-    const targetScreenRadius = 6;
-    this.pointRadiusX = (targetScreenRadius / rect.width) * 100;
-    this.pointRadiusY = (targetScreenRadius / rect.height) * 100;
-  }
-
-  public onPointMouseDown(event: MouseEvent, index: number) {
-    event.preventDefault();
-    this.isDragging = true;
-    this.dragIndex = index;
-  }
-
-  @HostListener('window:mousemove', ['$event'])
-  public onMouseMove(event: MouseEvent) {
-    if (!this.isDragging || this.dragIndex === -1) return;
-
-    const rect = this.svgCanvas.nativeElement.getBoundingClientRect();
-    const xPct = ((event.clientX - rect.left) / rect.width) * 100;
-    const yPct = 100 - (((event.clientY - rect.top) / rect.height) * 100);
-
-    if (yPct > 100) {
-      this.maxLoadValue += Math.ceil((-event.movementY) / 10);
-    }
-
-    const value = Math.max(0, this.screenYToValue(yPct));
-
-    const isEndpoint = this.dragIndex === 0 || this.dragIndex === this.points.length - 1;
-    const prevTime = this.dragIndex > 0 ? this.points[this.dragIndex - 1].time : 0;
-    const nextTime = this.dragIndex < this.points.length - 1
-      ? this.points[this.dragIndex + 1].time
-      : this.getTotalDuration();
-
-    const epsilon = this.getTotalDuration() * 0.001;
-    const minTime = prevTime + epsilon;
-    const maxTime = nextTime - epsilon;
-    const time = isEndpoint
-      ? this.points[this.dragIndex].time
-      : Math.max(minTime, Math.min(maxTime, this.screenXToTime(xPct)));
-
-    this.points[this.dragIndex] = { time, value };
+  public onPointsChange(points: ControlPoint[]) {
     this.isDirty = true;
-
-    this.updateCurve();
-  }
-
-  @HostListener('window:mouseup')
-  public onMouseUp() {
-    this.isDragging = false;
-    this.dragIndex = -1;
-  }
-
-  private updateCurve() {
-    this.svgPath = LoadProfileEditor.buildSplinePath(this.points, this.maxLoadValue, this.getTotalDuration());
-  }
-
-  /* y is a clamped Catmull-Rom spline in time; the path uses cubic Bezier segments whose x is linear in t */
-  private static buildSplinePath(points: ControlPoint[], maxLoadValue: number, totalDuration: number): string {
-    if (points.length < 2) return '';
-
-    const scale = maxLoadValue > 0 ? maxLoadValue : 1;
-    const screenX = (time: number) => (time / totalDuration) * 100;
-    const screenY = (value: number) => 100 - (value / scale) * 100;
-
-    let d = `M ${screenX(points[0].time)},${screenY(points[0].value)}`;
-    for (let i = 1; i < points.length; i++) {
-      const { p1, p2, cp1y, cp2y } = LoadProfileEditor.getSegmentControlPoints(points, i - 1);
-      const x1 = screenX(p1.time);
-      const x2 = screenX(p2.time);
-      const cp1x = x1 + (x2 - x1) / 3;
-      const cp2x = x1 + (2 * (x2 - x1)) / 3;
-      d += ` C ${cp1x},${screenY(cp1y)} ${cp2x},${screenY(cp2y)} ${x2},${screenY(p2.value)}`;
-    }
-    return d;
-  }
-
-  private static getSegmentControlPoints(
-    points: ControlPoint[],
-    segment: number
-  ): { p1: ControlPoint; p2: ControlPoint; cp1y: number; cp2y: number } {
-    const p0 = points[Math.max(segment - 1, 0)];
-    const p1 = points[segment];
-    const p2 = points[segment + 1];
-    const p3 = points[Math.min(segment + 2, points.length - 1)];
-
-    const m1 = (p2.value - p0.value) / 2;
-    const m2 = (p3.value - p1.value) / 2;
-
-    return { p1, p2, cp1y: p1.value + m1 / 3, cp2y: p2.value - m2 / 3 };
-  }
-
-  public addPoint(event: MouseEvent) {
-    if ((event.target as HTMLElement).tagName === 'rect') return;
-
-    const rect = this.svgCanvas.nativeElement.getBoundingClientRect();
-    const xPct = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
-    const yPct = 100 - (((event.clientY - rect.top) / rect.height) * 100);
-
-    if (yPct > 100) {
-      const newMax = Math.ceil(this.screenYToValue(yPct) / 10) * 10;
-      if (newMax > this.maxLoadValue) {
-        this.maxLoadValue = newMax;
-      }
-    }
-    const value = Math.max(0, this.screenYToValue(yPct));
-    const time = Math.max(0, Math.min(this.getTotalDuration(), this.screenXToTime(xPct)));
-
-    let inserted = false;
-    for (let i = 0; i < this.points.length - 1; i++) {
-      if (time > this.points[i].time && time < this.points[i + 1].time) {
-        this.points.splice(i + 1, 0, { time, value });
-        inserted = true;
-        break;
-      }
-    }
-    if (!inserted) return;
-
-    this.isDirty = true;
-    this.updateCurve();
-  }
-
-  public removePoint(event: MouseEvent, index: number) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (this.points.length <= 2) return;
-    if (index === 0 || index === this.points.length - 1) return;
-    this.points.splice(index, 1);
-
-    this.isDirty = true;
-    this.updateCurve();
+    this.points = points.map(p => ({ ...p }));
+    this.sourcePoints = LoadProfileEditor.mergeEditedPoints(points, this.originalPoints ?? points, this.totalDuration);
   }
 
   public applyAndClose() {
     const source = this.isDirty
-      ? LoadProfileEditor.mergeEditedPoints(this.points, this.originalPoints ?? this.points, this.getTotalDuration())
+      ? (this.sourcePoints ?? this.points)
       : (this.originalPoints ?? this.points);
     const profile = LoadProfileEditor.getProfileFromControlPoints(source, this.totalSteps, this.deltaTime, this.maxLoadValue);
     this.save.emit({ profile, controlPoints: source.map(p => ({ ...p })) });
-  }
-
-  public get xGridData(): { percent: number, instant: number }[] {
-    const data = [];
-    const maxVisualLines = 20;
-    const stepIncrement = Math.max(1, Math.ceil(this.totalSteps / maxVisualLines));
-
-    for (let i = 0; i < this.totalSteps; i += stepIncrement) {
-      const instant = i * this.deltaTime;
-      data.push({ percent: this.timeToScreenX(instant), instant });
-    }
-
-    const lastInstant = (this.totalSteps - 1) * this.deltaTime;
-    if (data.length === 0 || data[data.length - 1].instant !== lastInstant) {
-      data.push({ percent: 100, instant: lastInstant });
-    }
-
-    return data;
-  }
-
-  public get yGridData(): { percent: number, label: string }[] {
-    const max = this.maxLoadValue;
-    return [
-      { percent: 0, label: `0 ${this.loadUnit}` },
-      { percent: 25, label: `${(max * 0.25).toFixed(1)} ${this.loadUnit}` },
-      { percent: 50, label: `${(max * 0.5).toFixed(1)} ${this.loadUnit}` },
-      { percent: 75, label: `${(max * 0.75).toFixed(1)} ${this.loadUnit}` },
-      { percent: 100, label: `${max.toFixed(1)} ${this.loadUnit}` }
-    ];
   }
 
   public static getProfileFromControlPoints(
@@ -338,6 +122,21 @@ export class LoadProfileEditor implements AfterViewInit {
       }
     }
     return 0;
+  }
+
+  private static getSegmentControlPoints(
+    points: ControlPoint[],
+    segment: number
+  ): { p1: ControlPoint; p2: ControlPoint; cp1y: number; cp2y: number } {
+    const p0 = points[Math.max(segment - 1, 0)];
+    const p1 = points[segment];
+    const p2 = points[segment + 1];
+    const p3 = points[Math.min(segment + 2, points.length - 1)];
+
+    const m1 = (p2.value - p0.value) / 2;
+    const m2 = (p3.value - p1.value) / 2;
+
+    return { p1, p2, cp1y: p1.value + m1 / 3, cp2y: p2.value - m2 / 3 };
   }
 
   /* The sim duration is authoritative: drops control points past maxTime and, if the curve ends mid-segment,

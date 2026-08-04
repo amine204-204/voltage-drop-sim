@@ -33,9 +33,9 @@
         <td>{{ cable.standard }}</td>
         <td class="mono">{{ cable.physical.crossSection }}</td>
         <td>{{ cable.physical.conductorMaterial }}</td>
-        <td class="mono">{{ cable.electrical.resistancePerKm }}</td>
-        <td class="mono">{{ cable.electrical.reactancePerKm }}</td>
-        <td class="mono">{{ cable.electrical.ampacityFreeAirA }}</td>
+        <td class="mono">{{ cable.electrical.resistancePerKm | num }}</td>
+        <td class="mono">{{ cable.electrical.reactancePerKm | num }}</td>
+        <td class="mono">{{ cable.electrical.ampacityFreeAirA | num }}</td>
         <td class="row-actions">
           <button class="icon-btn" (click)="editCable(cable)" title="Edit">
             <app-icon name="pencil" [size]="14"></app-icon>
@@ -51,3 +51,4 @@
 
 <app-cable-form-modal *ngIf="showForm" [cable]="editingCable" (save)="saveCable($event)" (close)="showForm = false"></app-cable-form-modal>
 <app-catalog-import-modal *ngIf="showImport" type="CABLE" (imported)="loadCables()" (close)="showImport = false"></app-catalog-import-modal>
+<app-catalog-references-modal *ngIf="blockedItem" [itemName]="blockedItem.name" [itemType]="blockedItem.type" [references]="blockedReferences" (close)="blockedItem = null"></app-catalog-references-modal>

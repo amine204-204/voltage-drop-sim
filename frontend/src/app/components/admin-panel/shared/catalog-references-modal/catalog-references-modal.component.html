@@ -1,0 +1,23 @@
+<app-modal title="Cannot delete item" (close)="close.emit()">
+  <div class="modal-body">
+    <div class="blocked-note">
+      <app-icon name="error" [size]="18"></app-icon>
+      <p>"{{ itemName }}" is referenced by {{ references.length }} project{{ references.length === 1 ? '' : 's' }} and cannot be deleted.</p>
+    </div>
+
+    <ul class="ref-list">
+      <li *ngFor="let ref of references">
+        <app-icon name="file-plus" [size]="14"></app-icon>
+        <span class="ref-name">{{ ref.projectName }}</span>
+        <span class="ref-count">{{ ref.branchCount }} {{ referenceWord(ref.branchCount) }}</span>
+      </li>
+    </ul>
+
+    <p class="hint" *ngIf="references.length > 0">
+      Remove or replace this {{ itemType }} in the projects above first, then retry.
+    </p>
+  </div>
+  <div class="modal-footer">
+    <button class="save-btn" (click)="close.emit()">Got it</button>
+  </div>
+</app-modal>

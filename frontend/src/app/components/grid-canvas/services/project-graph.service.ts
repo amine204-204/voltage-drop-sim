@@ -1,6 +1,7 @@
 import { Core } from 'cytoscape';
 import { ProjectNode, ProjectBranch, ProjectSimulationResult } from '../../../models/project.model';
 import { SimulationResponseDto, PowerQualityEvent } from '../../../models/simulation.model';
+import { formatNum } from '../../../shared/utils/format.utils';
 
 export interface ProjectGraph {
   nodes: ProjectNode[];
@@ -102,7 +103,7 @@ export function loadProjectGraph(cy: Core, nodes: ProjectNode[], branches: Proje
     };
     if (isCable) {
       data['lengthInKm'] = branch.lengthInKm;
-      data['lengthLabel'] = `${branch.lengthInKm} km`;
+      data['lengthLabel'] = `${formatNum(branch.lengthInKm)} km`;
     } else if (isSwitch) {
       data['lengthLabel'] = branch.closed === false ? 'Open' : 'Closed';
     }

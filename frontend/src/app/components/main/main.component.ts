@@ -4,7 +4,7 @@ import { SimulationTopBar, SimulationSettings, MIN_DELTA_TIME_SECONDS, MAX_DELTA
 import { SimulationService } from '../../services/simulation.service';
 import { MockSimulationService } from '../../mocks/mock-simulation.service';
 import { SimulationRequestDto, SimulationResponseDto } from '../../models/simulation.model';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, Subscription } from 'rxjs';
 import { MOCK_CABLES, MOCK_TRANSFORMERS, MOCK_SWITCHES } from '../../mocks/equipment-catalog.mock';
 import { CatalogService } from '../../services/catalog.service';
 import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/catalog.model';
@@ -40,6 +40,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   public maxSimulationSteps: number = 10;
   public durationSeconds: number = 3600;
   public deltaTime: number = 360;
+  public minDeltaTimeSeconds: number = MIN_DELTA_TIME_SECONDS;
+  public maxDeltaTimeSeconds: number = MAX_DELTA_TIME_SECONDS;
   public currentStep: number = 0;
   public isSimulationLoaded: boolean = false;
   public simulationDeltaTimeSeconds: number | null = null;
@@ -48,6 +50,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   public isRepeat: boolean = false;
   public playbackSpeed: number = 1;
   private playbackTimer: number | undefined;
+  private simulationSubscription: Subscription | null = null;
   public selectedNormType: string = 'en50160';
   public customMinPu: number = 0.90;
   public customMaxPu: number = 1.10;
@@ -106,6 +109,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.pausePlayback();
+    this.simulationSubscription?.unsubscribe();
     this.saveScratchpad();
   }
 
@@ -248,7 +252,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   public onRunClicked(settings: SimulationSettings) {
     this.pausePlayback();
     if (!this.isDeltaTimeWithinRange()) {
-      this.toast.error(`Invalid simulation settings: Δt must be between ${MIN_DELTA_TIME_SECONDS} s and ${MAX_DELTA_TIME_SECONDS} s.`);
+      this.toast.error(`Invalid simulation settings: Δt must be between ${this.minDeltaTimeSeconds} s and ${this.maxDeltaTimeSeconds} s.`);
       this.cdr.markForCheck();
       return;
     }
@@ -256,7 +260,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
 
     try {
-      this.gridCanvas.resampleLoadProfiles(settings.totalTimeSteps, settings.deltaTimeSeconds);
+      this.gridCanvas.resampleLoadProfiles(settings.totalTimeSteps + 1, settings.deltaTimeSeconds);
       const islands = this.gridCanvas.getIslands();
 
       const simlatableIslands = islands.filter(island =>
@@ -271,7 +275,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       const payloads: Observable<SimulationResponseDto>[] = simlatableIslands.map(island => {
         const payload: SimulationRequestDto = {
-          totalTimeSteps: settings.totalTimeSteps,
+          totalTimeSteps: settings.totalTimeSteps + 1,
           deltaTimeSeconds: settings.deltaTimeSeconds,
           selectedNormType: this.selectedNormType,
           customMinPu: this.selectedNormType === 'custom' ? this.customMinPu : undefined,
@@ -281,8 +285,9 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
         return this.simService.runSimulation(payload);
       });
 
-      forkJoin(payloads).subscribe({
+      this.simulationSubscription = forkJoin(payloads).subscribe({
         next: (responses: SimulationResponseDto[]) => {
+          this.simulationSubscription = null;
           const mergedResponse = {
             nodes: responses.flatMap(r => r.nodes),
             branches: responses.flatMap(r => r.branches)
@@ -301,6 +306,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
           this.cdr.markForCheck();
         },
         error: (err) => {
+          this.simulationSubscription = null;
           this.isSimulating = false;
           this.toast.error('Simulation failed: ' + getErrorMessage(err));
           this.cdr.markForCheck();
@@ -308,13 +314,27 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
     } catch (e: unknown) {
+      this.simulationSubscription = null;
       this.isSimulating = false;
       this.toast.error(e instanceof Error ? e.message : 'Unknown error');
       this.cdr.markForCheck();
     }
   }
 
+  public onCancelClicked() {
+    this.simulationSubscription?.unsubscribe();
+    this.simulationSubscription = null;
+    this.isSimulating = false;
+    this.cdr.markForCheck();
+    this.toast.info('Simulation canceled.');
+  }
+
+  public onBackToEditClicked() {
+    this.invalidateSimulation();
+  }
+
   public onDurationChanged(durationSeconds: number) {
+    if (this.isSimulationLoaded) this.invalidateSimulation();
     this.durationSeconds = durationSeconds;
     this.recomputeDeltaTime();
   }
@@ -417,19 +437,30 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private lastStep(): number {
-    return this.maxSimulationSteps - 1;
+    return this.maxSimulationSteps;
   }
 
   public onMaxStepsChanged(maxSteps: number) {
+    if (this.isSimulationLoaded) this.invalidateSimulation();
     this.maxSimulationSteps = maxSteps;
     this.recomputeDeltaTime();
+  }
+
+  private invalidateSimulation() {
+    this.pausePlayback();
+    this.isSimulationLoaded = false;
+    this.currentStep = 0;
+    this.simulationDeltaTimeSeconds = null;
+    this.simulationTotalTimeSeconds = null;
+    this.gridCanvas?.clearSimulationResults();
+    this.cdr.markForCheck();
   }
 
   private recomputeDeltaTime() {
     this.deltaTime = this.maxSimulationSteps > 0
       ? Math.round((this.durationSeconds / this.maxSimulationSteps) * 100) / 100
       : 0;
-    this.gridCanvas.resampleLoadProfiles(this.maxSimulationSteps, this.deltaTime);
+    this.gridCanvas.resampleLoadProfiles(this.maxSimulationSteps + 1, this.deltaTime);
     if (this.currentStep > this.lastStep()) {
       this.setStep(this.lastStep());
     }
@@ -439,7 +470,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private isDeltaTimeWithinRange(): boolean {
-    return this.deltaTime >= MIN_DELTA_TIME_SECONDS && this.deltaTime <= MAX_DELTA_TIME_SECONDS;
+    return this.deltaTime >= this.minDeltaTimeSeconds && this.deltaTime <= this.maxDeltaTimeSeconds;
   }
 
   private getSavePayload(name: string, description: string): Project {
@@ -459,6 +490,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       selectedNormType: this.selectedNormType,
       customMinPu: this.selectedNormType === 'custom' ? this.customMinPu : undefined,
       customMaxPu: this.selectedNormType === 'custom' ? this.customMaxPu : undefined,
+      minDeltaTimeSeconds: this.minDeltaTimeSeconds,
+      maxDeltaTimeSeconds: this.maxDeltaTimeSeconds,
       nodes: canvasGraph.nodes,
       branches: canvasGraph.branches,
       simulationResult
@@ -478,6 +511,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
       this.deleteConfirmStep = false;
       this.runMinLimitPu = 0.90;
       this.runMaxLimitPu = 1.10;
+      this.minDeltaTimeSeconds = MIN_DELTA_TIME_SECONDS;
+      this.maxDeltaTimeSeconds = MAX_DELTA_TIME_SECONDS;
       this.cdr.markForCheck();
       return;
     }
@@ -498,6 +533,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
           this.customMinPu = project.customMinPu || 0.90;
           this.customMaxPu = project.customMaxPu || 1.10;
         }
+        this.minDeltaTimeSeconds = project.minDeltaTimeSeconds ?? MIN_DELTA_TIME_SECONDS;
+        this.maxDeltaTimeSeconds = project.maxDeltaTimeSeconds ?? MAX_DELTA_TIME_SECONDS;
         this.runMinLimitPu = project.simulationResult?.minLimitPu ?? this.effectiveMinPu;
         this.runMaxLimitPu = project.simulationResult?.maxLimitPu ?? this.effectiveMaxPu;
 
@@ -695,6 +732,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedNormType = settings.selectedNormType;
     this.customMinPu = settings.customMinPu;
     this.customMaxPu = settings.customMaxPu;
+    this.minDeltaTimeSeconds = settings.minDeltaTimeSeconds;
+    this.maxDeltaTimeSeconds = settings.maxDeltaTimeSeconds;
     this.loadStandards();
 
     if (this.selectedProjectId !== null) {
@@ -730,6 +769,8 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.runMinLimitPu = 0.90;
     this.runMaxLimitPu = 1.10;
     this.deleteConfirmStep = false;
+    this.minDeltaTimeSeconds = MIN_DELTA_TIME_SECONDS;
+    this.maxDeltaTimeSeconds = MAX_DELTA_TIME_SECONDS;
     this.resolveSelectedNorm();
 
     this.cdr.markForCheck();
