@@ -22,7 +22,15 @@
       <span class="result-label">Voltage Drop:</span>
       <span class="result-value"
         [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
-        {{ elementData.simulationData.dropPercentTimeSeries?.[simulationStep] | num }} %
+        {{ formatDrop(elementData.simulationData.dropPercentTimeSeries?.[simulationStep]) }} %
+      </span>
+    </div>
+
+    <div class="result-row" *ngIf="elementType === 'edge'">
+      <span class="result-label">Voltage Drop (cumulative):</span>
+      <span class="result-value"
+        [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
+        {{ formatDrop(elementData.simulationData.cumulativeDropPercentTimeSeries?.[simulationStep]) }} %
       </span>
     </div>
 

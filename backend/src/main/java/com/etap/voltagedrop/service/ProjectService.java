@@ -297,6 +297,7 @@ public class ProjectService {
                     br.setBranchId(brDto.getBranchId());
                     br.setCurrentTimeSeries(brDto.getCurrentTimeSeries());
                     br.setDropPercentTimeSeries(brDto.getDropPercentTimeSeries());
+                    br.setCumulativeDropPercentTimeSeries(brDto.getCumulativeDropPercentTimeSeries());
                     br.setStatusTimeSeries(brDto.getStatusTimeSeries());
                     br.setSimulationResult(simResult);
 
@@ -390,6 +391,7 @@ public class ProjectService {
                 brDto.setBranchId(br.getBranchId());
                 brDto.setCurrentTimeSeries(br.getCurrentTimeSeries());
                 brDto.setDropPercentTimeSeries(br.getDropPercentTimeSeries());
+                brDto.setCumulativeDropPercentTimeSeries(br.getCumulativeDropPercentTimeSeries());
                 brDto.setStatusTimeSeries(br.getStatusTimeSeries());
                 
                 brDto.setPowerQualityEvents(br.getPowerQualityEvents().stream().map(pq -> {

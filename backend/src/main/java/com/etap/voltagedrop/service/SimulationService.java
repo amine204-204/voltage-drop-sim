@@ -10,6 +10,9 @@ import com.etap.voltagedrop.service.visitor.ConductivityVisitor;
 import com.etap.voltagedrop.service.visitor.DownstreamNominalVoltageVisitor;
 import com.etap.voltagedrop.service.visitor.VoltageDropVisitor;
 import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -52,6 +55,7 @@ public class SimulationService {
             commitTimeStepAndEvaluateNorms(graph, t, nominalVoltage, activeNorm);
         }
 
+        computeCumulativeDropPercent(graph);
         classifyPowerQualityEvents(graph, nominalVoltage, deltaTimeSeconds);
     }
 
@@ -155,6 +159,30 @@ public class SimulationService {
 
                 incomingBranch.getStatusTimeSeries().add(isCompliant ? SimulationStatus.OK : SimulationStatus.VIOLATION);
             }
+        }
+    }
+
+    private void computeCumulativeDropPercent(NetworkGraph graph) {
+        for (NetworkNode node : graph.getNodes()) {
+            if (node.isSource()) {
+                continue;
+            }
+
+            NetworkBranch incomingBranch = graph.getIncomingBranch(node.getId());
+            if (incomingBranch == null) {
+                continue;
+            }
+
+            double nodeNominal = node.getLocalNominalVoltage();
+            int steps = node.getPotentialTimeSeries().size();
+            List<Double> cumulative = new ArrayList<>(steps);
+
+            for (int t = 0; t < steps; t++) {
+                double voltagePu = node.getPotentialTimeSeries().get(t) / nodeNominal;
+                cumulative.add((1.0 - voltagePu) * 100.0);
+            }
+
+            incomingBranch.setCumulativeDropPercentTimeSeries(cumulative);
         }
     }
 

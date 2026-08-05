@@ -16,3 +16,19 @@ export function formatNum(
   const trimmed = value.toFixed(decimals).replace(/\.?0+$/, '');
   return trimmed === '-0' ? '0' : trimmed;
 }
+
+/* Deliberate exception to the "at most 2 decimals" rule (AGENTS.md §5): small
+   voltage drops round to '0%' with formatNum. Widens precision based on the
+   magnitude so the first meaningful digit is always visible. Use ONLY for drop
+   fields. */
+export function formatDropPercent(value: number | null | undefined): string {
+  if (value === null || value === undefined || !isFinite(value)) {
+    return MISSING_VALUE;
+  }
+  if (value === 0) {
+    return '0';
+  }
+  const decimals = Math.max(2, Math.ceil(-Math.log10(Math.abs(value))) + 1);
+  const trimmed = value.toFixed(decimals).replace(/\.?0+$/, '');
+  return trimmed === '-0' ? '0' : trimmed;
+}

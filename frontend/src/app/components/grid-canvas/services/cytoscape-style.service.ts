@@ -1,12 +1,6 @@
 import { Core } from 'cytoscape';
 import { getCssVar } from '../../../services/theme.service';
 
-function hexToRgb(hex: string): string {
-  const clean = hex.replace('#', '');
-  const num = parseInt(clean, 16);
-  return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
-}
-
 export function getCytoscapeStyles(): any[] {
   return [
     // === NODES: SOURCE (Substation) ===
@@ -22,22 +16,19 @@ export function getCytoscapeStyles(): any[] {
         'font-family': 'Inter, system-ui, sans-serif',
         'font-weight': 500,
 
-        'shape': 'round-rectangle',
+        'shape': 'ellipse',
         'width': 44,
         'height': 44,
-        'background-color': 'rgba(232, 97, 93, 0.14)', // var(--status-danger-bg)
+        'background-color': '#ffffff', // white fill to make black SVG lines visible
         'background-opacity': 1,
         'border-width': 2,
-        'border-color': '#E8615D', // var(--status-danger)
-        'border-opacity': 0.8,
+        'border-color': '#2A2F3A', // dark neutral border
+        'border-opacity': 1,
 
-        'background-image': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23E8615D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
-        'background-width': '60%',
-        'background-height': '60%',
-        'background-position-x': '50%',
-        'background-position-y': '50%',
-        'background-fit': 'none',
-        'background-clip': 'none',
+        // hardcoded: CSS vars unsupported in Cytoscape SVG data URIs
+        // base64-encoded; viewBox="10 10 80 80" crops tight to the circle edge so contain fills the node
+        'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMTAgMTAgODAgODAiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjM4IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iNCIvPjxwYXRoIGQ9Ik0xOC40IDI4LjkgTDgxLjYgNzEuMSBNMjcuMyAxOS41IEw4Ni45IDU5LjIgTTEzLjEgNDAuOCBMNzIuNyA4MC41IiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMi41IiBmaWxsPSJub25lIi8+PC9zdmc+',
+        'background-fit': 'contain',
       } as any
     },
 
@@ -49,26 +40,24 @@ export function getCytoscapeStyles(): any[] {
         'text-valign': 'bottom',
         'text-halign': 'center',
         'text-margin-y': 6,
-        'color': '#8891A0',
+        'color': '#8891A0', // var(--text-secondary)
         'font-size': '10px',
         'font-family': 'Inter, system-ui, sans-serif',
         'font-weight': 500,
 
         'shape': 'ellipse',
-        'width': 36,
-        'height': 36,
-        'background-color': 'rgba(232, 163, 61, 0.14)', // var(--accent-dim)
+        'width': 44,
+        'height': 44,
+        'background-color': '#ffffff', // white fill to make black SVG lines visible
         'background-opacity': 1,
         'border-width': 2,
-        'border-color': '#E8A33D', // var(--accent)
-        'border-opacity': 0.7,
+        'border-color': '#2A2F3A', // dark neutral border
+        'border-opacity': 1,
 
-        'background-image': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23E8A33D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
-        'background-width': '55%',
-        'background-height': '55%',
-        'background-position-x': '50%',
-        'background-position-y': '50%',
-        'background-fit': 'none',
+        // hardcoded: CSS vars unsupported in Cytoscape SVG data URIs
+        // base64-encoded; IEC 60617 "Device, Functional unit, Component, Function" box (form 1)
+        'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI3MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMTUgMjUgNzAgNTAiPjxyZWN0IHg9IjIwIiB5PSIzMCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iNCIvPjwvc3ZnPg==',
+        'background-fit': 'contain',
       } as any
     },
 
@@ -80,26 +69,24 @@ export function getCytoscapeStyles(): any[] {
         'text-valign': 'bottom',
         'text-halign': 'center',
         'text-margin-y': 6,
-        'color': '#8891A0',
-        'font-size': '9px',
+        'color': '#8891A0', // var(--text-secondary)
+        'font-size': '10px',
         'font-family': 'Inter, system-ui, sans-serif',
         'font-weight': 500,
 
-        'shape': 'diamond',
-        'width': 28,
-        'height': 28,
-        'background-color': 'rgba(79, 184, 208, 0.12)',
+        'shape': 'ellipse',
+        'width': 44,
+        'height': 44,
+        'background-color': '#ffffff', // white fill to make black SVG lines visible
         'background-opacity': 1,
         'border-width': 2,
-        'border-color': '#4FB8D0', // var(--data-cyan)
-        'border-opacity': 0.6,
+        'border-color': '#2A2F3A', // dark neutral border
+        'border-opacity': 1,
 
-        'background-image': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%234FB8D0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v7M12 15v7M2 12h7M15 12h7"/></svg>',
-        'background-width': '55%',
-        'background-height': '55%',
-        'background-position-x': '50%',
-        'background-position-y': '50%',
-        'background-fit': 'none',
+        // hardcoded: CSS vars unsupported in Cytoscape SVG data URIs
+        // base64-encoded; IEC 60617 filled dot — T-connection / junction-box convention
+        'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iNDAgNDAgMjAgMjAiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjciIGZpbGw9IiMwMDAwMDAiLz48L3N2Zz4=',
+        'background-fit': 'contain',
       } as any
     },
 
@@ -272,20 +259,20 @@ export function syncCytoscapeTheme(cy: Core): void {
 
   style.selector('node[type="SOURCE"]').style({
     'color': textSecondary,
-    'background-color': statusDangerBg,
-    'border-color': statusDanger,
+    'background-color': '#FFFFFF',
+    'border-color': '#2A2F3A',
   } as any);
 
   style.selector('node[type="CONSUMER"]').style({
     'color': textSecondary,
-    'background-color': accentDim,
-    'border-color': accent,
+    'background-color': '#FFFFFF',
+    'border-color': '#2A2F3A',
   } as any);
 
   style.selector('node[type="JUNCTION"]').style({
     'color': textSecondary,
-    'background-color': `rgba(${hexToRgb(dataCyan)}, 0.12)`,
-    'border-color': dataCyan,
+    'background-color': '#FFFFFF',
+    'border-color': '#2A2F3A',
   } as any);
 
   style.selector('edge').style({

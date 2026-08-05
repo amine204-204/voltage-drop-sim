@@ -7,6 +7,7 @@ import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/ca
 import { LoadPreset } from '../../models/load-preset.model';
 import { LoadProfileEditor } from '../load-profile-editor/load-profile-editor.component';
 import { NumPipe } from '../../shared/pipes/format-number.pipe';
+import { formatDropPercent } from '../../shared/utils/format.utils';
 import { NodeType, LoadType, BranchType } from '../../models/simulation.model';
 
 export interface CytoscapeElementData {
@@ -54,6 +55,11 @@ export class PropertyPanel {
   @Output() openProfileEditor = new EventEmitter<void>();
 
   constructor(private cdr: ChangeDetectorRef) {}
+
+  public formatDrop(value: number | null | undefined): string {
+    return formatDropPercent(value);
+  }
+
 
   get displayProfile(): string {
     if (this.elementData?.loadProfile && Array.isArray(this.elementData.loadProfile)) {

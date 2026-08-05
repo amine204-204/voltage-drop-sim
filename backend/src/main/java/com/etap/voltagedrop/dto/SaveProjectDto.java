@@ -77,6 +77,7 @@ public class SaveProjectDto {
         private String branchId;
         private List<Double> currentTimeSeries;
         private List<Double> dropPercentTimeSeries;
+        private List<Double> cumulativeDropPercentTimeSeries;
         private List<String> statusTimeSeries;
         private List<PowerQualityEventDto> powerQualityEvents;
     }

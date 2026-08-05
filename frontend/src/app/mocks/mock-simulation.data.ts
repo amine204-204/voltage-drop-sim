@@ -22,6 +22,7 @@ export const MOCK_SIMULATION_RESULT = {
       // 219V is ~0.95 Pu (OK). 195V is ~0.84 Pu (VIOLATION!)
       statusTimeSeries: ['OK', 'OK', 'OK', 'VIOLATION', 'VIOLATION', 'OK', 'OK', 'OK', 'OK', 'OK'],
       dropPercentTimeSeries: [4.7, 5.2, 6.5, 15.2, 10.8, 5.2, 4.7, 5.2, 4.7, 5.2],
+      cumulativeDropPercentTimeSeries: [4.7, 5.2, 6.5, 15.2, 10.8, 5.2, 4.7, 5.2, 4.7, 5.2],
       currentTimeSeries: [10, 11, 13, 25, 18, 11, 10, 11, 10, 11],
       powerQualityEvents: [
         {

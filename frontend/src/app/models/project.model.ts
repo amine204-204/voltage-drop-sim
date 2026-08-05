@@ -47,6 +47,7 @@ export interface ProjectBranchResult {
   branchId: string;
   currentTimeSeries: number[];
   dropPercentTimeSeries: number[];
+  cumulativeDropPercentTimeSeries: number[];
   statusTimeSeries: ('OK' | 'VIOLATION')[];
   powerQualityEvents: PowerQualityEvent[];
 }

@@ -19,6 +19,7 @@ export class MockSimulationService {
         id: branch.id,
         statusTimeSeries: Array(payload.totalTimeSteps).fill('OK') as ('OK' | 'VIOLATION')[],
         dropPercentTimeSeries: Array(payload.totalTimeSteps).fill(5.2),
+        cumulativeDropPercentTimeSeries: Array(payload.totalTimeSteps).fill(5.2),
         currentTimeSeries: Array(payload.totalTimeSteps).fill(10),
         powerQualityEvents: []
       }))

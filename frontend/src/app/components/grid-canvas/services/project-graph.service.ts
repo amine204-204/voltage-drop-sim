@@ -14,6 +14,7 @@ export interface SimulationSnapshot {
     branchId: string;
     currentTimeSeries: number[];
     dropPercentTimeSeries: number[];
+    cumulativeDropPercentTimeSeries: number[];
     statusTimeSeries: ('OK' | 'VIOLATION')[];
     powerQualityEvents: { startTimeStep: number; endTimeStep: number; worstMagnitudePu: number; classification: string }[];
   }[];
@@ -141,6 +142,7 @@ export function getSimulationSnapshot(cy: Core): SimulationSnapshot | null {
       branchId: branch.id,
       currentTimeSeries: simData ? simData.currentTimeSeries : [],
       dropPercentTimeSeries: simData ? simData.dropPercentTimeSeries : [],
+      cumulativeDropPercentTimeSeries: simData ? simData.cumulativeDropPercentTimeSeries : [],
       statusTimeSeries: simData ? simData.statusTimeSeries : [],
       powerQualityEvents: simData ? simData.powerQualityEvents.map((pq: PowerQualityEvent) => ({
         startTimeStep: pq.startTimeStep,
@@ -165,6 +167,7 @@ export function mapStoredResultToResponse(storedResult: ProjectSimulationResult)
       id: br.branchId,
       currentTimeSeries: br.currentTimeSeries,
       dropPercentTimeSeries: br.dropPercentTimeSeries,
+      cumulativeDropPercentTimeSeries: br.cumulativeDropPercentTimeSeries,
       statusTimeSeries: br.statusTimeSeries,
       powerQualityEvents: br.powerQualityEvents
     }))

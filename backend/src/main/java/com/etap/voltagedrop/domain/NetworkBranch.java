@@ -25,6 +25,7 @@ public class NetworkBranch {
 
     private List<Double> currentTimeSeries = new ArrayList<>();
     private List<Double> dropPercentTimeSeries = new ArrayList<>();
+    private List<Double> cumulativeDropPercentTimeSeries = new ArrayList<>();
     private List<SimulationStatus> statusTimeSeries = new ArrayList<>();
     private List<PowerQualityEvent> powerQualityEvents = new ArrayList<>();
 

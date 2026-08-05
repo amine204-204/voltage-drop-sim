@@ -32,6 +32,10 @@ public class BranchResultEntity {
     @Column(columnDefinition = "TEXT")
     private List<Double> dropPercentTimeSeries = new ArrayList<>();
 
+    @Convert(converter = DoubleListConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private List<Double> cumulativeDropPercentTimeSeries = new ArrayList<>();
+
     @Convert(converter = StringListConverter.class)
     @Column(columnDefinition = "TEXT")
     private List<String> statusTimeSeries = new ArrayList<>();
