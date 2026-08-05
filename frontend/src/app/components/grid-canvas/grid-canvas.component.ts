@@ -19,6 +19,7 @@ import { getIslands, getNominalVoltageForNode, Island } from './services/graph-t
 import { applySimulationResults as applySimResults, updateTimeStep as updateSimTimeStep } from './services/simulation-render.service';
 import { getProjectGraph, loadProjectGraph as loadGraph, getSimulationSnapshot as getSnapshot, SimulationSnapshot, mapStoredResultToResponse } from './services/project-graph.service';
 import { formatNum } from '../../shared/utils/format.utils';
+import { registerEdgeSymbolRenderer } from './services/edge-symbol-render.service';
 
 @Component({
   selector: 'app-grid-canvas',
@@ -161,6 +162,9 @@ export class GridCanvas implements AfterViewInit {
       elements: [],
       layout: { name: 'preset' }
     });
+
+    registerEdgeSymbolRenderer(this.cy);
+
 
     this.cy.on('select unselect', () => {
       this.updateSelectionState();
@@ -539,7 +543,9 @@ export class GridCanvas implements AfterViewInit {
     }, 1600);
 
     if (focus.length) {
-      this.cy.animate({ fit: { eles: focus, padding: 80 }, duration: 250 });
+      setTimeout(() => {
+        if (this.cy) this.cy.animate({ fit: { eles: focus, padding: 80 }, duration: 750, easing: 'ease-in-out-cubic' });
+      }, 250);
     }
 
     if (this.isResultsMode) {

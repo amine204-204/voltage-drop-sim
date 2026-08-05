@@ -119,7 +119,6 @@ export function getCytoscapeStyles(): any[] {
 
         'target-arrow-shape': 'none',
 
-        'label': 'data(lengthLabel)',
         'font-size': '8px',
         'color': '#8891A0', // var(--text-secondary)
         'text-background-color': '#12161C', // var(--bg-canvas)
@@ -128,6 +127,14 @@ export function getCytoscapeStyles(): any[] {
         'text-background-shape': 'roundrectangle',
         'transition-property': 'line-color, border-color, background-color, width',
         'transition-duration': '0.2s',
+      } as any
+    },
+
+    // === LABELS: only on edges that have lengthLabel defined ===
+    {
+      selector: 'edge[lengthLabel]',
+      style: {
+        'label': 'data(lengthLabel)',
       } as any
     },
 
@@ -164,19 +171,19 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge[branchType = "TRANSFORMER"]',
       style: {
         'line-color': '#4FB8D0', // var(--data-cyan)
-        'line-style': 'dashed',
-        'line-dash-pattern': [8, 4],
+        'line-style': 'solid',
         'width': 3,
-        'label': 'data(lengthLabel)',
-        'text-rotation': 'autorotate',
       } as any
     },
     {
       selector: 'edge[branchType = "SWITCH"]',
       style: {
         'line-color': '#3FBF7F', // var(--status-ok) for closed
+        'line-opacity': 0,
         'width': 2,
         'label': 'data(lengthLabel)',
+        'text-rotation': 'autorotate',
+        'text-margin-y': 12,
       } as any
     },
     {
@@ -184,14 +191,15 @@ export function getCytoscapeStyles(): any[] {
       style: {
         'line-color': '#3FBF7F',
         'line-style': 'solid',
+        'line-opacity': 0,
       } as any
     },
     {
       selector: 'edge[branchType = "SWITCH"][!closed]',
       style: {
         'line-color': '#E8615D',
-        'line-style': 'dotted',
-        'line-dash-pattern': [4, 4],
+        'line-style': 'solid',
+        'line-opacity': 0
       } as any
     },
 
@@ -234,16 +242,25 @@ export function getCytoscapeStyles(): any[] {
         'line-opacity': 1,
       } as any
     },
-
-    // === SELECTED EDGE ===
-    // Kept last so selection highlight wins over branch-type and sim classes while selected;
-    // sim colors (classes) return automatically on deselect.
     {
       selector: 'edge:selected',
       style: {
         'line-color': '#E8A33D',
         'width': 4,
         'line-opacity': 1,
+      } as any
+    },
+
+    {
+      selector: 'edge[branchType = "TRANSFORMER"]:selected, edge[branchType = "SWITCH"]:selected',
+      style: {
+        'line-opacity': 0,
+      } as any
+    },
+    {
+      selector: 'edge[branchType = "TRANSFORMER"]:active, edge[branchType = "SWITCH"]:active',
+      style: {
+        'line-opacity': 0,
       } as any
     },
   ];
@@ -287,6 +304,30 @@ export function syncCytoscapeTheme(cy: Core): void {
     'background-image': buildSymbolDataUri('JUNCTION', getSymbolColor()),
   } as any);
 
+  style.selector('edge[branchType = "TRANSFORMER"]').style({
+    'line-color': dataCyan,
+    'width': 3,
+    'line-opacity': 0,
+  } as any);
+
+  style.selector('edge[branchType = "SWITCH"]').style({
+    'line-color': statusOk,
+    'width': 2,
+    'line-opacity': 0,
+  } as any);
+
+  style.selector('edge[branchType = "SWITCH"][?closed]').style({
+    'line-color': statusOk,
+    'line-style': 'solid',
+    'line-opacity': 0,
+  } as any);
+
+  style.selector('edge[branchType = "SWITCH"][!closed]').style({
+    'line-color': statusDanger,
+    'line-style': 'solid',
+    'line-opacity': 0,
+  } as any);
+
   style.selector('edge').style({
     'line-color': edgeColor,
     'color': textSecondary,
@@ -327,6 +368,12 @@ export function syncCytoscapeTheme(cy: Core): void {
     'line-color': accent,
     'width': 4,
     'line-opacity': 1,
+  } as any);
+  style.selector('edge[branchType = "TRANSFORMER"]:selected, edge[branchType = "SWITCH"]:selected').style({
+    'line-opacity': 0,
+  } as any);
+  style.selector('edge[branchType = "TRANSFORMER"]:active, edge[branchType = "SWITCH"]:active').style({
+    'line-opacity': 0,
   } as any);
 
   style.update();
