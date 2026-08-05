@@ -1,6 +1,23 @@
 import { Core } from 'cytoscape';
 import { getCssVar } from '../../../services/theme.service';
 
+// hardcoded: CSS vars unsupported in Cytoscape SVG data URIs, so the symbol color is
+// baked into the base64 SVG at build/sync time — it matches the branch/edge color (--edge-color)
+// so node symbols stay consistent with the cables, and the value still follows the theme.
+function buildSymbolDataUri(kind: 'SOURCE' | 'CONSUMER' | 'JUNCTION', color: string): string {
+  const svg =
+    kind === 'SOURCE'
+      ? `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="10 10 80 80"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="4"/><path d="M19 28 L41.6 13 M12.7 42.9 L57.8 12.8 M12.2 53.9 L68.1 16.6 M14.3 63.1 L75.8 22.1 M18.4 71.1 L81.6 28.9 M24.2 77.9 L85.7 36.9 M31.9 83.4 L87.8 46.1 M42.2 87.2 L87.3 57.1 M58.4 87.1 L81 72" stroke="${color}" stroke-width="2.5" fill="none"/></svg>`
+      : kind === 'CONSUMER'
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="20 20 60 60"><rect x="20" y="20" width="60" height="60" fill="none" stroke="${color}" stroke-width="4"/></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="43 43 14 14"><circle cx="50" cy="50" r="7" fill="${color}"/></svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+function getSymbolColor(): string {
+  return getCssVar('--edge-color', '#A3B1C6');
+}
+
 export function getCytoscapeStyles(): any[] {
   return [
     // === NODES: SOURCE (Substation) ===
@@ -17,17 +34,17 @@ export function getCytoscapeStyles(): any[] {
         'font-weight': 500,
 
         'shape': 'ellipse',
-        'width': 44,
-        'height': 44,
-        'background-color': '#ffffff', // white fill to make black SVG lines visible
-        'background-opacity': 1,
-        'border-width': 2,
+        'width': 60,
+        'height': 60,
+        'background-color': '#000000',
+        'background-opacity': 0, // Cytoscape paints alpha-0 colors as opaque black; use opacity to hide the fill
+        'border-width': 0,
         'border-color': '#2A2F3A', // dark neutral border
         'border-opacity': 1,
 
         // hardcoded: CSS vars unsupported in Cytoscape SVG data URIs
         // base64-encoded; viewBox="10 10 80 80" crops tight to the circle edge so contain fills the node
-        'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMTAgMTAgODAgODAiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjM4IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iNCIvPjxwYXRoIGQ9Ik0xOC40IDI4LjkgTDgxLjYgNzEuMSBNMjcuMyAxOS41IEw4Ni45IDU5LjIgTTEzLjEgNDAuOCBMNzIuNyA4MC41IiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMi41IiBmaWxsPSJub25lIi8+PC9zdmc+',
+        'background-image': buildSymbolDataUri('SOURCE', getSymbolColor()),
         'background-fit': 'contain',
       } as any
     },
@@ -45,18 +62,18 @@ export function getCytoscapeStyles(): any[] {
         'font-family': 'Inter, system-ui, sans-serif',
         'font-weight': 500,
 
-        'shape': 'ellipse',
-        'width': 44,
-        'height': 44,
-        'background-color': '#ffffff', // white fill to make black SVG lines visible
-        'background-opacity': 1,
-        'border-width': 2,
+        'shape': 'rectangle',
+        'width': 60, // square node matches the square box symbol so contain fills it edge-to-edge
+        'height': 60,
+        'background-color': '#000000',
+        'background-opacity': 0, // Cytoscape paints alpha-0 colors as opaque black; use opacity to hide the fill
+        'border-width': 0,
         'border-color': '#2A2F3A', // dark neutral border
         'border-opacity': 1,
 
         // hardcoded: CSS vars unsupported in Cytoscape SVG data URIs
         // base64-encoded; IEC 60617 "Device, Functional unit, Component, Function" box (form 1)
-        'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI3MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMTUgMjUgNzAgNTAiPjxyZWN0IHg9IjIwIiB5PSIzMCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iNCIvPjwvc3ZnPg==',
+        'background-image': buildSymbolDataUri('CONSUMER', getSymbolColor()),
         'background-fit': 'contain',
       } as any
     },
@@ -75,17 +92,17 @@ export function getCytoscapeStyles(): any[] {
         'font-weight': 500,
 
         'shape': 'ellipse',
-        'width': 44,
-        'height': 44,
-        'background-color': '#ffffff', // white fill to make black SVG lines visible
-        'background-opacity': 1,
-        'border-width': 2,
+        'width': 8, // matches the 14:14 dot viewBox so the filled dot fills the node edge-to-edge
+        'height': 8,
+        'background-color': '#000000',
+        'background-opacity': 0, // Cytoscape paints alpha-0 colors as opaque black; use opacity to hide the fill
+        'border-width': 0,
         'border-color': '#2A2F3A', // dark neutral border
         'border-opacity': 1,
 
         // hardcoded: CSS vars unsupported in Cytoscape SVG data URIs
         // base64-encoded; IEC 60617 filled dot — T-connection / junction-box convention
-        'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iNDAgNDAgMjAgMjAiPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjciIGZpbGw9IiMwMDAwMDAiLz48L3N2Zz4=',
+        'background-image': buildSymbolDataUri('JUNCTION', getSymbolColor()),
         'background-fit': 'contain',
       } as any
     },
@@ -95,15 +112,12 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge',
       style: {
         'width': 3,
-        'line-color': '#7A8CA0', // var(--edge-color)
+        'line-color': '#A3B1C6', // var(--edge-color)
         'line-opacity': 0.8,
         'curve-style': 'bezier',
         'control-point-step-size': 40,
 
-        'target-arrow-shape': 'triangle',
-        'target-arrow-color': '#7A8CA0',
-        'target-arrow-width': 8,
-        'arrow-scale': 0.8,
+        'target-arrow-shape': 'none',
 
         'label': 'data(lengthLabel)',
         'font-size': '8px',
@@ -150,7 +164,6 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge[branchType = "TRANSFORMER"]',
       style: {
         'line-color': '#4FB8D0', // var(--data-cyan)
-        'target-arrow-color': '#4FB8D0',
         'line-style': 'dashed',
         'line-dash-pattern': [8, 4],
         'width': 3,
@@ -162,7 +175,6 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge[branchType = "SWITCH"]',
       style: {
         'line-color': '#3FBF7F', // var(--status-ok) for closed
-        'target-arrow-color': '#3FBF7F',
         'width': 2,
         'label': 'data(lengthLabel)',
       } as any
@@ -171,7 +183,6 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge[branchType = "SWITCH"][?closed]',
       style: {
         'line-color': '#3FBF7F',
-        'target-arrow-color': '#3FBF7F',
         'line-style': 'solid',
       } as any
     },
@@ -179,7 +190,6 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge[branchType = "SWITCH"][!closed]',
       style: {
         'line-color': '#E8615D',
-        'target-arrow-color': '#E8615D',
         'line-style': 'dotted',
         'line-dash-pattern': [4, 4],
       } as any
@@ -191,7 +201,6 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge.sim-ok',
       style: {
         'line-color': '#3FBF7F', // var(--status-ok)
-        'target-arrow-color': '#3FBF7F',
         'width': 4,
         'line-opacity': 0.9,
       } as any
@@ -200,7 +209,6 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge.sim-violation',
       style: {
         'line-color': '#E8615D', // var(--status-danger)
-        'target-arrow-color': '#E8615D',
         'width': 5,
         'line-opacity': 1,
       } as any
@@ -222,7 +230,6 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge.report-focus',
       style: {
         'line-color': '#4FB8D0', // var(--data-cyan)
-        'target-arrow-color': '#4FB8D0',
         'width': 6,
         'line-opacity': 1,
       } as any
@@ -235,7 +242,6 @@ export function getCytoscapeStyles(): any[] {
       selector: 'edge:selected',
       style: {
         'line-color': '#E8A33D',
-        'target-arrow-color': '#E8A33D',
         'width': 4,
         'line-opacity': 1,
       } as any
@@ -250,7 +256,7 @@ export function syncCytoscapeTheme(cy: Core): void {
   const accentDim = getCssVar('--accent-dim', 'rgba(232, 163, 61, 0.14)');
   const accent = getCssVar('--accent', '#E8A33D');
   const dataCyan = getCssVar('--data-cyan', '#4FB8D0');
-  const edgeColor = getCssVar('--edge-color', '#7A8CA0');
+  const edgeColor = getCssVar('--edge-color', '#A3B1C6');
   const bgCanvas = getCssVar('--bg-canvas', '#12161C');
   const accentStrong = getCssVar('--accent-strong', '#F4B75A');
   const statusOk = getCssVar('--status-ok', '#3FBF7F');
@@ -259,25 +265,30 @@ export function syncCytoscapeTheme(cy: Core): void {
 
   style.selector('node[type="SOURCE"]').style({
     'color': textSecondary,
-    'background-color': '#FFFFFF',
-    'border-color': '#2A2F3A',
+    'background-color': '#000000',
+    'background-opacity': 0,
+    'border-color': 'transparent',
+    'background-image': buildSymbolDataUri('SOURCE', getSymbolColor()),
   } as any);
 
   style.selector('node[type="CONSUMER"]').style({
     'color': textSecondary,
-    'background-color': '#FFFFFF',
-    'border-color': '#2A2F3A',
+    'background-color': '#000000',
+    'background-opacity': 0,
+    'border-color': 'transparent',
+    'background-image': buildSymbolDataUri('CONSUMER', getSymbolColor()),
   } as any);
 
   style.selector('node[type="JUNCTION"]').style({
     'color': textSecondary,
-    'background-color': '#FFFFFF',
-    'border-color': '#2A2F3A',
+    'background-color': '#000000',
+    'background-opacity': 0,
+    'border-color': 'transparent',
+    'background-image': buildSymbolDataUri('JUNCTION', getSymbolColor()),
   } as any);
 
   style.selector('edge').style({
     'line-color': edgeColor,
-    'target-arrow-color': edgeColor,
     'color': textSecondary,
     'text-background-color': bgCanvas,
   } as any);
@@ -296,12 +307,10 @@ export function syncCytoscapeTheme(cy: Core): void {
 
   style.selector('edge.sim-ok').style({
     'line-color': statusOk,
-    'target-arrow-color': statusOk,
   } as any);
 
   style.selector('edge.sim-violation').style({
     'line-color': statusDanger,
-    'target-arrow-color': statusDanger,
   } as any);
 
   style.selector('node.report-focus').style({
@@ -310,12 +319,14 @@ export function syncCytoscapeTheme(cy: Core): void {
 
   style.selector('edge.report-focus').style({
     'line-color': dataCyan,
-    'target-arrow-color': dataCyan,
+    'width': 6,
+    'line-opacity': 1,
   } as any);
 
   style.selector('edge:selected').style({
     'line-color': accent,
-    'target-arrow-color': accent,
+    'width': 4,
+    'line-opacity': 1,
   } as any);
 
   style.update();
