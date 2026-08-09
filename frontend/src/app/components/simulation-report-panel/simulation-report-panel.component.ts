@@ -2,16 +2,16 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { IconComponent } from '../shared/icon/icon.component';
 import { formatNum } from '../../shared/utils/format.utils';
+import { PathBranch } from '../../models/simulation.model';
 
 export interface ReportIssue {
-  branchId: string;
-  branchName: string;
   nodeId: string;
   nodeName: string;
   classification: string;
   startTimeStep: number;
   endTimeStep: number;
   worstMagnitudePu: number;
+  pathBranches: PathBranch[];
 }
 
 const CLASSIFICATION_LABELS: Record<string, string> = {
@@ -58,5 +58,11 @@ export class SimulationReportPanel {
     const start = issue.startTimeStep * this.deltaTime;
     const end = (issue.endTimeStep + 1) * this.deltaTime;
     return `${formatNum(start)}s – ${formatNum(end)}s`;
+  }
+
+  /* Source→node chain of branches causing the violation at this connection point. */
+  public pathLabel(issue: ReportIssue): string {
+    const names = (issue.pathBranches || []).map(pb => pb.branchName || pb.branchId);
+    return names.length > 0 ? names.join(' → ') : 'direct feed';
   }
 }

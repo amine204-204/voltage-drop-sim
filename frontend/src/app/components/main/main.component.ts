@@ -296,7 +296,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
           this.gridCanvas.applySimulationResults(mergedResponse, settings.deltaTimeSeconds);
 
           const violations = responses.reduce(
-            (sum, r) => sum + r.branches.reduce((s, b) => s + (b.powerQualityEvents ? b.powerQualityEvents.length : 0), 0),
+            (sum, r) => sum + r.nodes.reduce((s, n) => s + (n.powerQualityEvents ? n.powerQualityEvents.length : 0), 0),
             0
           );
           if (violations > 0) {

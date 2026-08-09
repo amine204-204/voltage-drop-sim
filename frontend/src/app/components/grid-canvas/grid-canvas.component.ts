@@ -16,7 +16,7 @@ import { SimulationResponseDto } from '../../models/simulation.model';
 import { ProjectNode, ProjectBranch, ProjectSimulationResult } from '../../models/project.model';
 import { getCytoscapeStyles, syncCytoscapeTheme } from './services/cytoscape-style.service';
 import { getIslands, getNominalVoltageForNode, Island } from './services/graph-traversal.service';
-import { applySimulationResults as applySimResults, updateTimeStep as updateSimTimeStep } from './services/simulation-render.service';
+import { applySimulationResults as applySimResults, updateTimeStep as updateSimTimeStep, getEdgeStatusAt } from './services/simulation-render.service';
 import { getProjectGraph, loadProjectGraph as loadGraph, getSimulationSnapshot as getSnapshot, SimulationSnapshot, mapStoredResultToResponse } from './services/project-graph.service';
 import { formatNum } from '../../shared/utils/format.utils';
 import { registerEdgeSymbolRenderer } from './services/edge-symbol-render.service';
@@ -82,23 +82,24 @@ export class GridCanvas implements AfterViewInit {
     if (!this.simulationResult || !this.cy) return [];
     const issues: ReportIssue[] = [];
 
-    for (const branch of this.simulationResult.branches) {
-      const branchEl = this.cy.$('#' + branch.id);
-      const branchName = branchEl.data('name') || branch.id;
-      const targetNodeId = branchEl.data('target') || '';
-      const nodeEl = targetNodeId ? this.cy.$('#' + targetNodeId) : undefined;
-      const nodeName = (nodeEl && nodeEl.data('label')) || targetNodeId;
+    /* Compliance is owned by the connection point (node). The report lists CONSUMER nodes only;
+       junctions carry status but appear as path context, never as report entries. */
+    for (const node of this.simulationResult.nodes) {
+      if (node.type && node.type !== 'CONSUMER') continue;
 
-      for (const ev of branch.powerQualityEvents || []) {
+      const nodeEl = this.cy.$('#' + node.id);
+      const nodeName = nodeEl.data('label') || node.id;
+      const pathBranches = node.pathBranches || [];
+
+      for (const ev of node.powerQualityEvents || []) {
         issues.push({
-          branchId: branch.id,
-          branchName,
-          nodeId: targetNodeId,
+          nodeId: node.id,
           nodeName,
           classification: ev.classification,
           startTimeStep: ev.startTimeStep,
           endTimeStep: ev.endTimeStep,
-          worstMagnitudePu: ev.worstMagnitudePu
+          worstMagnitudePu: ev.worstMagnitudePu,
+          pathBranches
         });
       }
     }
@@ -210,6 +211,13 @@ export class GridCanvas implements AfterViewInit {
       this.selectedElementType = el.isNode() ? 'node' : 'edge';
 
       const baseData = { ...el.data() };
+
+      /* Edges carry no status of their own: derive it from the target node's compliance at the
+         current step, so edge panels always mirror the downstream connection point. */
+      if (el.isEdge() && this.simulationResult && baseData.target) {
+        const edge = el as any;
+        baseData.simStatus = getEdgeStatusAt(edge, this.currentSimulationStep) ?? 'N/A';
+      }
 
       this.selectedElementData = baseData;
       if (el.isNode()) {
@@ -509,6 +517,7 @@ export class GridCanvas implements AfterViewInit {
     if (!this.cy) return;
     this.cy.elements().forEach((el: any) => { el.removeData('simulationData'); });
     this.cy.edges().removeClass('sim-ok sim-violation');
+    this.cy.nodes().removeClass('sim-node-violation');
     this.cy.autoungrabify(false);
     this.simulationResult = null;
     this.currentSimulationStep = 0;
@@ -526,16 +535,17 @@ export class GridCanvas implements AfterViewInit {
   public onReportEventClicked(issue: ReportIssue) {
     if (!this.cy) return;
 
-    const branchEl = this.cy.$('#' + issue.branchId);
-    if (!branchEl.length) return;
     const nodeEl = this.cy.$('#' + issue.nodeId);
 
     const focus = this.cy.collection();
-    if (branchEl.length) focus.merge(branchEl);
     if (nodeEl.length) focus.merge(nodeEl);
+    for (const pb of issue.pathBranches || []) {
+      const branchEl = this.cy.$('#' + pb.branchId);
+      if (branchEl.length) focus.merge(branchEl);
+    }
 
     this.cy.elements().unselect();
-    branchEl.select();
+    if (nodeEl.length) nodeEl.select();
 
     focus.addClass('report-focus');
     setTimeout(() => {
@@ -610,6 +620,15 @@ export class GridCanvas implements AfterViewInit {
 
     if (simulationResult && deltaTimeSeconds !== undefined && simulationResult.nodesResults && simulationResult.branchesResults) {
       const mappedResponse = mapStoredResultToResponse(simulationResult);
+      /* The stored result DTO doesn't carry node types/names; enrich from the project graph so the
+         report and coloring can still classify nodes. */
+      mappedResponse.nodes.forEach(n => {
+        const projectNode = nodes.find(pn => pn.id === n.id);
+        if (projectNode) {
+          n.type = projectNode.type;
+          n.name = projectNode.name;
+        }
+      });
       this.applySimulationResults(mappedResponse, deltaTimeSeconds);
     } else {
       this.updateSelectionState();

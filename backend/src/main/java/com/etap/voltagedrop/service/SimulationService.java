@@ -12,6 +12,7 @@ import com.etap.voltagedrop.service.visitor.VoltageDropVisitor;
 import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +57,8 @@ public class SimulationService {
         }
 
         computeCumulativeDropPercent(graph);
-        classifyPowerQualityEvents(graph, nominalVoltage, deltaTimeSeconds);
+        classifyPowerQualityEvents(graph, deltaTimeSeconds);
+        computePaths(graph);
     }
 
     private void initializeWorkingVoltages(NetworkGraph graph, double nominalVoltage) {
@@ -143,21 +145,24 @@ public class SimulationService {
             double finalVoltage = node.getWorkingVoltage();
             node.getPotentialTimeSeries().add(finalVoltage);
 
+            double nodeNominal = node.getLocalNominalVoltage();
+
+            /* Only consumers are connection points, so only they carry a compliance status.
+               Junctions and the source have voltage/cumulative-drop diagnostics but no verdict. */
+            if (node.isConsumer()) {
+                double voltagePu = finalVoltage / nodeNominal;
+                boolean isCompliant = activeNorm.isCompliant(voltagePu);
+                node.getStatusTimeSeries().add(isCompliant ? SimulationStatus.OK : SimulationStatus.VIOLATION);
+            }
+
             NetworkBranch incomingBranch = graph.getIncomingBranch(node.getId());
             if (incomingBranch != null) {
                 double parentVoltage = graph.getNodeById(incomingBranch.getFromNodeId()).getWorkingVoltage();
                 double voltageDrop = parentVoltage - finalVoltage;
-                double nodeNominal = node.getLocalNominalVoltage();
                 double dropPercent = (voltageDrop / nodeNominal) * 100.0;
 
                 incomingBranch.getCurrentTimeSeries().add(incomingBranch.getWorkingCurrent());
                 incomingBranch.getDropPercentTimeSeries().add(dropPercent);
-
-                double voltagePu = finalVoltage / nodeNominal;
-
-                boolean isCompliant = activeNorm.isCompliant(voltagePu);
-
-                incomingBranch.getStatusTimeSeries().add(isCompliant ? SimulationStatus.OK : SimulationStatus.VIOLATION);
             }
         }
     }
@@ -165,11 +170,6 @@ public class SimulationService {
     private void computeCumulativeDropPercent(NetworkGraph graph) {
         for (NetworkNode node : graph.getNodes()) {
             if (node.isSource()) {
-                continue;
-            }
-
-            NetworkBranch incomingBranch = graph.getIncomingBranch(node.getId());
-            if (incomingBranch == null) {
                 continue;
             }
 
@@ -182,21 +182,24 @@ public class SimulationService {
                 cumulative.add((1.0 - voltagePu) * 100.0);
             }
 
-            incomingBranch.setCumulativeDropPercentTimeSeries(cumulative);
+            node.setCumulativeDropPercentTimeSeries(cumulative);
         }
     }
 
-    private void classifyPowerQualityEvents(NetworkGraph graph, double nominalVoltage, double deltaTimeSeconds) {
-        for (NetworkBranch branch : graph.getBranches()) {
+    private void classifyPowerQualityEvents(NetworkGraph graph, double deltaTimeSeconds) {
+        for (NetworkNode node : graph.getNodes()) {
+            if (!node.isConsumer()) {
+                continue;
+            }
+
             int eventStart = -1;
             double worstPu = 1.0;
 
-            for (int t = 0; t < branch.getStatusTimeSeries().size(); t++) {
-                if (branch.getStatusTimeSeries().get(t) == SimulationStatus.VIOLATION) {
+            for (int t = 0; t < node.getStatusTimeSeries().size(); t++) {
+                if (node.getStatusTimeSeries().get(t) == SimulationStatus.VIOLATION) {
                     if (eventStart == -1) eventStart = t;
 
-                    NetworkNode downstreamNode = graph.getNodeById(branch.getToNodeId());
-                    double currentPu = downstreamNode.getPotentialTimeSeries().get(t) / downstreamNode.getLocalNominalVoltage();
+                    double currentPu = node.getPotentialTimeSeries().get(t) / node.getLocalNominalVoltage();
                     if (currentPu < worstPu) worstPu = currentPu;
                 } else {
                     if (eventStart != -1) {
@@ -205,7 +208,7 @@ public class SimulationService {
                         double durationSeconds = durationSteps * deltaTimeSeconds;
 
                         DisturbanceType type = classifyByDurationSeconds(durationSeconds);
-                        branch.addPowerQualityEvent(new PowerQualityEvent(eventStart, eventEnd, worstPu, type));
+                        node.addPowerQualityEvent(new PowerQualityEvent(eventStart, eventEnd, worstPu, type));
 
                         eventStart = -1;
                         worstPu = 1.0;
@@ -214,12 +217,38 @@ public class SimulationService {
             }
 
             if (eventStart != -1) {
-                int eventEnd = branch.getStatusTimeSeries().size() - 1;
+                int eventEnd = node.getStatusTimeSeries().size() - 1;
                 int durationSteps = (eventEnd - eventStart) + 1;
                 double durationSeconds = durationSteps * deltaTimeSeconds;
                 DisturbanceType type = classifyByDurationSeconds(durationSeconds);
-                branch.addPowerQualityEvent(new PowerQualityEvent(eventStart, eventEnd, worstPu, type));
+                node.addPowerQualityEvent(new PowerQualityEvent(eventStart, eventEnd, worstPu, type));
             }
+        }
+    }
+
+    private void computePaths(NetworkGraph graph) {
+        for (NetworkNode node : graph.getNodes()) {
+            List<PathBranchInfo> path = new ArrayList<>();
+            String cursor = node.getId();
+            int guard = graph.getNodes().size() + 1;
+
+            while (guard-- > 0) {
+                NetworkNode cursorNode = graph.getNodeById(cursor);
+                if (cursorNode == null || cursorNode.isSource()) {
+                    break;
+                }
+
+                NetworkBranch incoming = graph.getIncomingBranch(cursor);
+                if (incoming == null) {
+                    break;
+                }
+
+                path.add(new PathBranchInfo(incoming.getId(), incoming.getName()));
+                cursor = incoming.getFromNodeId();
+            }
+
+            Collections.reverse(path);
+            node.setPathBranches(path);
         }
     }
 

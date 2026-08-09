@@ -97,10 +97,10 @@ class SimulationServiceTest {
 
         // Assert: EN 50160 Status
         // Voltage will be ~220.52V. Pu = 220.52 / 230 ≈ 0.958 Pu (Strictly > 0.90 limit)
-        assertEquals(SimulationStatus.OK, branch.getStatusTimeSeries().get(0));
+        assertEquals(SimulationStatus.OK, loadNode.getStatusTimeSeries().get(0));
 
         // Assert: IEEE 1159 Post-Processor should create NO events
-        assertTrue(branch.getPowerQualityEvents().isEmpty());
+        assertTrue(loadNode.getPowerQualityEvents().isEmpty());
     }
 
     @Test
@@ -123,16 +123,139 @@ class SimulationServiceTest {
 
         assertEquals(expectedVoltage, loadNode.getPotentialTimeSeries().get(0), 0.001);
 
-        assertEquals(SimulationStatus.VIOLATION, branch.getStatusTimeSeries().get(0));
+        assertEquals(SimulationStatus.VIOLATION, loadNode.getStatusTimeSeries().get(0));
 
-        assertEquals(1, branch.getPowerQualityEvents().size());
+        assertEquals(1, loadNode.getPowerQualityEvents().size());
 
-        var event = branch.getPowerQualityEvents().get(0);
+        var event = loadNode.getPowerQualityEvents().get(0);
         assertEquals(0, event.getStartTimeStep());
         assertEquals(0, event.getEndTimeStep());
         assertEquals(expectedPu, event.getWorstMagnitudePu(), 0.001);
 
         assertEquals(DisturbanceType.MOMENTARY_SAG, event.getClassification());
+    }
+
+    @Test
+    void testNodeOwnsCumulativeDropPercent() {
+        // Arrange
+        En50160NormEvaluator norm = new En50160NormEvaluator(new SimulationProperties());
+
+        // Act
+        simulationService.runChronologicalSimulation(testGraph, 2, 1.0, norm);
+
+        // Assert: cumulative drop is owned by the node, not the branch
+        double expectedDrop = ((230.0 - loadNode.getPotentialTimeSeries().get(0)) / 230.0) * 100.0;
+        assertEquals(2, loadNode.getCumulativeDropPercentTimeSeries().size());
+        assertEquals(expectedDrop, loadNode.getCumulativeDropPercentTimeSeries().get(0), 0.001);
+    }
+
+    @Test
+    void testJunctionsCarryNoStatus_onlyConsumersDo() {
+        NetworkGraph graph = new NetworkGraph();
+
+        NetworkNode source = new NetworkNode();
+        source.setId("SRC");
+        source.setSourceBehavior(new PowerSource(230.0));
+
+        NetworkNode bus = new NetworkNode();
+        bus.setId("BUS");
+
+        NetworkNode load = new NetworkNode();
+        load.setId("LOAD");
+        load.setConsumerBehavior(new PowerConsumer(
+                new ConstantCurrentStrategy(List.of(10.0)),
+                0.95
+        ));
+
+        NetworkBranch first = new NetworkBranch();
+        first.setId("BR1");
+        first.setFromNodeId("SRC");
+        first.setToNodeId("BUS");
+        CableSpec c1 = new CableSpec("16", "CU", 1.0, 0.0);
+        c1.setLengthInKm(0.5);
+        first.setComponent(c1);
+
+        NetworkBranch second = new NetworkBranch();
+        second.setId("BR2");
+        second.setFromNodeId("BUS");
+        second.setToNodeId("LOAD");
+        CableSpec c2 = new CableSpec("16", "CU", 1.0, 0.0);
+        c2.setLengthInKm(0.5);
+        second.setComponent(c2);
+
+        graph.addNode(source);
+        graph.addNode(bus);
+        graph.addNode(load);
+        graph.addBranch(first);
+        graph.addBranch(second);
+
+        simulationService.runChronologicalSimulation(graph, 2, 1.0, new En50160NormEvaluator(new SimulationProperties()));
+
+        assertTrue(source.getStatusTimeSeries().isEmpty(),
+                "Source node should never carry a status");
+        assertTrue(bus.getStatusTimeSeries().isEmpty(),
+                "Junction node should never carry a status");
+        assertFalse(load.getStatusTimeSeries().isEmpty(),
+                "Consumer node must carry a status");
+        assertTrue(bus.getPowerQualityEvents().isEmpty(),
+                "Junctions should never generate power quality events");
+    }
+
+    @Test
+    void testPathComputation_orderedFromSourceToNode() {
+        NetworkGraph graph = new NetworkGraph();
+
+        NetworkNode source = new NetworkNode();
+        source.setId("SRC");
+        source.setSourceBehavior(new PowerSource(230.0));
+
+        NetworkNode bus = new NetworkNode();
+        bus.setId("BUS");
+
+        NetworkNode load = new NetworkNode();
+        load.setId("LOAD");
+        load.setConsumerBehavior(new PowerConsumer(
+                new ConstantCurrentStrategy(List.of(10.0, 10.0)),
+                0.95
+        ));
+
+        NetworkBranch first = new NetworkBranch();
+        first.setId("BR1");
+        first.setName("Feeder");
+        first.setFromNodeId("SRC");
+        first.setToNodeId("BUS");
+        CableSpec c1 = new CableSpec("16", "CU", 1.0, 0.0);
+        c1.setLengthInKm(0.5);
+        first.setComponent(c1);
+
+        NetworkBranch second = new NetworkBranch();
+        second.setId("BR2");
+        second.setName("Drop");
+        second.setFromNodeId("BUS");
+        second.setToNodeId("LOAD");
+        CableSpec c2 = new CableSpec("16", "CU", 1.0, 0.0);
+        c2.setLengthInKm(0.5);
+        second.setComponent(c2);
+
+        graph.addNode(source);
+        graph.addNode(bus);
+        graph.addNode(load);
+        graph.addBranch(first);
+        graph.addBranch(second);
+
+        simulationService.runChronologicalSimulation(graph, 2, 1.0, new En50160NormEvaluator(new SimulationProperties()));
+
+        assertTrue(source.getPathBranches().isEmpty(),
+                "Source node should have an empty path");
+
+        assertEquals(1, bus.getPathBranches().size());
+        assertEquals("BR1", bus.getPathBranches().get(0).branchId());
+
+        assertEquals(2, load.getPathBranches().size());
+        assertEquals("BR1", load.getPathBranches().get(0).branchId());
+        assertEquals("BR2", load.getPathBranches().get(1).branchId());
+        assertEquals("Feeder", load.getPathBranches().get(0).branchName());
+        assertEquals("Drop", load.getPathBranches().get(1).branchName());
     }
 
     @Test

@@ -10,6 +10,7 @@ import com.etap.voltagedrop.domain.strategy.ConstantCurrentStrategy;
 import com.etap.voltagedrop.domain.strategy.ConstantPowerStrategy;
 import com.etap.voltagedrop.domain.strategy.LoadBehaviorStrategy;
 import com.etap.voltagedrop.dto.SimulationRequestDto;
+import com.etap.voltagedrop.dto.SimulationResponseDto;
 import com.etap.voltagedrop.persistence.entity.ComplianceStandardEntity;
 import com.etap.voltagedrop.service.BranchComponentFactory;
 import com.etap.voltagedrop.service.ComplianceStandardService;
@@ -33,7 +34,7 @@ public class SimulationController {
 
     @PostMapping("/run")
     @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
-    public ResponseEntity<NetworkGraph> runSimulation(@Valid @RequestBody SimulationRequestDto dto) {
+    public ResponseEntity<SimulationResponseDto> runSimulation(@Valid @RequestBody SimulationRequestDto dto) {
 
         NetworkGraph graph = mapDtoToDomain(dto);
 
@@ -48,7 +49,47 @@ public class SimulationController {
                 activeNorm
         );
 
-        return ResponseEntity.ok(graph);
+        return ResponseEntity.ok(toResponseDto(graph));
+    }
+
+    private SimulationResponseDto toResponseDto(NetworkGraph graph) {
+        SimulationResponseDto dto = new SimulationResponseDto();
+
+        dto.setNodes(graph.getNodes().stream().map(node -> {
+            SimulationResponseDto.NodeResultDto n = new SimulationResponseDto.NodeResultDto();
+            n.setId(node.getId());
+            n.setName(node.getName());
+            n.setType(node.isSource() ? "SOURCE" : (node.isConsumer() ? "CONSUMER" : "JUNCTION"));
+            n.setLocalNominalVoltage(node.getLocalNominalVoltage());
+            n.setPotentialTimeSeries(node.getPotentialTimeSeries());
+            n.setCumulativeDropPercentTimeSeries(node.getCumulativeDropPercentTimeSeries());
+            n.setStatusTimeSeries(node.getStatusTimeSeries());
+            n.setPowerQualityEvents(node.getPowerQualityEvents().stream().map(pq -> {
+                SimulationResponseDto.PowerQualityEventDto e = new SimulationResponseDto.PowerQualityEventDto();
+                e.setStartTimeStep(pq.getStartTimeStep());
+                e.setEndTimeStep(pq.getEndTimeStep());
+                e.setWorstMagnitudePu(pq.getWorstMagnitudePu());
+                e.setClassification(pq.getClassification());
+                return e;
+            }).toList());
+            n.setPathBranches(node.getPathBranches().stream().map(pb -> {
+                SimulationResponseDto.PathBranchDto p = new SimulationResponseDto.PathBranchDto();
+                p.setBranchId(pb.branchId());
+                p.setBranchName(pb.branchName());
+                return p;
+            }).toList());
+            return n;
+        }).toList());
+
+        dto.setBranches(graph.getBranches().stream().map(branch -> {
+            SimulationResponseDto.BranchResultDto b = new SimulationResponseDto.BranchResultDto();
+            b.setId(branch.getId());
+            b.setCurrentTimeSeries(branch.getCurrentTimeSeries());
+            b.setDropPercentTimeSeries(branch.getDropPercentTimeSeries());
+            return b;
+        }).toList());
+
+        return dto;
     }
 
 

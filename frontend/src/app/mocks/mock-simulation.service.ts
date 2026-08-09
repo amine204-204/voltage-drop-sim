@@ -13,15 +13,21 @@ export class MockSimulationService {
     const mockResponse: SimulationResponseDto = {
       nodes: payload.graph.nodes.map(node => ({
         id: node.id,
-        potentialTimeSeries: Array(payload.totalTimeSteps).fill(node.type === 'SOURCE' ? 230 : 218)
+        name: node.name,
+        type: node.type,
+        localNominalVoltage: node.nominalVoltage || 230,
+        potentialTimeSeries: Array(payload.totalTimeSteps).fill(node.type === 'SOURCE' ? 230 : 218),
+        cumulativeDropPercentTimeSeries: Array(payload.totalTimeSteps).fill(node.type === 'SOURCE' ? 0 : 5.2),
+        statusTimeSeries: node.type === 'CONSUMER'
+          ? Array(payload.totalTimeSteps).fill('OK') as ('OK' | 'VIOLATION')[]
+          : [],
+        powerQualityEvents: [],
+        pathBranches: []
       })),
       branches: payload.graph.branches.map(branch => ({
         id: branch.id,
-        statusTimeSeries: Array(payload.totalTimeSteps).fill('OK') as ('OK' | 'VIOLATION')[],
         dropPercentTimeSeries: Array(payload.totalTimeSteps).fill(5.2),
-        cumulativeDropPercentTimeSeries: Array(payload.totalTimeSteps).fill(5.2),
-        currentTimeSeries: Array(payload.totalTimeSteps).fill(10),
-        powerQualityEvents: []
+        currentTimeSeries: Array(payload.totalTimeSteps).fill(10)
       }))
     };
 

@@ -48,19 +48,27 @@ export interface PowerQualityEvent {
   classification: string;
 }
 
+export interface PathBranch {
+  branchId: string;
+  branchName?: string;
+}
+
 export interface SimulationNodeResult {
   id: string;
-  potentialTimeSeries: number[];
+  name?: string;
+  type?: NodeType;
   localNominalVoltage?: number;
+  potentialTimeSeries: number[];
+  cumulativeDropPercentTimeSeries: number[];
+  statusTimeSeries: ('OK' | 'VIOLATION')[];
+  powerQualityEvents: PowerQualityEvent[];
+  pathBranches: PathBranch[];
 }
 
 export interface SimulationBranchResult {
   id: string;
   currentTimeSeries: number[];
   dropPercentTimeSeries: number[];
-  cumulativeDropPercentTimeSeries: number[];
-  statusTimeSeries: ('OK' | 'VIOLATION')[];
-  powerQualityEvents: PowerQualityEvent[];
 }
 
 export interface SimulationResponseDto {

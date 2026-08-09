@@ -20,7 +20,8 @@
       <span class="sev-dot" [class.sev-severe]="isSevere(issue.classification)"></span>
       <span class="report-main">
         <span class="report-label">{{ labelFor(issue.classification) }}</span>
-        <span class="report-path">{{ issue.branchName }} > {{ issue.nodeName }}</span>
+        <span class="report-path">{{ issue.nodeName }}</span>
+        <span class="report-path">{{ pathLabel(issue) }}</span>
       </span>
       <span class="report-meta">
         <span class="report-mag mono">−{{ magnitudePercent(issue) }}%</span>

@@ -23,7 +23,7 @@ public class PowerQualityEventEntity {
     private String classification; // Enum value name
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "branch_result_id", nullable = false)
+    @JoinColumn(name = "node_result_id", nullable = false)
     @JsonIgnore
-    private BranchResultEntity branchResult;
+    private NodeResultEntity nodeResult;
 }

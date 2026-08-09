@@ -68,7 +68,12 @@ public class SaveProjectDto {
     @Setter
     public static class NodeResultDto {
         private String nodeId;
+        private Double localNominalVoltage;
         private List<Double> potentialTimeSeries;
+        private List<Double> cumulativeDropPercentTimeSeries;
+        private List<String> statusTimeSeries;
+        private List<String> pathBranchIds;
+        private List<PowerQualityEventDto> powerQualityEvents;
     }
 
     @Getter
@@ -77,9 +82,6 @@ public class SaveProjectDto {
         private String branchId;
         private List<Double> currentTimeSeries;
         private List<Double> dropPercentTimeSeries;
-        private List<Double> cumulativeDropPercentTimeSeries;
-        private List<String> statusTimeSeries;
-        private List<PowerQualityEventDto> powerQualityEvents;
     }
 
     @Getter

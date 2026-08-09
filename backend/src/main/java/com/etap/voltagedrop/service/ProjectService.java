@@ -283,8 +283,26 @@ public class ProjectService {
                 for (SaveProjectDto.NodeResultDto nrDto : dto.getSimulationResult().getNodesResults()) {
                     NodeResultEntity nr = new NodeResultEntity();
                     nr.setNodeId(nrDto.getNodeId());
+                    nr.setLocalNominalVoltage(nrDto.getLocalNominalVoltage());
                     nr.setPotentialTimeSeries(nrDto.getPotentialTimeSeries());
+                    nr.setCumulativeDropPercentTimeSeries(nrDto.getCumulativeDropPercentTimeSeries());
+                    nr.setStatusTimeSeries(nrDto.getStatusTimeSeries());
+                    nr.setPathBranchIds(nrDto.getPathBranchIds());
                     nr.setSimulationResult(simResult);
+
+                    List<PowerQualityEventEntity> events = new ArrayList<>();
+                    if (nrDto.getPowerQualityEvents() != null) {
+                        for (SaveProjectDto.PowerQualityEventDto pqDto : nrDto.getPowerQualityEvents()) {
+                            PowerQualityEventEntity pq = new PowerQualityEventEntity();
+                            pq.setStartTimeStep(pqDto.getStartTimeStep());
+                            pq.setEndTimeStep(pqDto.getEndTimeStep());
+                            pq.setWorstMagnitudePu(pqDto.getWorstMagnitudePu());
+                            pq.setClassification(pqDto.getClassification());
+                            pq.setNodeResult(nr);
+                            events.add(pq);
+                        }
+                    }
+                    nr.setPowerQualityEvents(events);
                     nodesResults.add(nr);
                 }
             }
@@ -297,23 +315,7 @@ public class ProjectService {
                     br.setBranchId(brDto.getBranchId());
                     br.setCurrentTimeSeries(brDto.getCurrentTimeSeries());
                     br.setDropPercentTimeSeries(brDto.getDropPercentTimeSeries());
-                    br.setCumulativeDropPercentTimeSeries(brDto.getCumulativeDropPercentTimeSeries());
-                    br.setStatusTimeSeries(brDto.getStatusTimeSeries());
                     br.setSimulationResult(simResult);
-
-                    List<PowerQualityEventEntity> events = new ArrayList<>();
-                    if (brDto.getPowerQualityEvents() != null) {
-                        for (SaveProjectDto.PowerQualityEventDto pqDto : brDto.getPowerQualityEvents()) {
-                            PowerQualityEventEntity pq = new PowerQualityEventEntity();
-                            pq.setStartTimeStep(pqDto.getStartTimeStep());
-                            pq.setEndTimeStep(pqDto.getEndTimeStep());
-                            pq.setWorstMagnitudePu(pqDto.getWorstMagnitudePu());
-                            pq.setClassification(pqDto.getClassification());
-                            pq.setBranchResult(br);
-                            events.add(pq);
-                        }
-                    }
-                    br.setPowerQualityEvents(events);
                     branchesResults.add(br);
                 }
             }
@@ -382,19 +384,13 @@ public class ProjectService {
             sr.setNodesResults(p.getSimulationResult().getNodesResults().stream().map(nr -> {
                 ProjectDto.NodeResultDto nrDto = new ProjectDto.NodeResultDto();
                 nrDto.setNodeId(nr.getNodeId());
+                nrDto.setLocalNominalVoltage(nr.getLocalNominalVoltage());
                 nrDto.setPotentialTimeSeries(nr.getPotentialTimeSeries());
-                return nrDto;
-            }).collect(Collectors.toList()));
+                nrDto.setCumulativeDropPercentTimeSeries(nr.getCumulativeDropPercentTimeSeries());
+                nrDto.setStatusTimeSeries(nr.getStatusTimeSeries());
+                nrDto.setPathBranchIds(nr.getPathBranchIds());
 
-            sr.setBranchesResults(p.getSimulationResult().getBranchesResults().stream().map(br -> {
-                ProjectDto.BranchResultDto brDto = new ProjectDto.BranchResultDto();
-                brDto.setBranchId(br.getBranchId());
-                brDto.setCurrentTimeSeries(br.getCurrentTimeSeries());
-                brDto.setDropPercentTimeSeries(br.getDropPercentTimeSeries());
-                brDto.setCumulativeDropPercentTimeSeries(br.getCumulativeDropPercentTimeSeries());
-                brDto.setStatusTimeSeries(br.getStatusTimeSeries());
-                
-                brDto.setPowerQualityEvents(br.getPowerQualityEvents().stream().map(pq -> {
+                nrDto.setPowerQualityEvents(nr.getPowerQualityEvents().stream().map(pq -> {
                     ProjectDto.PowerQualityEventDto pqDto = new ProjectDto.PowerQualityEventDto();
                     pqDto.setStartTimeStep(pq.getStartTimeStep());
                     pqDto.setEndTimeStep(pq.getEndTimeStep());
@@ -403,6 +399,14 @@ public class ProjectService {
                     return pqDto;
                 }).collect(Collectors.toList()));
 
+                return nrDto;
+            }).collect(Collectors.toList()));
+
+            sr.setBranchesResults(p.getSimulationResult().getBranchesResults().stream().map(br -> {
+                ProjectDto.BranchResultDto brDto = new ProjectDto.BranchResultDto();
+                brDto.setBranchId(br.getBranchId());
+                brDto.setCurrentTimeSeries(br.getCurrentTimeSeries());
+                brDto.setDropPercentTimeSeries(br.getDropPercentTimeSeries());
                 return brDto;
             }).collect(Collectors.toList()));
 

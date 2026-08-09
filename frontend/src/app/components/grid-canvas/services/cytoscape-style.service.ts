@@ -206,6 +206,14 @@ export function getCytoscapeStyles(): any[] {
     // === SIMULATION STATES ===
     // Kept last so they win over :selected and branch-type rules (equal specificity, order decides)
     {
+      selector: 'node.sim-node-violation',
+      style: {
+        'border-width': 4,
+        'border-color': '#E8615D', // var(--status-danger)
+        'border-opacity': 1,
+      } as any
+    },
+    {
       selector: 'edge.sim-ok',
       style: {
         'line-color': '#3FBF7F', // var(--status-ok)
@@ -344,6 +352,12 @@ export function syncCytoscapeTheme(cy: Core): void {
 
   style.selector('edge:active').style({
     'line-color': accentDim,
+  } as any);
+
+  style.selector('node.sim-node-violation').style({
+    'border-width': 4,
+    'border-color': statusDanger,
+    'border-opacity': 1,
   } as any);
 
   style.selector('edge.sim-ok').style({

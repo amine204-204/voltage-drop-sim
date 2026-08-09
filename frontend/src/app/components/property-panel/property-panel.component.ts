@@ -28,6 +28,8 @@ export interface CytoscapeElementData {
   componentMaterial?: string;
   closed?: boolean;
   simulationData?: any;
+  /* Resolved by the grid canvas for edges: status of the target (downstream) node at the current step. */
+  simStatus?: string;
   [key: string]: any;
 }
 
@@ -58,6 +60,24 @@ export class PropertyPanel {
 
   public formatDrop(value: number | null | undefined): string {
     return formatDropPercent(value);
+  }
+
+  /* Compliance lives on the node. For edges, the status shown is resolved from the target node
+     (injected as `simStatus` by the grid canvas) — a branch never owns a status itself. */
+  get statusAtStep(): string {
+    const sim = this.elementData?.simulationData;
+    if (this.elementType === 'node') {
+      return sim?.statusTimeSeries?.[this.simulationStep] ?? 'N/A';
+    }
+    return this.elementData?.simStatus ?? 'N/A';
+  }
+
+  /* Only consumers carry a verdict; junctions/source never show a compliance badge. */
+  get showStatusBadge(): boolean {
+    if (this.elementType === 'node') {
+      return this.elementData?.type === 'CONSUMER';
+    }
+    return true;
   }
 
 

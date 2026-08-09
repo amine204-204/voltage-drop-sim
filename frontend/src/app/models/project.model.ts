@@ -39,17 +39,18 @@ export interface ProjectBranch {
 
 export interface ProjectNodeResult {
   nodeId: string;
-  potentialTimeSeries: number[];
   localNominalVoltage?: number;
+  potentialTimeSeries: number[];
+  cumulativeDropPercentTimeSeries: number[];
+  statusTimeSeries: ('OK' | 'VIOLATION')[];
+  pathBranchIds: string[];
+  powerQualityEvents: PowerQualityEvent[];
 }
 
 export interface ProjectBranchResult {
   branchId: string;
   currentTimeSeries: number[];
   dropPercentTimeSeries: number[];
-  cumulativeDropPercentTimeSeries: number[];
-  statusTimeSeries: ('OK' | 'VIOLATION')[];
-  powerQualityEvents: PowerQualityEvent[];
 }
 
 export interface ProjectSimulationResult {

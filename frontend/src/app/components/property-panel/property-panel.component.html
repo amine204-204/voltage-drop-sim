@@ -7,7 +7,7 @@
     <div class="result-row" *ngIf="elementType === 'node'">
       <span class="result-label">Voltage:</span>
       <span class="result-value"
-        [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
+        [class.text-danger]="statusAtStep === 'VIOLATION'">
         {{ elementData.simulationData.potentialTimeSeries[simulationStep] | num }} V
       </span>
     </div>
@@ -20,28 +20,25 @@
 
     <div class="result-row" *ngIf="elementType === 'edge'">
       <span class="result-label">Voltage Drop:</span>
-      <span class="result-value"
-        [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
+      <span class="result-value" [class.text-danger]="statusAtStep === 'VIOLATION'">
         {{ formatDrop(elementData.simulationData.dropPercentTimeSeries?.[simulationStep]) }} %
       </span>
     </div>
 
-    <div class="result-row" *ngIf="elementType === 'edge'">
+    <div class="result-row" *ngIf="elementType === 'node'">
       <span class="result-label">Voltage Drop (cumulative):</span>
-      <span class="result-value"
-        [class.text-danger]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
+      <span class="result-value" [class.text-danger]="statusAtStep === 'VIOLATION'">
         {{ formatDrop(elementData.simulationData.cumulativeDropPercentTimeSeries?.[simulationStep]) }} %
       </span>
     </div>
 
-    <div *ngIf="elementType === 'edge'" class="status-badge"
-      [class.badge-ok]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'OK'"
-      [class.badge-violation]="elementData.simulationData.statusTimeSeries?.[simulationStep] === 'VIOLATION'">
-      {{ elementData.simulationData.statusTimeSeries?.[simulationStep] || elementData.simulationData.simStatus || 'N/A'
-      }}
+    <div class="status-badge" *ngIf="showStatusBadge"
+      [class.badge-ok]="statusAtStep === 'OK'"
+      [class.badge-violation]="statusAtStep === 'VIOLATION'">
+      {{ statusAtStep }}
     </div>
 
-    <div *ngIf="elementData.simulationData.powerQualityEvents?.length > 0 && elementType === 'edge'"
+    <div *ngIf="elementType === 'node' && elementData.simulationData.powerQualityEvents?.length > 0"
       class="events-list">
       <h5>Power Quality Events <span class="event-standard">(IEEE 1159)</span></h5>
       <ul>

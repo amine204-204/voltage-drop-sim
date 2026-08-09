@@ -9,14 +9,19 @@ export interface ProjectGraph {
 }
 
 export interface SimulationSnapshot {
-  nodesResults: { nodeId: string; potentialTimeSeries: number[]; localNominalVoltage?: number }[];
+  nodesResults: {
+    nodeId: string;
+    localNominalVoltage?: number;
+    potentialTimeSeries: number[];
+    cumulativeDropPercentTimeSeries: number[];
+    statusTimeSeries: ('OK' | 'VIOLATION')[];
+    pathBranchIds: string[];
+    powerQualityEvents: PowerQualityEvent[];
+  }[];
   branchesResults: {
     branchId: string;
     currentTimeSeries: number[];
     dropPercentTimeSeries: number[];
-    cumulativeDropPercentTimeSeries: number[];
-    statusTimeSeries: ('OK' | 'VIOLATION')[];
-    powerQualityEvents: { startTimeStep: number; endTimeStep: number; worstMagnitudePu: number; classification: string }[];
   }[];
 }
 
@@ -130,8 +135,21 @@ export function getSimulationSnapshot(cy: Core): SimulationSnapshot | null {
     const simData = cyNode?.data('simulationData');
     return {
       nodeId: node.id,
+      localNominalVoltage: simData?.localNominalVoltage,
       potentialTimeSeries: simData ? simData.potentialTimeSeries : [],
-      localNominalVoltage: simData?.localNominalVoltage
+      cumulativeDropPercentTimeSeries: simData ? simData.cumulativeDropPercentTimeSeries : [],
+      statusTimeSeries: simData ? simData.statusTimeSeries : [],
+      pathBranchIds: simData && Array.isArray(simData.pathBranches)
+        ? simData.pathBranches.map((pb: { branchId: string }) => pb.branchId)
+        : [],
+      powerQualityEvents: simData && Array.isArray(simData.powerQualityEvents)
+        ? simData.powerQualityEvents.map((pq: PowerQualityEvent) => ({
+            startTimeStep: pq.startTimeStep,
+            endTimeStep: pq.endTimeStep,
+            worstMagnitudePu: pq.worstMagnitudePu,
+            classification: pq.classification
+          }))
+        : []
     };
   });
 
@@ -141,15 +159,7 @@ export function getSimulationSnapshot(cy: Core): SimulationSnapshot | null {
     return {
       branchId: branch.id,
       currentTimeSeries: simData ? simData.currentTimeSeries : [],
-      dropPercentTimeSeries: simData ? simData.dropPercentTimeSeries : [],
-      cumulativeDropPercentTimeSeries: simData ? simData.cumulativeDropPercentTimeSeries : [],
-      statusTimeSeries: simData ? simData.statusTimeSeries : [],
-      powerQualityEvents: simData ? simData.powerQualityEvents.map((pq: PowerQualityEvent) => ({
-        startTimeStep: pq.startTimeStep,
-        endTimeStep: pq.endTimeStep,
-        worstMagnitudePu: pq.worstMagnitudePu,
-        classification: pq.classification
-      })) : []
+      dropPercentTimeSeries: simData ? simData.dropPercentTimeSeries : []
     };
   });
 
@@ -160,16 +170,17 @@ export function mapStoredResultToResponse(storedResult: ProjectSimulationResult)
   return {
     nodes: storedResult.nodesResults.map(nr => ({
       id: nr.nodeId,
+      localNominalVoltage: nr.localNominalVoltage,
       potentialTimeSeries: nr.potentialTimeSeries,
-      localNominalVoltage: nr.localNominalVoltage
+      cumulativeDropPercentTimeSeries: nr.cumulativeDropPercentTimeSeries,
+      statusTimeSeries: nr.statusTimeSeries,
+      powerQualityEvents: nr.powerQualityEvents,
+      pathBranches: (nr.pathBranchIds || []).map(id => ({ branchId: id }))
     })),
     branches: storedResult.branchesResults.map(br => ({
       id: br.branchId,
       currentTimeSeries: br.currentTimeSeries,
-      dropPercentTimeSeries: br.dropPercentTimeSeries,
-      cumulativeDropPercentTimeSeries: br.cumulativeDropPercentTimeSeries,
-      statusTimeSeries: br.statusTimeSeries,
-      powerQualityEvents: br.powerQualityEvents
+      dropPercentTimeSeries: br.dropPercentTimeSeries
     }))
   };
 }
