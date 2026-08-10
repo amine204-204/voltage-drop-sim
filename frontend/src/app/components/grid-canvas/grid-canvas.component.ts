@@ -12,7 +12,7 @@ import { MOCK_CABLES, MOCK_TRANSFORMERS } from '../../mocks/equipment-catalog.mo
 import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/catalog.model';
 import { LoadPreset } from '../../models/load-preset.model';
 import { ThemeService } from '../../services/theme.service';
-import { SimulationResponseDto } from '../../models/simulation.model';
+import { SimulationResponseDto, CableSizingSuggestion } from '../../models/simulation.model';
 import { ProjectNode, ProjectBranch, ProjectSimulationResult } from '../../models/project.model';
 import { getCytoscapeStyles, syncCytoscapeTheme } from './services/cytoscape-style.service';
 import { getIslands, getNominalVoltageForNode, Island } from './services/graph-traversal.service';
@@ -40,6 +40,8 @@ export class GridCanvas implements AfterViewInit {
   @Input() transformerCatalogItems: TransformerCatalog[] = MOCK_TRANSFORMERS;
   @Input() switchCatalogItems: SwitchCatalog[] = [];
   @Input() loadPresets: LoadPreset[] = LOAD_PRESETS;
+  @Input() cableSuggestions: CableSizingSuggestion[] = [];
+  @Input() isSuggesting: boolean = false;
 
   private cy: Core | undefined;
   private initialized = false;
@@ -56,6 +58,7 @@ export class GridCanvas implements AfterViewInit {
   public currentSimulationStep: number = 0;
   private simulationResult: SimulationResponseDto | null = null;
   private cachedReportIssues: ReportIssue[] = [];
+  private appliedSizingIds: string[] = [];
 
   public get isResultsMode(): boolean {
     return this.simulationResult !== null;
@@ -67,6 +70,8 @@ export class GridCanvas implements AfterViewInit {
   public showReportPanel: boolean = false;
 
   @Output() seekStep = new EventEmitter<number>();
+  @Output() suggestClicked = new EventEmitter<void>();
+  @Output() cableApplied = new EventEmitter<CableSizingSuggestion>();
 
   public selectedPresetId: string = '';
 
@@ -76,6 +81,10 @@ export class GridCanvas implements AfterViewInit {
 
   public get reportIssues(): ReportIssue[] {
     return this.cachedReportIssues;
+  }
+
+  public get appliedSizingBranchIds(): string[] {
+    return this.appliedSizingIds;
   }
 
   private buildReportIssues(): ReportIssue[] {
@@ -510,17 +519,19 @@ export class GridCanvas implements AfterViewInit {
     this.cy.elements().unselect();
     this.cachedReportIssues = this.buildReportIssues();
     this.showReportPanel = this.cachedReportIssues.length > 0;
+    this.appliedSizingIds = [];
     this.updateSelectionState();
   }
 
   public clearSimulationResults() {
     if (!this.cy) return;
     this.cy.elements().forEach((el: any) => { el.removeData('simulationData'); });
-    this.cy.edges().removeClass('sim-ok sim-violation');
+    this.cy.edges().removeClass('sim-ok sim-violation sim-sizing sim-applied');
     this.cy.nodes().removeClass('sim-node-violation');
     this.cy.autoungrabify(false);
     this.simulationResult = null;
     this.currentSimulationStep = 0;
+    this.appliedSizingIds = [];
     this.updateSelectionState();
   }
 
@@ -566,6 +577,73 @@ export class GridCanvas implements AfterViewInit {
     this.cdr.markForCheck();
   }
 
+  public onSuggestClicked() {
+    this.suggestClicked.emit();
+  }
+
+  public onSuggestionClicked(suggestion: CableSizingSuggestion) {
+    if (!this.cy) return;
+
+    /* Amber dashed = recommended fix target. The path behind it (source→consumers) gets the same
+       cyan focus used by issue clicks, but the branch to upsize is deliberately rendered amber. */
+    const focus = this.cy.collection();
+    for (const an of suggestion.affectedNodes || []) {
+      const nodeEl = this.cy.$('#' + an.nodeId);
+      if (nodeEl.length) focus.merge(nodeEl);
+      const issue = this.cachedReportIssues.find(i => i.nodeId === an.nodeId);
+      for (const pb of issue?.pathBranches || []) {
+        const branchEl = this.cy.$('#' + pb.branchId);
+        if (branchEl.length) focus.merge(branchEl);
+      }
+    }
+
+    const target = this.cy.$('#' + suggestion.branchId);
+    if (target.length === 0) return;
+
+    this.cy.elements().unselect();
+    focus.addClass('report-focus');
+    target.removeClass('sim-applied');
+    target.addClass('sim-sizing');
+    target.select();
+
+    if (focus.length > 0) {
+      setTimeout(() => {
+        if (this.cy) focus.removeClass('report-focus');
+      }, 2000);
+    }
+
+    this.cy.animate({ fit: { eles: focus.union(target), padding: 90 }, duration: 600, easing: 'ease-in-out-cubic' });
+    this.cdr.markForCheck();
+  }
+
+  public onApplySuggestion(suggestion: CableSizingSuggestion) {
+    this.applySizingSuggestion(suggestion);
+    this.cableApplied.emit(suggestion);
+  }
+
+  /* Swaps the branch's cable to a real catalog item (same material, larger cross-section).
+     The catalogId/crossSection live on the edge data, so the applied upsizing persists through
+     the existing project save/load flow. */
+  private applySizingSuggestion(suggestion: CableSizingSuggestion) {
+    if (!this.cy) return;
+    const edge = this.cy.$('#' + suggestion.branchId);
+    if (edge.length === 0) return;
+
+    edge.removeClass('sim-sizing');
+    edge.addClass('sim-applied');
+    edge.data('catalogId', suggestion.suggestedCatalogId);
+    edge.data('componentCrossSection', suggestion.suggestedCrossSection);
+    edge.data('componentMaterial', suggestion.currentMaterial);
+    if (suggestion.suggestedName) {
+      edge.data('catalogName', suggestion.suggestedName);
+    }
+
+    if (!this.appliedSizingIds.includes(suggestion.branchId)) {
+      this.appliedSizingIds.push(suggestion.branchId);
+    }
+    this.cdr.markForCheck();
+  }
+
   public onProfileSaved(result: { profile: number[]; controlPoints: ControlPoint[] }) {
     if (this.isResultsMode) return;
     if (!this.selectedElementData) return;
@@ -592,6 +670,7 @@ export class GridCanvas implements AfterViewInit {
     this.selectedElementType = '';
     this.simulationResult = null;
     this.cachedReportIssues = [];
+    this.appliedSizingIds = [];
     this.currentTool = 'pointer';
     this.showReportPanel = false;
     this.cdr.markForCheck();

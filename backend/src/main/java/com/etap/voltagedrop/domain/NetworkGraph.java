@@ -30,6 +30,10 @@ public class NetworkGraph {
         return nodes.stream().filter(n -> n.getId().equals(id)).findFirst().orElse(null);
     }
 
+    public NetworkBranch getBranchById(String id) {
+        return branches.stream().filter(b -> b.getId().equals(id)).findFirst().orElse(null);
+    }
+
     public NetworkBranch getIncomingBranch(String nodeId) {
         return branches.stream().filter(b -> b.getToNodeId().equals(nodeId)).findFirst().orElse(null);
     }

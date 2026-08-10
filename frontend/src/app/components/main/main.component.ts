@@ -3,7 +3,7 @@ import { GridCanvas } from '../grid-canvas/grid-canvas.component';
 import { SimulationTopBar, SimulationSettings, MIN_DELTA_TIME_SECONDS, MAX_DELTA_TIME_SECONDS } from '../simulation-top-bar/simulation-top-bar.component';
 import { SimulationService } from '../../services/simulation.service';
 import { MockSimulationService } from '../../mocks/mock-simulation.service';
-import { SimulationRequestDto, SimulationResponseDto } from '../../models/simulation.model';
+import { SimulationRequestDto, SimulationResponseDto, CableSizingSuggestion } from '../../models/simulation.model';
 import { forkJoin, Observable, Subscription } from 'rxjs';
 import { MOCK_CABLES, MOCK_TRANSFORMERS, MOCK_SWITCHES } from '../../mocks/equipment-catalog.mock';
 import { CatalogService } from '../../services/catalog.service';
@@ -51,6 +51,9 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   public playbackSpeed: number = 1;
   private playbackTimer: number | undefined;
   private simulationSubscription: Subscription | null = null;
+  private suggestionSubscription: Subscription | null = null;
+  public isSuggesting: boolean = false;
+  public cableSuggestions: CableSizingSuggestion[] = [];
   public selectedNormType: string = 'en50160';
   public customMinPu: number = 0.90;
   public customMaxPu: number = 1.10;
@@ -110,6 +113,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.pausePlayback();
     this.simulationSubscription?.unsubscribe();
+    this.suggestionSubscription?.unsubscribe();
     this.saveScratchpad();
   }
 
@@ -339,6 +343,77 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.toast.info('Simulation canceled.');
   }
 
+  public onSuggestClicked() {
+    if (!this.isSimulationLoaded) {
+      this.toast.info('Run a simulation first — suggestions analyze the last run.');
+      return;
+    }
+    if (this.isSuggesting) return;
+
+    this.isSuggesting = true;
+    this.cableSuggestions = [];
+    this.cdr.markForCheck();
+
+    try {
+      const islands = this.gridCanvas.getIslands();
+      const simlatableIslands = islands.filter(island =>
+        island.nodes.some(node => node.type === 'SOURCE')
+      );
+
+      if (simlatableIslands.length === 0) {
+        this.isSuggesting = false;
+        this.cdr.markForCheck();
+        return;
+      }
+
+      /* Replay the exact parameters of the last run so the analysis matches the loaded results. */
+      const payloads: Observable<CableSizingSuggestion[]>[] = simlatableIslands.map(island => {
+        const payload: SimulationRequestDto = {
+          totalTimeSteps: this.maxSimulationSteps + 1,
+          deltaTimeSeconds: this.simulationDeltaTimeSeconds ?? this.deltaTime,
+          selectedNormType: this.selectedNormType,
+          customMinPu: this.selectedNormType === 'custom' ? this.customMinPu : undefined,
+          customMaxPu: this.selectedNormType === 'custom' ? this.customMaxPu : undefined,
+          graph: island
+        };
+        return this.simService.suggestCables(payload);
+      });
+
+      this.suggestionSubscription = forkJoin(payloads).subscribe({
+        next: (responses: CableSizingSuggestion[][]) => {
+          this.suggestionSubscription = null;
+          this.isSuggesting = false;
+          this.cableSuggestions = responses.flat();
+
+          const count = this.cableSuggestions.length;
+          if (count > 0) {
+            this.toast.info(`${count} cable upsizing suggestion(s) found. Click Apply to accept.`);
+          } else {
+            this.toast.info('No cable upsizing needed for the current issues.');
+          }
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.suggestionSubscription = null;
+          this.isSuggesting = false;
+          this.toast.error('Cable sizing analysis failed: ' + getErrorMessage(err));
+          this.cdr.markForCheck();
+        }
+      });
+    } catch (e: unknown) {
+      this.suggestionSubscription = null;
+      this.isSuggesting = false;
+      this.toast.error(e instanceof Error ? e.message : 'Unknown error');
+      this.cdr.markForCheck();
+    }
+  }
+
+  public onCableApplied(suggestion: CableSizingSuggestion) {
+    const name = suggestion.branchName || suggestion.branchId;
+    this.toast.success(`Applied ${suggestion.suggestedCrossSection} ${suggestion.currentMaterial} to ${name} — re-run to verify.`);
+    this.cdr.markForCheck();
+  }
+
   public onSeekStep(step: number) {
     this.pausePlayback();
     this.currentStep = Math.min(Math.max(step, 0), this.lastStep());
@@ -468,6 +543,7 @@ export class MainComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentStep = 0;
     this.simulationDeltaTimeSeconds = null;
     this.simulationTotalTimeSeconds = null;
+    this.cableSuggestions = [];
     this.gridCanvas?.clearSimulationResults();
     this.cdr.markForCheck();
   }

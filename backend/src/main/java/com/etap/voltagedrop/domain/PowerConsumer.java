@@ -1,10 +1,8 @@
 package com.etap.voltagedrop.domain;
 
-import com.etap.voltagedrop.domain.strategy.ConstantCurrentStrategy;
 import com.etap.voltagedrop.domain.strategy.LoadBehaviorStrategy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Getter

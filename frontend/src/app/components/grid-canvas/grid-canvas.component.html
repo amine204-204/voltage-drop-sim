@@ -65,7 +65,13 @@
 
       <div class="report-panel-slot" *ngIf="showReportPanel">
         <app-simulation-report-panel [issues]="reportIssues" [deltaTime]="deltaTime" [stale]="!isResultsMode"
-          (issueClicked)="onReportEventClicked($event)" (close)="showReportPanel = false">
+          [cableSuggestions]="cableSuggestions" [suggesting]="isSuggesting"
+          [appliedBranchIds]="appliedSizingBranchIds"
+          (issueClicked)="onReportEventClicked($event)"
+          (suggestClicked)="onSuggestClicked()"
+          (suggestionClicked)="onSuggestionClicked($event)"
+          (applySuggestion)="onApplySuggestion($event)"
+          (close)="showReportPanel = false">
         </app-simulation-report-panel>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { SimulationResponseDto, SimulationNodeResult } from '../../../models/sim
 
 export function applySimulationResults(cy: Core, response: SimulationResponseDto): void {
   cy.elements().forEach((el: any) => { el.removeData('simulationData'); });
-  cy.edges().removeClass('sim-ok sim-violation');
+  cy.edges().removeClass('sim-ok sim-violation sim-sizing sim-applied');
   cy.nodes().removeClass('sim-node-violation');
 
   response.nodes.forEach(node => {

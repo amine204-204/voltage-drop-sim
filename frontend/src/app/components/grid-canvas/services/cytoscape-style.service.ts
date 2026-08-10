@@ -250,6 +250,31 @@ export function getCytoscapeStyles(): any[] {
         'line-opacity': 1,
       } as any
     },
+
+    // === CABLE SIZING SUGGESTION ===
+    // Amber (accent) = recommended fix target, deliberately distinct from the red compliance
+    // symptom and the cyan report focus. Dashed = proposed, solid = applied by the engineer.
+    {
+      selector: 'edge.sim-sizing',
+      style: {
+        'line-color': '#E8A33D', // var(--accent)
+        'line-style': 'dashed',
+        'line-dash-pattern': [8, 6],
+        'width': 6,
+        'line-opacity': 1,
+        'z-index': 200,
+      } as any
+    },
+    {
+      selector: 'edge.sim-applied',
+      style: {
+        'line-color': '#F4B75A', // var(--accent-strong)
+        'line-style': 'solid',
+        'width': 6,
+        'line-opacity': 1,
+        'z-index': 200,
+      } as any
+    },
     {
       selector: 'edge:selected',
       style: {
@@ -376,6 +401,23 @@ export function syncCytoscapeTheme(cy: Core): void {
     'line-color': dataCyan,
     'width': 6,
     'line-opacity': 1,
+  } as any);
+
+  style.selector('edge.sim-sizing').style({
+    'line-color': accent,
+    'line-style': 'dashed',
+    'line-dash-pattern': [8, 6],
+    'width': 6,
+    'line-opacity': 1,
+    'z-index': 200,
+  } as any);
+
+  style.selector('edge.sim-applied').style({
+    'line-color': accentStrong,
+    'line-style': 'solid',
+    'width': 6,
+    'line-opacity': 1,
+    'z-index': 200,
   } as any);
 
   style.selector('edge:selected').style({

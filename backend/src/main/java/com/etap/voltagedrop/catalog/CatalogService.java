@@ -6,7 +6,6 @@ import com.etap.voltagedrop.catalog.mongo.SwitchCatalogDocument;
 import com.etap.voltagedrop.catalog.mongo.SwitchCatalogRepository;
 import com.etap.voltagedrop.catalog.mongo.TransformerCatalogDocument;
 import com.etap.voltagedrop.catalog.mongo.TransformerCatalogRepository;
-import com.etap.voltagedrop.domain.catalog.BranchComponent;
 import com.etap.voltagedrop.domain.catalog.CableSpec;
 import com.etap.voltagedrop.domain.catalog.SwitchSpec;
 import com.etap.voltagedrop.domain.catalog.TransformerSpec;
@@ -38,7 +37,8 @@ public class CatalogService {
         }
 
         if (doc == null) {
-            List<CableCatalogDocument> matches = cableRepo.findByPhysicalConductorMaterialAndPhysicalCrossSection(material, crossSection);
+            List<CableCatalogDocument> matches = cableRepo
+                    .findByPhysicalConductorMaterialAndPhysicalCrossSection(material, crossSection);
             if (matches.isEmpty()) {
                 throw new ResourceNotFoundException(
                         "Cable not found for material=" + material + " crossSection=" + crossSection);
@@ -50,8 +50,7 @@ public class CatalogService {
                 doc.getPhysical().getCrossSection(),
                 doc.getPhysical().getConductorMaterial(),
                 doc.getElectrical().getResistancePerKm(),
-                doc.getElectrical().getReactancePerKm()
-        );
+                doc.getElectrical().getReactancePerKm());
     }
 
     public TransformerSpec getTransformer(String catalogId) {
@@ -65,8 +64,7 @@ public class CatalogService {
                 e.getPrimaryVoltageV(),
                 e.getSecondaryVoltageV(),
                 e.getNoLoadLossW(),
-                e.getLoadLossW()
-        );
+                e.getLoadLossW());
     }
 
     public SwitchSpec getSwitch(String catalogId, boolean closed) {
@@ -77,8 +75,7 @@ public class CatalogService {
         return new SwitchSpec(
                 closed,
                 e.getRatedCurrentA(),
-                e.getBreakingCapacity()
-        );
+                e.getBreakingCapacity());
     }
 
     public List<CableCatalogDocument> listAllCables() {
@@ -127,7 +124,8 @@ public class CatalogService {
         if (doc == null) {
             return false;
         }
-        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "cable", doc.getName());
+        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "cable",
+                doc.getName());
         cableRepo.deleteById(id);
         return true;
     }
@@ -153,7 +151,8 @@ public class CatalogService {
         if (doc == null) {
             return false;
         }
-        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "transformer", doc.getName());
+        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "transformer",
+                doc.getName());
         transformerRepo.deleteById(id);
         return true;
     }
@@ -179,7 +178,8 @@ public class CatalogService {
         if (doc == null) {
             return false;
         }
-        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "switch", doc.getName());
+        CatalogUsageDto.checkNotReferenced(projectRepository.countBranchReferencesByCatalogId(id), "switch",
+                doc.getName());
         switchRepo.deleteById(id);
         return true;
     }

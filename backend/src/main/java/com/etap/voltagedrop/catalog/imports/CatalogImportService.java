@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,11 +45,14 @@ public class CatalogImportService {
             new CatalogImportField("physical.outerDiameterMm", "Outer Diameter (mm)", "Physical", "number", false),
             new CatalogImportField("electrical.resistancePerKm", "Resistance R (Ω/km)", "Electrical", "number", true),
             new CatalogImportField("electrical.reactancePerKm", "Reactance X (Ω/km)", "Electrical", "number", true),
-            new CatalogImportField("electrical.ampacityFreeAirA", "Ampacity Free Air (A)", "Electrical", "number", true),
+            new CatalogImportField("electrical.ampacityFreeAirA", "Ampacity Free Air (A)", "Electrical", "number",
+                    true),
             new CatalogImportField("electrical.ampacityBuriedA", "Ampacity Buried (A)", "Electrical", "number", false),
-            new CatalogImportField("electrical.voltageDropPerAKm", "Voltage Drop (V/A/km)", "Electrical", "number", false),
+            new CatalogImportField("electrical.voltageDropPerAKm", "Voltage Drop (V/A/km)", "Electrical", "number",
+                    false),
             new CatalogImportField("thermal.ratedTempC", "Rated Temp (°C)", "Thermal", "number", false),
-            new CatalogImportField("thermal.maxShortCircuitTempC", "Max Short-Circuit Temp (°C)", "Thermal", "number", false));
+            new CatalogImportField("thermal.maxShortCircuitTempC", "Max Short-Circuit Temp (°C)", "Thermal", "number",
+                    false));
 
     private static final List<CatalogImportField> TRANSFORMER_FIELDS = List.of(
             new CatalogImportField("name", "Name", "Identification", "string", true),
@@ -58,12 +60,14 @@ public class CatalogImportService {
             new CatalogImportField("active", "Active", "Identification", "boolean", false),
             new CatalogImportField("electrical.ratedPowerKva", "Rated Power (kVA)", "Electrical", "number", true),
             new CatalogImportField("electrical.primaryVoltageV", "Primary Voltage (V)", "Electrical", "number", true),
-            new CatalogImportField("electrical.secondaryVoltageV", "Secondary Voltage (V)", "Electrical", "number", true),
+            new CatalogImportField("electrical.secondaryVoltageV", "Secondary Voltage (V)", "Electrical", "number",
+                    true),
             new CatalogImportField("electrical.impedancePercent", "Impedance Z (%)", "Electrical", "number", true),
             new CatalogImportField("electrical.noLoadLossW", "No-Load Loss (W)", "Electrical", "number", false),
             new CatalogImportField("electrical.loadLossW", "Load Loss (W)", "Electrical", "number", false),
             new CatalogImportField("tapChanger.steps", "Tap Steps", "Tap Changer", "number", false),
-            new CatalogImportField("tapChanger.stepVoltagePercent", "Step Voltage (%)", "Tap Changer", "number", false));
+            new CatalogImportField("tapChanger.stepVoltagePercent", "Step Voltage (%)", "Tap Changer", "number",
+                    false));
 
     private static final List<CatalogImportField> SWITCH_FIELDS = List.of(
             new CatalogImportField("name", "Name", "Identification", "string", true),
@@ -100,7 +104,8 @@ public class CatalogImportService {
         throw new IllegalArgumentException("Unsupported file type. Use .json, .xlsx or .xls");
     }
 
-    public CatalogImportPreview preview(CatalogImportType type, MultipartFile file, String mappingJson) throws IOException {
+    public CatalogImportPreview preview(CatalogImportType type, MultipartFile file, String mappingJson)
+            throws IOException {
         String fileName = file.getOriginalFilename();
 
         if (isJsonFile(fileName)) {
@@ -184,7 +189,7 @@ public class CatalogImportService {
     }
 
     private ImportRowResult buildExcelRow(CatalogImportType type, Map<String, String> rawRow,
-                                          List<String> headers, Map<String, String> mapping, int rowNumber) {
+            List<String> headers, Map<String, String> mapping, int rowNumber) {
         List<String> errors = new ArrayList<>();
         Map<String, Object> map = buildDocumentMap(type, rawRow, mapping, errors);
         if (!errors.isEmpty()) {
@@ -202,7 +207,7 @@ public class CatalogImportService {
     }
 
     private Map<String, Object> buildDocumentMap(CatalogImportType type, Map<String, String> rawRow,
-                                                 Map<String, String> mapping, List<String> errors) {
+            Map<String, String> mapping, List<String> errors) {
         Map<String, Object> doc = new LinkedHashMap<>();
         for (CatalogImportField field : fieldDefinitions(type)) {
             String column = mapping.get(field.key());
@@ -263,7 +268,8 @@ public class CatalogImportService {
         Map<String, Object> node = root;
         for (int i = 0; i < parts.length - 1; i++) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> child = (Map<String, Object>) node.computeIfAbsent(parts[i], k -> new LinkedHashMap<>());
+            Map<String, Object> child = (Map<String, Object>) node.computeIfAbsent(parts[i],
+                    k -> new LinkedHashMap<>());
             node = child;
         }
         node.put(parts[parts.length - 1], value);
@@ -442,7 +448,8 @@ public class CatalogImportService {
     private void validateCable(CableCatalogDocument d, List<String> errors) {
         requireText(d.getName(), "name", errors);
         requireText(d.getStandard(), "standard", errors);
-        requireText(d.getPhysical() != null ? d.getPhysical().getCrossSection() : null, "physical.crossSection", errors);
+        requireText(d.getPhysical() != null ? d.getPhysical().getCrossSection() : null, "physical.crossSection",
+                errors);
         String material = d.getPhysical() != null ? d.getPhysical().getConductorMaterial() : null;
         if (material == null || material.isBlank()) {
             errors.add("physical.conductorMaterial is required.");

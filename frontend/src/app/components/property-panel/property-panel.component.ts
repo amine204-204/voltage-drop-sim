@@ -93,6 +93,14 @@ export class PropertyPanel {
     return this.loadPresets.filter(p => p.loadType === this.elementData!.loadType);
   }
 
+  /* A node may reference a preset id that is not in the catalog (e.g. a saved
+     project after the catalog changed). Show it as 'Custom' instead of blank. */
+  get orphanPresetId(): string | null {
+    const id = this.elementData?.selectedPresetId;
+    if (!id) return null;
+    return this.loadPresets.some(p => p.id === id) ? null : id;
+  }
+
   get isCable(): boolean {
     return this.elementData?.branchType === 'CABLE' || !this.elementData?.branchType;
   }

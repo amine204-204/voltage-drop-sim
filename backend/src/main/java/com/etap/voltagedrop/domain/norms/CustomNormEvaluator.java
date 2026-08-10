@@ -30,4 +30,9 @@ public class CustomNormEvaluator implements NormEvaluator {
     public String getStandardName() {
         return customName;
     }
+
+    @Override
+    public double getMinVoltagePu() {
+        return customMinPu;
+    }
 }

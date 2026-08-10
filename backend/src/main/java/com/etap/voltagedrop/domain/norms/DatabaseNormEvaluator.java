@@ -19,4 +19,9 @@ public class DatabaseNormEvaluator implements NormEvaluator {
     public String getStandardName() {
         return standard.getName();
     }
+
+    @Override
+    public double getMinVoltagePu() {
+        return standard.getMinVoltagePu();
+    }
 }

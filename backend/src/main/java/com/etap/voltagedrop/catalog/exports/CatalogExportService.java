@@ -64,6 +64,7 @@ public class CatalogExportService {
     }
 
     private Object readPath(Object doc, String path) {
+        @SuppressWarnings("unchecked")
         Map<String, Object> map = objectMapper.convertValue(doc, Map.class);
         String[] parts = path.split("\\.");
         Object node = map;

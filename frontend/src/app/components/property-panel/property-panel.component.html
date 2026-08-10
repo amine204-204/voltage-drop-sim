@@ -83,8 +83,9 @@
       <label>Load Preset</label>
       <select [(ngModel)]="elementData.selectedPresetId" (ngModelChange)="onLoadPresetSelect($event)"
         [disabled]="readOnly">
-        <option value="null">Custom</option>
-        <option *ngFor="let preset of filteredLoadPresets" [value]="preset.id">{{ preset.name }}</option>
+        <option [ngValue]="null">Custom</option>
+        <option *ngIf="orphanPresetId" [ngValue]="orphanPresetId">Custom</option>
+        <option *ngFor="let preset of filteredLoadPresets" [ngValue]="preset.id">{{ preset.name }}</option>
       </select>
     </div>
     <div class="form-group">

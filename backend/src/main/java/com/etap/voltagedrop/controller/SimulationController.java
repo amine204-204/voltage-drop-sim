@@ -9,10 +9,12 @@ import com.etap.voltagedrop.domain.norms.NormEvaluator;
 import com.etap.voltagedrop.domain.strategy.ConstantCurrentStrategy;
 import com.etap.voltagedrop.domain.strategy.ConstantPowerStrategy;
 import com.etap.voltagedrop.domain.strategy.LoadBehaviorStrategy;
+import com.etap.voltagedrop.dto.CableSizingSuggestionDto;
 import com.etap.voltagedrop.dto.SimulationRequestDto;
 import com.etap.voltagedrop.dto.SimulationResponseDto;
 import com.etap.voltagedrop.persistence.entity.ComplianceStandardEntity;
 import com.etap.voltagedrop.service.BranchComponentFactory;
+import com.etap.voltagedrop.service.CableSizingService;
 import com.etap.voltagedrop.service.ComplianceStandardService;
 import com.etap.voltagedrop.service.GraphValidationService;
 import com.etap.voltagedrop.service.SimulationService;
@@ -21,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(ApiPaths.SIMULATIONS)
@@ -31,6 +35,7 @@ public class SimulationController {
     private final GraphValidationService validationService;
     private final BranchComponentFactory branchComponentFactory;
     private final ComplianceStandardService complianceStandardService;
+    private final CableSizingService cableSizingService;
 
     @PostMapping("/run")
     @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
@@ -50,6 +55,25 @@ public class SimulationController {
         );
 
         return ResponseEntity.ok(toResponseDto(graph));
+    }
+
+    @PostMapping("/suggest-cables")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
+    public ResponseEntity<List<CableSizingSuggestionDto>> suggestCables(@Valid @RequestBody SimulationRequestDto dto) {
+        NetworkGraph graph = mapDtoToDomain(dto);
+
+        validationService.validateRadialTree(graph);
+
+        NormEvaluator activeNorm = resolveNorm(dto);
+
+        simulationService.runChronologicalSimulation(
+                graph,
+                dto.getTotalTimeSteps(),
+                dto.getDeltaTimeSeconds(),
+                activeNorm
+        );
+
+        return ResponseEntity.ok(cableSizingService.generateSuggestions(graph, activeNorm));
     }
 
     private SimulationResponseDto toResponseDto(NetworkGraph graph) {
