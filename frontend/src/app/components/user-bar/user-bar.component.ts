@@ -6,11 +6,12 @@ import { ProjectSummary } from '../../models/project.model';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { IconComponent } from '../shared/icon/icon.component';
+import { LogoComponent } from '../shared/logo/logo.component';
 
 @Component({
   selector: 'app-user-bar',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, IconComponent],
+  imports: [NgIf, NgFor, FormsModule, IconComponent, LogoComponent],
   templateUrl: './user-bar.component.html',
   styleUrl: './user-bar.component.scss'
 })

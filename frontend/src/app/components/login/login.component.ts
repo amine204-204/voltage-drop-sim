@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { getErrorMessage } from '../../shared/utils/error.utils';
+import { LogoComponent } from '../shared/logo/logo.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [NgIf, FormsModule],
+  imports: [NgIf, FormsModule, LogoComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })

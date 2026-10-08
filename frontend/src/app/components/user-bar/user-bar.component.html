@@ -1,5 +1,9 @@
 <div class="user-bar">
-  <div class="project-section">
+  <div class="left-section">
+    <app-logo class="app-logo" [size]="22"></app-logo>
+    <span class="app-name"><strong>Delta</strong>Grid</span>
+
+    <div class="project-section">
     <label>Project:</label>
     <select [ngModel]="selectedProjectId" (ngModelChange)="onProjectSelected($event)">
       <option [value]="null">-- Scratchpad --</option>
@@ -40,6 +44,7 @@
         <app-icon name="trash" [size]="16"></app-icon>
       </button>
     </div>
+  </div>
   </div>
 
   <div class="user-section">
