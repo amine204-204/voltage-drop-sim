@@ -1,0 +1,52 @@
+<div class="section">
+  <div class="section-header">
+    <h2>Transformer Catalog ({{ transformers.length }})</h2>
+    <div class="header-actions">
+      <div class="search-box">
+        <app-icon name="search" [size]="14"></app-icon>
+        <input [(ngModel)]="searchText" placeholder="Search transformers..." />
+      </div>
+      <button class="icon-btn" (click)="openImport()" title="Import from JSON / Excel">
+        <app-icon name="upload" [size]="14"></app-icon>
+      </button>
+      <app-catalog-export-buttons type="TRANSFORMER"></app-catalog-export-buttons>
+      <button class="icon-btn add-btn primary" (click)="openNewForm()" title="New Transformer">+</button>
+    </div>
+  </div>
+
+  <table class="data-table" *ngIf="transformers.length > 0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Standard</th>
+        <th>Power (kVA)</th>
+        <th>Primary (V)</th>
+        <th>Secondary (V)</th>
+        <th>Z (%)</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let t of filteredTransformers">
+        <td>{{ t.name }}</td>
+        <td>{{ t.standard }}</td>
+        <td class="mono">{{ t.electrical.ratedPowerKva | num }}</td>
+        <td class="mono">{{ t.electrical.primaryVoltageV | num }}</td>
+        <td class="mono">{{ t.electrical.secondaryVoltageV | num }}</td>
+        <td class="mono">{{ t.electrical.impedancePercent | num }}</td>
+        <td class="row-actions">
+          <button class="icon-btn" (click)="editTransformer(t)" title="Edit">
+            <app-icon name="pencil" [size]="14"></app-icon>
+          </button>
+          <app-confirm-delete-button title="Delete transformer" (confirm)="deleteTransformer(t)"></app-confirm-delete-button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="loading-msg" *ngIf="loading">Loading transformers...</p>
+  <p class="empty-msg" *ngIf="transformers.length === 0 && !loading">No transformers in catalog.</p>
+</div>
+
+<app-transformer-form-modal *ngIf="showForm" [transformer]="editingTransformer" (save)="saveTransformer($event)" (close)="showForm = false"></app-transformer-form-modal>
+<app-catalog-import-modal *ngIf="showImport" type="TRANSFORMER" (imported)="loadTransformers()" (close)="showImport = false"></app-catalog-import-modal>
+<app-catalog-references-modal *ngIf="blockedItem" [itemName]="blockedItem.name" [itemType]="blockedItem.type" [references]="blockedReferences" (close)="blockedItem = null"></app-catalog-references-modal>

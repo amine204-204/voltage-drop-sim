@@ -1,0 +1,105 @@
+// ---------------------------------------------------------------------------
+// Design tokens — voltage drop simulator
+// Import this once in src/styles.scss:  @import 'design-tokens';
+// ---------------------------------------------------------------------------
+
+:root {
+  // Surfaces
+  --bg-app: #0F1318;
+  --bg-canvas: #12161C;
+  --bg-panel: #171C23;
+  --bg-panel-raised: #1E242C;
+  --bg-input: #12161C;
+
+  // Borders
+  --border-hairline: #2A323C;
+  --border-hairline-soft: rgba(255, 255, 255, 0.06);
+
+  // Text
+  --text-primary: #eef2f6;
+  --text-secondary: #bac1cc;
+  --text-tertiary: #b1bccc;
+  --chevron-color: #8891A0;
+
+  // Accent — "energized" amber, borrowed from single-line diagram convention
+  --accent: #E8A33D;
+  --accent-strong: #F4B75A;
+  --accent-dim: rgba(232, 163, 61, 0.14);
+  --accent-glow: rgba(232, 163, 61, 0.6);
+  --text-on-accent: #0F1318;
+
+  // Reserved for live/computed measurement values only
+  --data-cyan: #4FB8D0;
+
+  // Status
+  --status-ok: #3FBF7F;
+  --status-ok-bg: rgba(63, 191, 127, 0.12);
+  --status-danger: #E8615D;
+  --status-danger-bg: rgba(232, 97, 93, 0.14);
+
+  // Canvas grid
+  --grid-line: rgba(255, 255, 255, 0.035);
+  --grid-line-strong: rgba(255, 255, 255, 0.07);
+
+  // Canvas edges (cables, transformers, switches)
+  --edge-color: #A3B1C6;
+
+  // Overlays & shadows
+  --modal-overlay: rgba(8, 10, 13, 0.75);
+  --shadow-heavy: rgba(0, 0, 0, 0.5);
+
+  // Type
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'IBM Plex Mono', 'Cascadia Code', Consolas, monospace;
+
+  // Radius — kept small and sharp; this isn't a consumer app
+  --radius-sm: 2.5px;
+  --radius-md: 4.5px;
+
+  // Animation
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --duration-fast: 150ms;
+  --duration-med: 250ms;
+  --duration-slow: 400ms;
+}
+
+// ---------------------------------------------------------------------------
+// Light theme overrides (applied via data-theme="light" on <html>)
+// ---------------------------------------------------------------------------
+[data-theme="light"] {
+  --bg-app: #F2F4F7;
+  --bg-canvas: #FFFFFF;
+  --bg-panel: #FFFFFF;
+  --bg-panel-raised: #E8ECF1;
+  --bg-input: #FFFFFF;
+
+  --border-hairline: #D0D5DD;
+  --border-hairline-soft: rgba(0, 0, 0, 0.08);
+
+  --text-primary: #1A1D23;
+  --text-secondary: #5E6676;
+  --text-tertiary: #9DA4B0;
+  --chevron-color: #5E6676;
+
+  --accent: #D48B2C;
+  --accent-strong: #B8731E;
+  --accent-dim: rgba(212, 139, 44, 0.12);
+  --accent-glow: rgba(212, 139, 44, 0.5);
+
+  --data-cyan: #3A9DB5;
+
+  --status-ok: #2E9A5E;
+  --status-ok-bg: rgba(46, 154, 94, 0.12);
+  --status-danger: #D44A47;
+  --status-danger-bg: rgba(212, 74, 71, 0.12);
+
+  --grid-line: rgba(0, 0, 0, 0.06);
+  --grid-line-strong: rgba(0, 0, 0, 0.12);
+
+  --edge-color: #4B5563;
+
+  --text-on-accent: #FFFFFF;
+  --modal-overlay: rgba(0, 0, 0, 0.40);
+  --shadow-heavy: rgba(0, 0, 0, 0.15);
+}

@@ -7,25 +7,17 @@ import org.springframework.validation.annotation.Validated;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 
 @Component
 @Validated
-@ConfigurationProperties(prefix = "simulator")
+@ConfigurationProperties(prefix = "simulation")
 @Getter
 public class SimulationProperties {
 
-    private GridSettings grid = new GridSettings();
     private MathAssumptions math = new MathAssumptions();
     private ConvergenceSettings convergence = new ConvergenceSettings();
     private NormSettings norms = new NormSettings();
     private Ieee1159Standards ieee1159 = new Ieee1159Standards();
-
-    @Getter
-    public static class GridSettings {
-        @NotNull
-        private double nominalFrequencyHz = 50.0;
-    }
 
     @Getter
     public static class MathAssumptions {

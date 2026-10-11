@@ -1,0 +1,55 @@
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-panel);
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    input,
+    textarea {
+      padding: 10px 12px;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-hairline);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: var(--font-ui);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+      &::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-dim);
+      }
+    }
+
+    .field-error {
+      font-size: 11px;
+      color: var(--status-danger);
+      background: var(--status-danger-bg);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+    }
+
+    textarea {
+      resize: none;
+    }
+  }
+}

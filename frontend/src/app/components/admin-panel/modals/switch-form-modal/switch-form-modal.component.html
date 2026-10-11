@@ -1,0 +1,26 @@
+<app-modal [title]="title" (close)="close.emit()">
+  <div class="modal-body">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name</label>
+        <input [(ngModel)]="model.name" placeholder="e.g. LV Circuit Breaker 250A">
+      </div>
+      <div class="form-group">
+        <label>Standard</label>
+        <input [(ngModel)]="model.standard" placeholder="e.g. IEC 60947">
+      </div>
+      <div class="form-group">
+        <label>Rated Current (A)</label>
+        <input type="number" [(ngModel)]="model.electrical!.ratedCurrentA">
+      </div>
+      <div class="form-group">
+        <label>Breaking Capacity</label>
+        <input [(ngModel)]="model.electrical!.breakingCapacity" placeholder="e.g. 50kA">
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="cancel-btn" (click)="close.emit()">Cancel</button>
+    <button class="save-btn" (click)="submit()">{{ submitLabel }}</button>
+  </div>
+</app-modal>

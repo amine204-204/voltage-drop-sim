@@ -1,0 +1,765 @@
+import { Component, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef, ChangeDetectionStrategy, HostListener, Input, Output, EventEmitter, effect } from '@angular/core';
+import cytoscape, { Core, EventObject, NodeSingular } from 'cytoscape';
+import { PropertyPanel, CytoscapeElementData } from '../property-panel/property-panel.component';
+import { VoltageChartModal } from '../voltage-chart-modal/voltage-chart-modal.component';
+import { IconComponent } from '../shared/icon/icon.component';
+import { NgIf } from '@angular/common';
+import { LoadProfileEditor } from '../load-profile-editor/load-profile-editor.component';
+import { ControlPoint } from '../load-profile-editor/load-profile-editor.component';
+import { SimulationReportPanel, ReportIssue } from '../simulation-report-panel/simulation-report-panel.component';
+import { LOAD_PRESETS } from '../../mocks/load-preset.mock';
+import { MOCK_CABLES, MOCK_TRANSFORMERS } from '../../mocks/equipment-catalog.mock';
+import { CableCatalog, TransformerCatalog, SwitchCatalog } from '../../models/catalog.model';
+import { LoadPreset } from '../../models/load-preset.model';
+import { ThemeService } from '../../services/theme.service';
+import { SimulationResponseDto, CableSizingSuggestion } from '../../models/simulation.model';
+import { ProjectNode, ProjectBranch, ProjectSimulationResult } from '../../models/project.model';
+import { getCytoscapeStyles, syncCytoscapeTheme } from './services/cytoscape-style.service';
+import { getIslands, getNominalVoltageForNode, Island } from './services/graph-traversal.service';
+import { applySimulationResults as applySimResults, updateTimeStep as updateSimTimeStep, getEdgeStatusAt } from './services/simulation-render.service';
+import { getProjectGraph, loadProjectGraph as loadGraph, getSimulationSnapshot as getSnapshot, SimulationSnapshot, mapStoredResultToResponse } from './services/project-graph.service';
+import { formatNum } from '../../shared/utils/format.utils';
+import { registerEdgeSymbolRenderer } from './services/edge-symbol-render.service';
+
+@Component({
+  selector: 'app-grid-canvas',
+  standalone: true,
+  imports: [PropertyPanel, VoltageChartModal, LoadProfileEditor, SimulationReportPanel, IconComponent, NgIf],
+  templateUrl: './grid-canvas.component.html',
+  styleUrl: './grid-canvas.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class GridCanvas implements AfterViewInit {
+
+  @ViewChild('cyContainer', { static: true }) cyContainer!: ElementRef;
+  @Input() deltaTime: number = 2.0;
+  @Input() maxSimulationSteps: number = 10;
+  @Input() minLimitPu: number = 0.90;
+  @Input() maxLimitPu: number = 1.10;
+  @Input() cableCatalogItems: CableCatalog[] = MOCK_CABLES;
+  @Input() transformerCatalogItems: TransformerCatalog[] = MOCK_TRANSFORMERS;
+  @Input() switchCatalogItems: SwitchCatalog[] = [];
+  @Input() loadPresets: LoadPreset[] = LOAD_PRESETS;
+  @Input() cableSuggestions: CableSizingSuggestion[] = [];
+  @Input() isSuggesting: boolean = false;
+
+  private cy: Core | undefined;
+  private initialized = false;
+
+  public currentTool: string = 'pointer';
+  private edgeSourceNode: NodeSingular | null = null;
+  private nodeCounter: number = 0;
+
+  public selectedElementData: CytoscapeElementData | null = null;
+  public selectedElementType: string = '';
+
+  public isSpacePressed: boolean = false;
+
+  public currentSimulationStep: number = 0;
+  private simulationResult: SimulationResponseDto | null = null;
+  private cachedReportIssues: ReportIssue[] = [];
+  private appliedSizingIds: string[] = [];
+
+  public get isResultsMode(): boolean {
+    return this.simulationResult !== null;
+  }
+
+  public showChartModal: boolean = false;
+  public chartNominalVoltage: number = 230;
+  public showProfileEditor: boolean = false;
+  public showReportPanel: boolean = false;
+
+  @Output() seekStep = new EventEmitter<number>();
+  @Output() suggestClicked = new EventEmitter<void>();
+  @Output() cableApplied = new EventEmitter<CableSizingSuggestion>();
+
+  public selectedPresetId: string = '';
+
+  public get isEmpty(): boolean {
+    return this.cy ? this.cy.nodes().length === 0 : true;
+  }
+
+  public get reportIssues(): ReportIssue[] {
+    return this.cachedReportIssues;
+  }
+
+  public get appliedSizingBranchIds(): string[] {
+    return this.appliedSizingIds;
+  }
+
+  private buildReportIssues(): ReportIssue[] {
+    if (!this.simulationResult || !this.cy) return [];
+    const issues: ReportIssue[] = [];
+
+    /* Compliance is owned by the connection point (node). The report lists CONSUMER nodes only;
+       junctions carry status but appear as path context, never as report entries. */
+    for (const node of this.simulationResult.nodes) {
+      if (node.type && node.type !== 'CONSUMER') continue;
+
+      const nodeEl = this.cy.$('#' + node.id);
+      const nodeName = nodeEl.data('label') || node.id;
+      const pathBranches = node.pathBranches || [];
+
+      for (const ev of node.powerQualityEvents || []) {
+        issues.push({
+          nodeId: node.id,
+          nodeName,
+          classification: ev.classification,
+          startTimeStep: ev.startTimeStep,
+          endTimeStep: ev.endTimeStep,
+          worstMagnitudePu: ev.worstMagnitudePu,
+          pathBranches
+        });
+      }
+    }
+
+    return issues;
+  }
+
+  public hasElements(): boolean {
+    return this.cy ? this.cy.elements().length > 0 : false;
+  }
+
+  public get nodeCount(): number {
+    return this.cy ? this.cy.nodes().length : 0;
+  }
+
+  public get edgeCount(): number {
+    return this.cy ? this.cy.edges().length : 0;
+  }
+
+  public get currentToolLabel(): string {
+    const labels: Record<string, string> = {
+      'pointer': 'Select',
+      'place-SOURCE': 'Place Substation',
+      'place-JUNCTION': 'Place Busbar',
+      'place-CONSUMER': 'Place Load',
+      'draw-cable': 'Draw Cable',
+      'draw-transformer': 'Draw Transformer',
+      'draw-switch': 'Draw Switch'
+    };
+    return labels[this.currentTool] || this.currentTool;
+  }
+
+  public get zoomPercent(): number {
+    return this.cy ? Math.round(this.cy.zoom() * 100) : 100;
+  }
+
+  constructor(private cdr: ChangeDetectorRef, private themeService: ThemeService) {
+    effect(() => {
+      this.themeService.mode();
+      if (this.initialized && this.cy) {
+        syncCytoscapeTheme(this.cy);
+      }
+    });
+  }
+
+  ngAfterViewInit(): void {
+    this.initCanvas();
+    this.initialized = true;
+    if (this.cy) {
+      syncCytoscapeTheme(this.cy);
+    }
+    requestAnimationFrame(() => this.cy?.resize());
+  }
+
+  private initCanvas() {
+    this.cy = cytoscape({
+      container: this.cyContainer.nativeElement,
+      boxSelectionEnabled: true,
+      userPanningEnabled: false,
+      style: getCytoscapeStyles() as any,
+      elements: [],
+      layout: { name: 'preset' }
+    });
+
+    registerEdgeSymbolRenderer(this.cy);
+
+
+    this.cy.on('select unselect', () => {
+      this.updateSelectionState();
+    });
+
+    this.cy.on('tap', (event: EventObject) => {
+      this.handleCanvasTap(event);
+      this.cdr.markForCheck();
+      this.cy?.resize();
+    });
+
+    this.cyContainer.nativeElement.addEventListener('wheel', (e: WheelEvent) => {
+      e.preventDefault();
+
+      const zoomFactor = 1.1;
+      const currentZoom = this.cy!.zoom();
+
+      if (e.deltaY < 0) {
+        this.cy!.zoom({
+          level: currentZoom * zoomFactor,
+          renderedPosition: { x: e.offsetX, y: e.offsetY }
+        });
+      } else {
+        this.cy!.zoom({
+          level: currentZoom / zoomFactor,
+          renderedPosition: { x: e.offsetX, y: e.offsetY }
+        });
+      }
+      this.cdr.markForCheck();
+    }, { passive: false });
+
+    this.cy.on('dbltap', () => {
+      this.cy!.fit(undefined, 50);
+    });
+  }
+
+  private updateSelectionState() {
+    if (!this.cy) return;
+    const selectedElements = this.cy.$(':selected');
+
+    if (selectedElements.length === 1) {
+      const el = selectedElements.first();
+      this.selectedElementType = el.isNode() ? 'node' : 'edge';
+
+      const baseData = { ...el.data() };
+
+      /* Edges carry no status of their own: derive it from the target node's compliance at the
+         current step, so edge panels always mirror the downstream connection point. */
+      if (el.isEdge() && this.simulationResult && baseData.target) {
+        const edge = el as any;
+        baseData.simStatus = getEdgeStatusAt(edge, this.currentSimulationStep) ?? 'N/A';
+      }
+
+      this.selectedElementData = baseData;
+      if (el.isNode()) {
+        this.chartNominalVoltage = getNominalVoltageForNode(this.cy, el.id(), this.transformerCatalogItems);
+      }
+    } else {
+      this.selectedElementData = null;
+      this.selectedElementType = '';
+    }
+    this.cdr.markForCheck();
+  }
+
+  private isDrawTool(tool: string): boolean {
+    return tool === 'draw-cable' || tool === 'draw-transformer' || tool === 'draw-switch';
+  }
+
+  private getBranchTypeForTool(tool: string): string {
+    if (tool === 'draw-transformer') return 'TRANSFORMER';
+    if (tool === 'draw-switch') return 'SWITCH';
+    return 'CABLE';
+  }
+
+  private handleCanvasTap(event: EventObject) {
+    if (this.isResultsMode && this.currentTool !== 'pointer') return;
+    const target = event.target;
+
+    if (target === this.cy) {
+      if (this.currentTool.startsWith('place-')) {
+        this.placeNode(event.position, this.currentTool.replace('place-', '').toUpperCase());
+      } else if (this.isDrawTool(this.currentTool)) {
+        this.edgeSourceNode?.style({ 'border-width': 0 });
+        this.edgeSourceNode = null;
+      } else if (this.currentTool === 'pointer') {
+        this.cy?.elements().unselect();
+      }
+      return;
+    }
+
+    if (this.isDrawTool(this.currentTool) && target.isNode()) {
+      if (!this.edgeSourceNode) {
+        this.edgeSourceNode = target as NodeSingular;
+        // hardcoded: CSS vars unsupported in Cytoscape SVG data URIs
+        target.style({ 'border-width': 3, 'border-color': '#F4B75A' });
+      } else {
+        const targetNode = target as NodeSingular;
+        if (this.edgeSourceNode.id() !== targetNode.id()) {
+          this.drawEdge(this.edgeSourceNode, targetNode, this.getBranchTypeForTool(this.currentTool));
+          this.edgeSourceNode.style({ 'border-width': 0 });
+          this.edgeSourceNode = null;
+        }
+      }
+      return;
+    }
+
+    if (this.currentTool === 'pointer') {
+      if (target.isNode() || target.isEdge()) {
+        const originalEvent = event.originalEvent as MouseEvent;
+        if (!originalEvent.shiftKey && !originalEvent.ctrlKey && !originalEvent.metaKey) {
+          this.cy?.elements().unselect();
+        }
+        (target as any).select();
+      }
+    }
+  }
+
+  public onPropertyUpdated(event: { property: string, value: any }) {
+    if (this.isResultsMode) return;
+    if (!this.selectedElementData || !this.cy) return;
+
+    this.updateSelectedElementProperty(event.property, event.value);
+
+    if (event.property === 'lengthInKm') {
+      this.updateSelectedElementProperty('lengthLabel', `${formatNum(event.value)} km`);
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  private updateSelectedElementProperty(property: string, value: any) {
+    if (!this.selectedElementData || !this.cy) return;
+
+    this.selectedElementData[property] = value;
+    const cyElement = this.cy.$(':selected').first();
+
+    if (cyElement && cyElement.id() === this.selectedElementData.id) {
+      cyElement.data(property, value);
+    }
+  }
+
+  private placeNode(position: { x: number, y: number }, type: string) {
+    this.nodeCounter++;
+    let label = '';
+    if (type === 'SOURCE') label = `Sub ${this.nodeCounter}`;
+    if (type === 'CONSUMER') label = `Load ${this.nodeCounter}`;
+    if (type === 'JUNCTION') label = `Bus ${this.nodeCounter}`;
+
+    this.cy?.add({
+      data: {
+        id: `node_${this.nodeCounter}`,
+        label: label,
+        type: type,
+        nominalVoltage: type === 'SOURCE' ? 230 : null,
+        loadType: type === 'CONSUMER' ? 'CONSTANT_POWER' : null,
+        cosPhi: type === 'CONSUMER' ? 0.95 : null,
+        loadProfile: null,
+        loadProfileControlPoints: null,
+        selectedPresetId: null
+      },
+      position: { x: position.x, y: position.y }
+    });
+
+    const node = this.cy?.getElementById(`node_${this.nodeCounter}`);
+    if (node && node.length) {
+      node.style({ 'opacity': 0 });
+      node.animate({
+        style: { 'opacity': 1 },
+        duration: 250,
+        easing: 'ease-out'
+      });
+    }
+  }
+
+  private drawEdge(source: NodeSingular, target: NodeSingular, branchType: string = 'CABLE') {
+    if (!this.cy) return;
+
+    const edgeId = `edge_${source.id()}_${target.id()}`;
+    const reverseEdgeId = `edge_${target.id()}_${source.id()}`;
+
+    if (this.cy.$('#' + edgeId).length > 0 || this.cy.$('#' + reverseEdgeId).length > 0) {
+      return;
+    }
+
+    if (source.id() === target.id()) {
+      return;
+    }
+
+    const defaults: Record<string, any> = {
+      'CABLE': {
+        lengthInKm: 0.1,
+        lengthLabel: '0.1 km',
+        componentCrossSection: '16mm2',
+        componentMaterial: 'CU',
+        catalogId: null
+      },
+      'TRANSFORMER': {
+        lengthInKm: 0,
+        lengthLabel: '',
+        catalogId: null,
+        componentCrossSection: '',
+        componentMaterial: ''
+      },
+      'SWITCH': {
+        lengthInKm: 0,
+        lengthLabel: 'Closed',
+        closed: true,
+        componentCrossSection: '',
+        componentMaterial: '',
+        catalogId: null
+      }
+    };
+
+    const data = defaults[branchType] || defaults['CABLE'];
+
+    this.cy.add({
+      data: {
+        id: edgeId,
+        source: source.id(),
+        target: target.id(),
+        branchType,
+        ...data
+      }
+    });
+  }
+
+  public selectTool(tool: string) {
+    if (this.isResultsMode && tool !== 'pointer') return;
+    this.currentTool = tool;
+    if (this.edgeSourceNode) {
+      this.edgeSourceNode.style({ 'border-width': 0 });
+      this.edgeSourceNode = null;
+    }
+
+    if (this.cy) {
+      if (tool.startsWith('place-')) {
+        this.cyContainer.nativeElement.style.cursor = 'crosshair';
+      } else if (this.isDrawTool(tool)) {
+        this.cyContainer.nativeElement.style.cursor = 'default';
+      } else {
+        this.cyContainer.nativeElement.style.cursor = 'default';
+      }
+    }
+  }
+
+  public zoomIn() {
+    if (!this.cy) return;
+    this.cy.zoom({ level: this.cy.zoom() * 1.25, renderedPosition: this.cy.pan() });
+    this.cdr.markForCheck();
+  }
+
+  public zoomOut() {
+    if (!this.cy) return;
+    this.cy.zoom({ level: this.cy.zoom() / 1.25, renderedPosition: this.cy.pan() });
+    this.cdr.markForCheck();
+  }
+
+  public fitToScreen() {
+    if (!this.cy) return;
+    this.cy.fit(undefined, 50);
+    this.cdr.markForCheck();
+  }
+
+  public getIslands(): Island[] {
+    if (!this.cy) throw new Error("Cytoscape not initialized");
+    return getIslands(this.cy);
+  }
+
+  /* Control points are the source of truth: re-derives every consumer's sampled loadProfile for the current
+     sim configuration, so the stored array never goes stale when totalTimeSteps/deltaTime change. */
+  public resampleLoadProfiles(totalTimeSteps: number, deltaTimeSeconds: number) {
+    if (!this.cy) return;
+    this.cy.nodes().forEach((node: any) => {
+      const data = node.data();
+      const controlPoints: ControlPoint[] | undefined = data.loadProfileControlPoints;
+      if (!Array.isArray(controlPoints) || controlPoints.length === 0) return;
+      const profile = LoadProfileEditor.getProfileFromControlPoints(controlPoints, totalTimeSteps, deltaTimeSeconds, 1);
+      node.data('loadProfile', profile);
+      if (this.selectedElementData && this.selectedElementData.id === data.id) {
+        this.selectedElementData.loadProfile = profile;
+      }
+    });
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent) {
+    if (event.code === 'Space' && !this.isSpacePressed) {
+      const tagName = (event.target as HTMLElement).tagName;
+      if (tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA') {
+        return;
+      }
+      this.isSpacePressed = true;
+      if (this.cy) {
+        this.cy.userPanningEnabled(true);
+        this.cyContainer.nativeElement.style.cursor = 'grab';
+      }
+      event.preventDefault();
+    }
+
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      const tagName = (event.target as HTMLElement).tagName;
+      if (tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (this.isResultsMode) return;
+
+      if (this.cy?.$(':selected').length) {
+        event.preventDefault();
+        this.cy.$(':selected').remove();
+        this.selectedElementData = null;
+        this.selectedElementType = '';
+        this.cdr.markForCheck();
+      }
+    }
+  }
+
+  @HostListener('window:keyup', ['$event'])
+  handleKeyUp(event: KeyboardEvent) {
+    if (event.code === 'Space') {
+      this.isSpacePressed = false;
+      if (this.cy) {
+        this.cy.userPanningEnabled(false);
+        this.selectTool(this.currentTool);
+      }
+    }
+  }
+
+  public applySimulationResults(response: SimulationResponseDto, deltaTimeSeconds: number) {
+    if (!this.cy) return;
+
+    applySimResults(this.cy, response);
+
+    this.simulationResult = response;
+    this.currentSimulationStep = 0;
+    this.deltaTime = deltaTimeSeconds;
+    this.currentTool = 'pointer';
+    this.edgeSourceNode?.style({ 'border-width': 0 });
+    this.edgeSourceNode = null;
+    this.cy.autoungrabify(true);
+
+    this.cy.elements().unselect();
+    this.cachedReportIssues = this.buildReportIssues();
+    this.showReportPanel = this.cachedReportIssues.length > 0;
+    this.appliedSizingIds = [];
+    this.updateSelectionState();
+  }
+
+  public clearSimulationResults() {
+    if (!this.cy) return;
+    this.cy.elements().forEach((el: any) => { el.removeData('simulationData'); });
+    this.cy.edges().removeClass('sim-ok sim-violation sim-sizing sim-applied');
+    this.cy.nodes().removeClass('sim-node-violation');
+    this.cy.autoungrabify(false);
+    this.simulationResult = null;
+    this.currentSimulationStep = 0;
+    this.appliedSizingIds = [];
+    this.updateSelectionState();
+  }
+
+  public updateTimeStep(step: number) {
+    if (!this.cy) return;
+    this.currentSimulationStep = step;
+
+    updateSimTimeStep(this.cy, step);
+    this.updateSelectionState();
+  }
+
+  public onReportEventClicked(issue: ReportIssue) {
+    if (!this.cy) return;
+
+    const nodeEl = this.cy.$('#' + issue.nodeId);
+
+    const focus = this.cy.collection();
+    if (nodeEl.length) focus.merge(nodeEl);
+    for (const pb of issue.pathBranches || []) {
+      const branchEl = this.cy.$('#' + pb.branchId);
+      if (branchEl.length) focus.merge(branchEl);
+    }
+
+    this.cy.elements().unselect();
+    if (nodeEl.length) nodeEl.select();
+
+    focus.addClass('report-focus');
+    setTimeout(() => {
+      if (this.cy) focus.removeClass('report-focus');
+    }, 1600);
+
+    if (focus.length) {
+      setTimeout(() => {
+        if (this.cy) this.cy.animate({ fit: { eles: focus, padding: 80 }, duration: 750, easing: 'ease-in-out-cubic' });
+      }, 250);
+    }
+
+    if (this.isResultsMode) {
+      this.updateTimeStep(issue.startTimeStep);
+      this.seekStep.emit(issue.startTimeStep);
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  public onSuggestClicked() {
+    this.suggestClicked.emit();
+  }
+
+  public onSuggestionClicked(suggestion: CableSizingSuggestion) {
+    if (!this.cy) return;
+
+    /* Amber dashed = recommended fix target. The path behind it (source→consumers) gets the same
+       cyan focus used by issue clicks, but the branch to upsize is deliberately rendered amber. */
+    const focus = this.cy.collection();
+    for (const an of suggestion.affectedNodes || []) {
+      const nodeEl = this.cy.$('#' + an.nodeId);
+      if (nodeEl.length) focus.merge(nodeEl);
+      const issue = this.cachedReportIssues.find(i => i.nodeId === an.nodeId);
+      for (const pb of issue?.pathBranches || []) {
+        const branchEl = this.cy.$('#' + pb.branchId);
+        if (branchEl.length) focus.merge(branchEl);
+      }
+    }
+
+    const target = this.cy.$('#' + suggestion.branchId);
+    if (target.length === 0) return;
+
+    this.cy.elements().unselect();
+    focus.addClass('report-focus');
+    target.removeClass('sim-applied');
+    target.addClass('sim-sizing');
+    target.select();
+
+    if (focus.length > 0) {
+      setTimeout(() => {
+        if (this.cy) focus.removeClass('report-focus');
+      }, 2000);
+    }
+
+    this.cy.animate({ fit: { eles: focus.union(target), padding: 90 }, duration: 600, easing: 'ease-in-out-cubic' });
+    this.cdr.markForCheck();
+  }
+
+  public onApplySuggestion(suggestion: CableSizingSuggestion) {
+    this.applySizingSuggestion(suggestion);
+    this.cableApplied.emit(suggestion);
+  }
+
+  /* Swaps the branch's cable to a real catalog item (same material, larger cross-section).
+     The catalogId/crossSection live on the edge data, so the applied upsizing persists through
+     the existing project save/load flow. */
+  private applySizingSuggestion(suggestion: CableSizingSuggestion) {
+    if (!this.cy) return;
+    const edge = this.cy.$('#' + suggestion.branchId);
+    if (edge.length === 0) return;
+
+    edge.removeClass('sim-sizing');
+    edge.addClass('sim-applied');
+    edge.data('catalogId', suggestion.suggestedCatalogId);
+    edge.data('componentCrossSection', suggestion.suggestedCrossSection);
+    edge.data('componentMaterial', suggestion.currentMaterial);
+    if (suggestion.suggestedName) {
+      edge.data('catalogName', suggestion.suggestedName);
+    }
+
+    if (!this.appliedSizingIds.includes(suggestion.branchId)) {
+      this.appliedSizingIds.push(suggestion.branchId);
+    }
+    this.cdr.markForCheck();
+  }
+
+  public onProfileSaved(result: { profile: number[]; controlPoints: ControlPoint[] }) {
+    if (this.isResultsMode) return;
+    if (!this.selectedElementData) return;
+
+    this.selectedElementData.loadProfile = result.profile;
+    this.selectedElementData.loadProfileControlPoints = result.controlPoints;
+
+    const cyElement = this.cy?.$('#' + this.selectedElementData.id);
+    if (cyElement) {
+      cyElement.data('loadProfile', result.profile);
+      cyElement.data('loadProfileControlPoints', result.controlPoints);
+    }
+
+    this.showProfileEditor = false;
+    this.cdr.markForCheck();
+  }
+
+  public clearCanvas() {
+    if (!this.cy) return;
+    this.cy.elements().remove();
+    this.cy.autoungrabify(false);
+    this.nodeCounter = 0;
+    this.selectedElementData = null;
+    this.selectedElementType = '';
+    this.simulationResult = null;
+    this.cachedReportIssues = [];
+    this.appliedSizingIds = [];
+    this.currentTool = 'pointer';
+    this.showReportPanel = false;
+    this.cdr.markForCheck();
+  }
+
+  public getProjectGraph(): { nodes: ProjectNode[]; branches: ProjectBranch[] } {
+    if (!this.cy) return { nodes: [], branches: [] };
+    return getProjectGraph(this.cy);
+  }
+
+  public loadProjectGraph(nodes: ProjectNode[], branches: ProjectBranch[], simulationResult?: ProjectSimulationResult, deltaTimeSeconds?: number) {
+    if (!this.cy) return;
+    this.clearCanvas();
+
+    loadGraph(this.cy, nodes, branches);
+
+    let maxNodeNum = 0;
+    nodes.forEach(node => {
+      const match = node.id.match(/node_(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNodeNum) maxNodeNum = num;
+      }
+    });
+    this.nodeCounter = maxNodeNum;
+
+    if (simulationResult && deltaTimeSeconds !== undefined && simulationResult.nodesResults && simulationResult.branchesResults) {
+      const mappedResponse = mapStoredResultToResponse(simulationResult);
+      /* The stored result DTO doesn't carry node types/names; enrich from the project graph so the
+         report and coloring can still classify nodes. */
+      mappedResponse.nodes.forEach(n => {
+        const projectNode = nodes.find(pn => pn.id === n.id);
+        if (projectNode) {
+          n.type = projectNode.type;
+          n.name = projectNode.name;
+        }
+      });
+      this.applySimulationResults(mappedResponse, deltaTimeSeconds);
+    } else {
+      this.updateSelectionState();
+    }
+  }
+
+  public appendGraph(nodes: ProjectNode[], branches: ProjectBranch[]): { nodesAdded: number; branchesAdded: number } {
+    if (!this.cy) return { nodesAdded: 0, branchesAdded: 0 };
+
+    const existingIds = new Set<string>();
+    this.cy.nodes().forEach(n => { existingIds.add(n.id()); });
+    this.cy.edges().forEach(e => { existingIds.add(e.id()); });
+
+    const idMap = new Map<string, string>();
+    const remappedNodes: ProjectNode[] = [];
+    const remappedBranches: ProjectBranch[] = [];
+
+    let maxX = 0;
+    this.cy.nodes().forEach(n => { const p = n.position(); if (p.x > maxX) maxX = p.x; });
+    const offsetX = maxX + 250;
+
+    for (const node of nodes) {
+      if (existingIds.has(node.id)) {
+        this.nodeCounter++;
+        const newId = `node_${this.nodeCounter}`;
+        idMap.set(node.id, newId);
+        remappedNodes.push({ ...node, id: newId, x: node.x + offsetX, y: node.y });
+      } else {
+        remappedNodes.push({ ...node, x: node.x + offsetX, y: node.y });
+      }
+    }
+
+    for (const branch of branches) {
+      let newId = branch.id;
+      let newFrom = branch.fromNodeId;
+      let newTo = branch.toNodeId;
+      if (idMap.has(branch.fromNodeId)) newFrom = idMap.get(branch.fromNodeId)!;
+      if (idMap.has(branch.toNodeId)) newTo = idMap.get(branch.toNodeId)!;
+      const candidateId = `edge_${newFrom}_${newTo}`;
+      if (existingIds.has(candidateId) || candidateId !== branch.id) {
+        newId = candidateId;
+      }
+      remappedBranches.push({ ...branch, id: newId, fromNodeId: newFrom, toNodeId: newTo });
+    }
+
+    loadGraph(this.cy, remappedNodes, remappedBranches);
+    this.updateSelectionState();
+    return { nodesAdded: remappedNodes.length, branchesAdded: remappedBranches.length };
+  }
+
+  public getSimulationSnapshot(): SimulationSnapshot | null {
+    if (!this.cy) return null;
+    return getSnapshot(this.cy);
+  }
+}

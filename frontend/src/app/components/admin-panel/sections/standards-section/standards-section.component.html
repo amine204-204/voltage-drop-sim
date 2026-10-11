@@ -1,0 +1,44 @@
+<div class="section">
+  <div class="section-header">
+    <h2>Compliance Standards ({{ standards.length }})</h2>
+    <div class="header-actions">
+      <div class="search-box">
+        <app-icon name="search" [size]="14"></app-icon>
+        <input [(ngModel)]="searchText" placeholder="Search standards..." />
+      </div>
+      <button class="icon-btn add-btn primary" (click)="openNewForm()" title="New Standard">+</button>
+    </div>
+  </div>
+
+  <table class="data-table" *ngIf="standards.length > 0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Min (pu)</th>
+        <th>Max (pu)</th>
+        <th>Active</th>
+        <th>Default</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let standard of filteredStandards">
+        <td>{{ standard.name }}</td>
+        <td class="mono">{{ standard.minVoltagePu | num }}</td>
+        <td class="mono">{{ standard.maxVoltagePu | num }}</td>
+        <td>{{ standard.active ? '✓' : '—' }}</td>
+        <td>{{ standard.defaultStandard ? '✓' : '—' }}</td>
+        <td class="row-actions">
+          <button class="icon-btn" (click)="editStandard(standard)" title="Edit">
+            <app-icon name="pencil" [size]="14"></app-icon>
+          </button>
+          <app-confirm-delete-button title="Delete standard" (confirm)="deleteStandard(standard)"></app-confirm-delete-button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="loading-msg" *ngIf="loading">Loading standards...</p>
+  <p class="empty-msg" *ngIf="standards.length === 0 && !loading">No compliance standards defined.</p>
+</div>
+
+<app-standard-form-modal *ngIf="showForm" [standard]="editingStandard" (save)="saveStandard($event)" (close)="showForm = false"></app-standard-form-modal>

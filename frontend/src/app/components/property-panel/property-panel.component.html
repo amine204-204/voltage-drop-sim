@@ -1,0 +1,172 @@
+<div class="side-panel" *ngIf="elementData">
+  <h3>{{ elementData.label || 'Properties' }}</h3>
+
+  <div *ngIf="elementData.simulationData !== undefined" class="results-section">
+    <h4>Simulation State</h4>
+
+    <div class="result-row" *ngIf="elementType === 'node'">
+      <span class="result-label">Voltage:</span>
+      <span class="result-value"
+        [class.text-danger]="statusAtStep === 'VIOLATION'">
+        {{ elementData.simulationData.potentialTimeSeries[simulationStep] | num }} V
+      </span>
+    </div>
+
+    <div class="result-row" *ngIf="elementType === 'edge'">
+      <span class="result-label">Current:</span>
+      <span class="result-value">{{ elementData.simulationData.currentTimeSeries?.[simulationStep] | num }}
+        A</span>
+    </div>
+
+    <div class="result-row" *ngIf="elementType === 'edge'">
+      <span class="result-label">Voltage Drop:</span>
+      <span class="result-value" [class.text-danger]="statusAtStep === 'VIOLATION'">
+        {{ formatDrop(elementData.simulationData.dropPercentTimeSeries?.[simulationStep]) }} %
+      </span>
+    </div>
+
+    <div class="result-row" *ngIf="elementType === 'node'">
+      <span class="result-label">Voltage Drop (cumulative):</span>
+      <span class="result-value" [class.text-danger]="statusAtStep === 'VIOLATION'">
+        {{ formatDrop(elementData.simulationData.cumulativeDropPercentTimeSeries?.[simulationStep]) }} %
+      </span>
+    </div>
+
+    <div class="status-badge" *ngIf="showStatusBadge"
+      [class.badge-ok]="statusAtStep === 'OK'"
+      [class.badge-violation]="statusAtStep === 'VIOLATION'">
+      {{ statusAtStep }}
+    </div>
+
+    <div *ngIf="elementType === 'node' && elementData.simulationData.powerQualityEvents?.length > 0"
+      class="events-list">
+      <h5>Power Quality Events <span class="event-standard">(IEEE 1159)</span></h5>
+      <ul>
+        <li *ngFor="let event of elementData.simulationData.powerQualityEvents">
+          <strong>{{ event.classification }}</strong> (Steps {{ event.startTimeStep }} to {{ event.endTimeStep }})
+          <br><small>Worst: {{ event.worstMagnitudePu * 100 | num }}% Pu</small>
+        </li>
+      </ul>
+    </div>
+
+    <button class="chart-btn"
+      *ngIf="elementType === 'node' && elementData.simulationData.potentialTimeSeries !== undefined"
+      (click)="openChart.emit()">
+      View Voltage Profile
+    </button>
+  </div>
+
+  <div class="form-group">
+    <label>Name</label>
+    <input type="text" [value]="elementData.label" (input)="onPropertyChange('label', $any($event.target).value)"
+      [disabled]="readOnly">
+  </div>
+
+  <div *ngIf="elementData.type === 'SOURCE'">
+    <div class="form-group">
+      <label>Nominal Voltage (V)</label>
+      <input type="number" [value]="elementData.nominalVoltage"
+        (input)="onPropertyChange('nominalVoltage', $any($event.target).value)" [disabled]="readOnly">
+    </div>
+  </div>
+
+  <div *ngIf="elementData.type === 'CONSUMER'">
+    <div class="form-group">
+      <label>Load Type</label>
+      <select [value]="elementData.loadType" (change)="onPropertyChange('loadType', $any($event.target).value)"
+        [disabled]="readOnly">
+        <option value="CONSTANT_CURRENT">Constant Current (A)</option>
+        <option value="CONSTANT_POWER">Constant Power (W)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Load Preset</label>
+      <select [(ngModel)]="elementData.selectedPresetId" (ngModelChange)="onLoadPresetSelect($event)"
+        [disabled]="readOnly">
+        <option [ngValue]="null">Custom</option>
+        <option *ngIf="orphanPresetId" [ngValue]="orphanPresetId">Custom</option>
+        <option *ngFor="let preset of filteredLoadPresets" [ngValue]="preset.id">{{ preset.name }}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Load Profile ({{ elementData.loadProfile?.length || 0 }} steps)</label>
+      <button class="chart-btn" (click)="openProfileEditor.emit()">
+        Open Graph Editor
+      </button>
+    </div>
+    <div class="form-group">
+      <label>Power Factor (cosPhi)</label>
+      <input type="number" step="0.01" [(ngModel)]="elementData.cosPhi"
+        (ngModelChange)="onPropertyChange('cosPhi', $event)" [disabled]="readOnly">
+    </div>
+  </div>
+
+  <div *ngIf="elementType === 'edge' && isCable">
+    <div class="form-group">
+      <label>Length (km)</label>
+      <input type="number" step="0.01" [(ngModel)]="elementData.lengthInKm"
+        (ngModelChange)="onPropertyChange('lengthInKm', $event)" [disabled]="readOnly">
+    </div>
+
+    <div class="form-group">
+      <label>Equipment Catalog</label>
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)" [disabled]="readOnly">
+        <option *ngFor="let item of cableCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="elementData.catalogId">
+      <label>Cross Section</label>
+      <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentCrossSection"
+        (change)="onPropertyChange('componentCrossSection', $any($event.target).value)">
+    </div>
+    <div class="form-group" *ngIf="elementData.catalogId">
+      <label>Material</label>
+      <input type="text" [disabled]="!!elementData.catalogId" [value]="elementData.componentMaterial"
+        (change)="onPropertyChange('componentMaterial', $any($event.target).value)">
+    </div>
+  </div>
+
+  <div *ngIf="elementType === 'edge' && isTransformer">
+    <div class="form-group">
+      <label>Transformer Catalog</label>
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)" [disabled]="readOnly">
+        <option value="null">Select transformer...</option>
+        <option *ngFor="let item of transformerCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
+      <label>Rated Power</label>
+      <input type="text" [disabled]="true" [value]="(selectedTransformer?.electrical?.ratedPowerKva | num) + ' kVA'">
+    </div>
+    <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
+      <label>Primary / Secondary</label>
+      <input type="text" [disabled]="true"
+        [value]="(selectedTransformer?.electrical?.primaryVoltageV | num) + 'V / ' + (selectedTransformer?.electrical?.secondaryVoltageV | num) + 'V'">
+    </div>
+  </div>
+
+  <div *ngIf="elementType === 'edge' && isSwitch">
+    <div class="form-group">
+      <label>Switch Catalog</label>
+      <select [(ngModel)]="elementData.catalogId" (ngModelChange)="onCatalogSelect($event)" [disabled]="readOnly">
+        <option value="null">Select switch...</option>
+        <option *ngFor="let item of switchCatalogItems" [ngValue]="item.id">{{ item.name }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="elementData.catalogId && elementData.catalogId !== 'null'">
+      <label>Rated Current</label>
+      <input type="text" [disabled]="true" [value]="(selectedSwitch?.electrical?.ratedCurrentA | num) + ' A'">
+    </div>
+
+    <div class="form-group">
+      <label>State</label>
+      <div class="switch-toggle">
+        <button [class.active]="elementData.closed" (click)="onSwitchToggle(true)" [disabled]="readOnly">Closed</button>
+        <button [class.active]="!elementData.closed" (click)="onSwitchToggle(false)" [disabled]="readOnly">Open</button>
+      </div>
+    </div>
+  </div>
+</div>

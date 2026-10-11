@@ -1,0 +1,43 @@
+@use '../../shared/admin-modal-form.scss';
+
+.form-group--full {
+  grid-column: 1 / -1;
+}
+
+.curve-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--bg-canvas);
+
+  .curve-preview-info {
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+  }
+
+  .curve-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  }
+}

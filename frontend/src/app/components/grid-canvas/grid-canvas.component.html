@@ -1,0 +1,124 @@
+<div class="workspace">
+
+  <div class="toolbar">
+    <button (click)="selectTool('pointer')" [class.active-tool]="currentTool === 'pointer'" title="Select / Move">
+      <app-icon name="pointer" [size]="16"></app-icon>
+    </button>
+
+    <hr class="toolbar-divider">
+
+    <button (click)="selectTool('place-SOURCE')" [class.active-tool]="currentTool === 'place-SOURCE'"
+      [disabled]="isResultsMode" title="Substation (Source)">
+      <app-icon name="lightning" [size]="16"></app-icon>
+    </button>
+
+    <button (click)="selectTool('place-JUNCTION')" [class.active-tool]="currentTool === 'place-JUNCTION'"
+      [disabled]="isResultsMode" title="Busbar (Junction)">
+      <app-icon name="crosshair" [size]="16"></app-icon>
+    </button>
+
+    <button (click)="selectTool('place-CONSUMER')" [class.active-tool]="currentTool === 'place-CONSUMER'"
+      [disabled]="isResultsMode" title="Load (Consumer)">
+      <app-icon name="bar-chart" [size]="16"></app-icon>
+    </button>
+
+    <hr class="toolbar-divider">
+
+    <button (click)="selectTool('draw-cable')" [class.active-tool]="currentTool === 'draw-cable'"
+      [disabled]="isResultsMode" title="Draw Cable">
+      <app-icon name="cable" [size]="16"></app-icon>
+    </button>
+
+    <button (click)="selectTool('draw-transformer')" [class.active-tool]="currentTool === 'draw-transformer'"
+      [disabled]="isResultsMode" title="Draw Transformer">
+      <app-icon name="transformer" [size]="16"></app-icon>
+    </button>
+
+    <button (click)="selectTool('draw-switch')" [class.active-tool]="currentTool === 'draw-switch'"
+      [disabled]="isResultsMode" title="Draw Switch">
+      <app-icon name="switch" [size]="16"></app-icon>
+    </button>
+
+  </div>
+
+  <div class="canvas-area">
+    <div class="canvas-container">
+      <div #cyContainer class="cy-container"></div>
+
+      <div class="empty-state" *ngIf="isEmpty">
+        <app-icon name="document-grid" [size]="48"></app-icon>
+        <p class="empty-hint">Start building your grid</p>
+
+      </div>
+
+      <div class="zoom-controls">
+        <button (click)="zoomIn()" title="Zoom in">
+          <app-icon name="zoom-in" [size]="16"></app-icon>
+        </button>
+        <button (click)="zoomOut()" title="Zoom out">
+          <app-icon name="zoom-out" [size]="16"></app-icon>
+        </button>
+        <button (click)="fitToScreen()" title="Fit to screen">
+          <app-icon name="fit-to-screen" [size]="16"></app-icon>
+        </button>
+      </div>
+
+      <div class="report-panel-slot" *ngIf="showReportPanel">
+        <app-simulation-report-panel [issues]="reportIssues" [deltaTime]="deltaTime" [stale]="!isResultsMode"
+          [cableSuggestions]="cableSuggestions" [suggesting]="isSuggesting"
+          [appliedBranchIds]="appliedSizingBranchIds"
+          (issueClicked)="onReportEventClicked($event)"
+          (suggestClicked)="onSuggestClicked()"
+          (suggestionClicked)="onSuggestionClicked($event)"
+          (applySuggestion)="onApplySuggestion($event)"
+          (close)="showReportPanel = false">
+        </app-simulation-report-panel>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span class="status-item">
+        <span class="status-dot" [class.active]="currentTool !== 'pointer'"></span>
+        {{ currentToolLabel }}
+      </span>
+      <span class="status-divider"></span>
+      <span class="status-item">{{ nodeCount }} nodes</span>
+      <span class="status-divider"></span>
+      <span class="status-item">{{ edgeCount }} branches</span>
+      <span class="status-divider"></span>
+      <span class="status-item">
+        <button class="report-toggle" [class.has-issues]="isResultsMode && reportIssues.length > 0"
+          (click)="showReportPanel = !showReportPanel" title="Toggle power quality report">
+          <app-icon name="alert" [size]="12"></app-icon>
+          Issues ({{ reportIssues.length }})
+        </button>
+      </span>
+      <span class="status-spacer"></span>
+      <span class="status-item status-hint" *ngIf="isSpacePressed">Panning.. Release Space to stop</span>
+      <span class="status-item status-hint status-lock" *ngIf="isResultsMode">Read-only mode</span>
+      <span class="status-item mono">{{ zoomPercent }}%</span>
+    </div>
+  </div>
+
+  <app-property-panel *ngIf="selectedElementData" [elementData]="selectedElementData"
+    [elementType]="selectedElementType" [simulationStep]="currentSimulationStep"
+    [maxSimulationSteps]="maxSimulationSteps + 1" [deltaTime]="deltaTime" [cableCatalogItems]="cableCatalogItems"
+    [transformerCatalogItems]="transformerCatalogItems" [switchCatalogItems]="switchCatalogItems"
+    [loadPresets]="loadPresets" [readOnly]="isResultsMode" (propertyChanged)="onPropertyUpdated($event)"
+    (openChart)="showChartModal = true" (openProfileEditor)="showProfileEditor = true">
+  </app-property-panel>
+
+  <app-voltage-chart-modal *ngIf="showChartModal && selectedElementData" [nodeName]="selectedElementData.label"
+    [voltageTimeSeries]="selectedElementData.simulationData?.potentialTimeSeries" [nominalVoltage]="chartNominalVoltage"
+    [deltaTime]="deltaTime" [minLimitPu]="minLimitPu" [maxLimitPu]="maxLimitPu" (close)="showChartModal = false">
+  </app-voltage-chart-modal>
+
+  <app-load-profile-editor *ngIf="showProfileEditor && selectedElementData"
+    [initialProfile]="selectedElementData.loadProfile || []"
+    [initialControlPoints]="selectedElementData.loadProfileControlPoints || null" [totalSteps]="maxSimulationSteps + 1"
+    [deltaTime]="deltaTime" [maxLoadValue]="100"
+    [loadUnit]="selectedElementData.loadType === 'CONSTANT_POWER' ? 'W' : 'A'" [readOnly]="isResultsMode"
+    (save)="onProfileSaved($event)" (close)="showProfileEditor = false">
+  </app-load-profile-editor>
+
+</div>

@@ -1,38 +1,45 @@
 package com.etap.voltagedrop.controller;
 
+import com.etap.voltagedrop.config.ApiPaths;
 import com.etap.voltagedrop.domain.*;
 import com.etap.voltagedrop.domain.catalog.BranchComponent;
-import com.etap.voltagedrop.domain.catalog.CableSpec;
 import com.etap.voltagedrop.domain.norms.CustomNormEvaluator;
+import com.etap.voltagedrop.domain.norms.DatabaseNormEvaluator;
 import com.etap.voltagedrop.domain.norms.NormEvaluator;
 import com.etap.voltagedrop.domain.strategy.ConstantCurrentStrategy;
 import com.etap.voltagedrop.domain.strategy.ConstantPowerStrategy;
 import com.etap.voltagedrop.domain.strategy.LoadBehaviorStrategy;
+import com.etap.voltagedrop.dto.CableSizingSuggestionDto;
 import com.etap.voltagedrop.dto.SimulationRequestDto;
-import com.etap.voltagedrop.service.CatalogService;
+import com.etap.voltagedrop.dto.SimulationResponseDto;
+import com.etap.voltagedrop.persistence.entity.ComplianceStandardEntity;
+import com.etap.voltagedrop.service.BranchComponentFactory;
+import com.etap.voltagedrop.service.CableSizingService;
+import com.etap.voltagedrop.service.ComplianceStandardService;
 import com.etap.voltagedrop.service.GraphValidationService;
 import com.etap.voltagedrop.service.SimulationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/simulations")
+@RequestMapping(ApiPaths.SIMULATIONS)
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class SimulationController {
 
     private final SimulationService simulationService;
     private final GraphValidationService validationService;
-    private final CatalogService catalogService;
-
-    private final Map<String, NormEvaluator> systemNormEvaluators;
+    private final BranchComponentFactory branchComponentFactory;
+    private final ComplianceStandardService complianceStandardService;
+    private final CableSizingService cableSizingService;
 
     @PostMapping("/run")
-    public ResponseEntity<NetworkGraph> runSimulation(@Valid @RequestBody SimulationRequestDto dto) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
+    public ResponseEntity<SimulationResponseDto> runSimulation(@Valid @RequestBody SimulationRequestDto dto) {
 
         NetworkGraph graph = mapDtoToDomain(dto);
 
@@ -47,7 +54,66 @@ public class SimulationController {
                 activeNorm
         );
 
-        return ResponseEntity.ok(graph);
+        return ResponseEntity.ok(toResponseDto(graph));
+    }
+
+    @PostMapping("/suggest-cables")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENGINEER')")
+    public ResponseEntity<List<CableSizingSuggestionDto>> suggestCables(@Valid @RequestBody SimulationRequestDto dto) {
+        NetworkGraph graph = mapDtoToDomain(dto);
+
+        validationService.validateRadialTree(graph);
+
+        NormEvaluator activeNorm = resolveNorm(dto);
+
+        simulationService.runChronologicalSimulation(
+                graph,
+                dto.getTotalTimeSteps(),
+                dto.getDeltaTimeSeconds(),
+                activeNorm
+        );
+
+        return ResponseEntity.ok(cableSizingService.generateSuggestions(graph, activeNorm));
+    }
+
+    private SimulationResponseDto toResponseDto(NetworkGraph graph) {
+        SimulationResponseDto dto = new SimulationResponseDto();
+
+        dto.setNodes(graph.getNodes().stream().map(node -> {
+            SimulationResponseDto.NodeResultDto n = new SimulationResponseDto.NodeResultDto();
+            n.setId(node.getId());
+            n.setName(node.getName());
+            n.setType(node.isSource() ? "SOURCE" : (node.isConsumer() ? "CONSUMER" : "JUNCTION"));
+            n.setLocalNominalVoltage(node.getLocalNominalVoltage());
+            n.setPotentialTimeSeries(node.getPotentialTimeSeries());
+            n.setCumulativeDropPercentTimeSeries(node.getCumulativeDropPercentTimeSeries());
+            n.setStatusTimeSeries(node.getStatusTimeSeries());
+            n.setPowerQualityEvents(node.getPowerQualityEvents().stream().map(pq -> {
+                SimulationResponseDto.PowerQualityEventDto e = new SimulationResponseDto.PowerQualityEventDto();
+                e.setStartTimeStep(pq.getStartTimeStep());
+                e.setEndTimeStep(pq.getEndTimeStep());
+                e.setWorstMagnitudePu(pq.getWorstMagnitudePu());
+                e.setClassification(pq.getClassification());
+                return e;
+            }).toList());
+            n.setPathBranches(node.getPathBranches().stream().map(pb -> {
+                SimulationResponseDto.PathBranchDto p = new SimulationResponseDto.PathBranchDto();
+                p.setBranchId(pb.branchId());
+                p.setBranchName(pb.branchName());
+                return p;
+            }).toList());
+            return n;
+        }).toList());
+
+        dto.setBranches(graph.getBranches().stream().map(branch -> {
+            SimulationResponseDto.BranchResultDto b = new SimulationResponseDto.BranchResultDto();
+            b.setId(branch.getId());
+            b.setCurrentTimeSeries(branch.getCurrentTimeSeries());
+            b.setDropPercentTimeSeries(branch.getDropPercentTimeSeries());
+            return b;
+        }).toList());
+
+        return dto;
     }
 
 
@@ -58,26 +124,14 @@ public class SimulationController {
             }
             return new CustomNormEvaluator(dto.getCustomMinPu(), dto.getCustomMaxPu());
         } else {
-            NormEvaluator norm = systemNormEvaluators.get(dto.getSelectedNormType());
-            if (norm == null) {
-                throw new IllegalArgumentException("Unknown system norm selected: " + dto.getSelectedNormType());
-            }
-            return norm;
+            ComplianceStandardEntity standard = complianceStandardService.findEntityByName(dto.getSelectedNormType());
+            return new DatabaseNormEvaluator(standard);
         }
     }
 
     private NetworkGraph mapDtoToDomain(SimulationRequestDto dto) {
         NetworkGraph graph = new NetworkGraph();
 
-        double gridNominalVoltage = 230.0; // Safe fallback default
-        for (SimulationRequestDto.NodeDto nodeDto : dto.getGraph().getNodes()) {
-            if ("SOURCE".equals(nodeDto.getType()) && nodeDto.getNominalVoltage() != null) {
-                gridNominalVoltage = nodeDto.getNominalVoltage();
-                break;
-            }
-        }
-
-        // 2. Second pass: Map Nodes and wire up Load Strategies
         for (SimulationRequestDto.NodeDto nodeDto : dto.getGraph().getNodes()) {
             NetworkNode node = new NetworkNode();
             node.setId(nodeDto.getId());
@@ -95,7 +149,6 @@ public class SimulationController {
                 } else if ("CONSTANT_POWER".equals(nodeDto.getLoadType())) {
                     strategy = new ConstantPowerStrategy(
                             nodeDto.getLoadProfile(),
-                            gridNominalVoltage,
                             nodeDto.getCosPhi()
                     );
                 } else {
@@ -119,12 +172,8 @@ public class SimulationController {
             branch.setName(branchDto.getName());
             branch.setFromNodeId(branchDto.getFromNodeId());
             branch.setToNodeId(branchDto.getToNodeId());
-            branch.setLengthInKm(branchDto.getLengthInKm());
 
-            BranchComponent component = catalogService.getCableSpec(
-                    branchDto.getComponentCrossSection(),
-                    branchDto.getComponentMaterial()
-            );
+            BranchComponent component = branchComponentFactory.create(branchDto);
             branch.setComponent(component);
 
             graph.addBranch(branch);

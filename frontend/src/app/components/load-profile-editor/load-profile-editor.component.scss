@@ -1,0 +1,13 @@
+.instructions {
+  display: flex; justify-content: center; gap: 20px;
+  padding: 10px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-hairline);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.2px;
+}
+
+.read-only-hint {
+  color: var(--accent);
+}

@@ -1,0 +1,45 @@
+<app-modal [title]="title" (close)="close.emit()">
+  <div class="modal-body">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name</label>
+        <input [(ngModel)]="model.name" placeholder="e.g. XZY 3x16 Cu">
+      </div>
+      <div class="form-group">
+        <label>Standard</label>
+        <input [(ngModel)]="model.standard" placeholder="e.g. IEC 60502">
+      </div>
+      <div class="form-group">
+        <label>Cross Section</label>
+        <input [(ngModel)]="model.physical!.crossSection" placeholder="e.g. 16mm2">
+      </div>
+      <div class="form-group">
+        <label>Material</label>
+        <select [(ngModel)]="model.physical!.conductorMaterial">
+          <option value="CU">Copper</option>
+          <option value="AL">Aluminium</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>R (Ω/km)</label>
+        <input type="number" [(ngModel)]="model.electrical!.resistancePerKm" step="0.001">
+      </div>
+      <div class="form-group">
+        <label>X (Ω/km)</label>
+        <input type="number" [(ngModel)]="model.electrical!.reactancePerKm" step="0.001">
+      </div>
+      <div class="form-group">
+        <label>Ampacity Air (A)</label>
+        <input type="number" [(ngModel)]="model.electrical!.ampacityFreeAirA">
+      </div>
+      <div class="form-group">
+        <label>Ampacity Buried (A)</label>
+        <input type="number" [(ngModel)]="model.electrical!.ampacityBuriedA">
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="cancel-btn" (click)="close.emit()">Cancel</button>
+    <button class="save-btn" (click)="submit()">{{ submitLabel }}</button>
+  </div>
+</app-modal>

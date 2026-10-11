@@ -1,0 +1,29 @@
+// Shared styles for admin modal form components.
+// Imported by each modal's own scss file.
+
+.modal-body {
+  padding: 16px 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 4px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+}
+
+.form-error {
+  font-size: 11px;
+  color: var(--status-danger);
+  background: var(--status-danger-bg);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin-top: 12px;
+}

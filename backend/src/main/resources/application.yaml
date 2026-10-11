@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: voltage-drop-sim
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/grid_catalogs}
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration-ms: 86400000 # 24 hours
+  refresh-expiration-ms: 604800000 # 7 days
+
+simulation:
+  math:
+    default-power-factor: 0.95
+  convergence:
+    voltage-tolerance-pu: 0.0001
+    max-iterations: 50
+  norms:
+    active-norm: en50160
+    en50160:
+      min-voltage-pu: 0.90
+      max-voltage-pu: 1.1
+  ieee1159:
+    instantaneous-sag-max-seconds: 0.5
+    momentary-sag-max-seconds: 3
+    temporary-sag-max-seconds: 60
+

@@ -1,0 +1,36 @@
+<div class="svg-wrapper" [class.read-only]="readOnly" (click)="addPoint($event)">
+  <div class="y-axis-labels">
+    <div *ngFor="let label of yGridData" class="axis-label">{{label.label}}</div>
+  </div>
+  <div class="graph-area">
+    <svg #svgCanvas xmlns="http://www.w3.org/2000/svg" style="overflow: hidden;" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <g class="grid-lines">
+        <line *ngFor="let grid of yGridData" x1="0" [attr.y1]="(100 - grid.percent) + '%'" x2="100" [attr.y2]="(100 - grid.percent) + '%'" stroke="var(--grid-line-strong)" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
+        <line *ngFor="let grid of xGridData" [attr.x1]="grid.percent + '%'" y1="0" [attr.x2]="grid.percent + '%'" y2="100" stroke="var(--grid-line)" stroke-width="0.5" vector-effect="non-scaling-stroke"/>
+      </g>
+      <path *ngIf="svgPath" class="curve" [attr.d]="svgPath" fill="none" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+      <path *ngIf="svgPath" class="curve-fill" [attr.d]="svgPath + ' L 100,100 L 0,100 Z'" [attr.fill]="accentFill" stroke="none"/>
+      <g class="points-layer">
+        <rect *ngFor="let point of points; let i = index"
+              [attr.x]="(getScreenX(point) - pointRadiusX) + '%'"
+              [attr.y]="(100 - getScreenY(point) - pointRadiusY) + '%'"
+              [attr.width]="(pointRadiusX * 2) + '%'"
+              [attr.height]="(pointRadiusY * 2) + '%'"
+              [attr.rx]="pointRadiusX + '%'"
+              [attr.ry]="pointRadiusY + '%'"
+              fill="var(--accent)"
+              stroke="var(--bg-panel)"
+              stroke-width="0.8"
+              vector-effect="non-scaling-stroke"
+              [class.point-readonly]="readOnly"
+              (mousedown)="onPointMouseDown($event, i)"
+              (contextmenu)="removePoint($event, i)"
+              [style.cursor]="readOnly ? 'default' : 'grab'"/>
+      </g>
+    </svg>
+  </div>
+  <div class="x-axis-spacer"></div>
+  <div class="x-axis-labels">
+    <div *ngFor="let grid of xGridData" class="axis-label" [style.left.%]="grid.percent">{{formatTime(grid.instant)}}</div>
+  </div>
+</div>

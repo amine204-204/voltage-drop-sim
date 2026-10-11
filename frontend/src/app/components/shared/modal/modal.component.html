@@ -1,0 +1,12 @@
+<div class="modal-overlay" (click)="close.emit()">
+  <div class="modal-card" [style.width]="width" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h3>{{ title }}</h3>
+      <button class="close-btn" (click)="close.emit()">✕</button>
+    </div>
+
+    <ng-content></ng-content>
+
+  </div>
+</div>

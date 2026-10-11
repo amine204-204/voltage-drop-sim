@@ -1,0 +1,27 @@
+<app-modal [title]="readOnly ? 'View Load Curve' : 'Edit Load Curve'" width="850px" (close)="close.emit()">
+
+    <div class="instructions" *ngIf="!readOnly">
+      <span>Click to add a point</span>
+      <span>Drag a point to reshape the curve</span>
+      <span>Right-click a point to delete it</span>
+    </div>
+    <div class="instructions read-only-hint" *ngIf="readOnly">
+      <span>View only</span>
+    </div>
+
+    <app-profile-curve-canvas
+        [initialPoints]="points"
+        [totalDuration]="totalDuration"
+        [maxLoadValue]="baselineMaxLoadValue"
+        [loadUnit]="loadUnit"
+        [readOnly]="readOnly"
+        (pointsChange)="onPointsChange($event)">
+    </app-profile-curve-canvas>
+
+    <div class="modal-footer">
+      <button class="cancel-btn" *ngIf="!readOnly" (click)="close.emit()">Cancel</button>
+      <button class="save-btn" *ngIf="!readOnly" (click)="applyAndClose()">Sample &amp; Apply Curve</button>
+      <button class="save-btn" *ngIf="readOnly" (click)="close.emit()">Close</button>
+    </div>
+
+</app-modal>

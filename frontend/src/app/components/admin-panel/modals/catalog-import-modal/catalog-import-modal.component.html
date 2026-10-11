@@ -1,0 +1,119 @@
+<app-modal [title]="title" [width]="'720px'" (close)="close.emit()">
+
+  <div class="modal-body">
+
+    <!-- Step: pick -->
+    <ng-container *ngIf="step === 'pick'">
+      <label
+        class="dropzone"
+        [class.dragging]="dragging"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop($event)">
+        <app-icon name="upload" [size]="28"></app-icon>
+        <p class="dropzone-title">Drop a file here or click to browse</p>
+        <p class="dropzone-hint">Accepts .json, .xlsx or .xls</p>
+        <input type="file" accept=".json,.xlsx,.xls" (change)="onFileSelected($event)" />
+      </label>
+
+      <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+    </ng-container>
+
+    <!-- Step: mapping -->
+    <ng-container *ngIf="step === 'mapping'">
+      <div class="mapping-head">
+        <p class="file-info">
+          <app-icon name="document-grid" [size]="14"></app-icon>
+          {{ selectedFile?.name }}
+        </p>
+        <p class="mapping-hint">Required fields are marked with *.</p>
+      </div>
+
+      <div class="mapping-list">
+        <ng-container *ngFor="let group of groups">
+          <div class="group-label">{{ group.label }}</div>
+          <div class="mapping-row" *ngFor="let field of group.fields">
+            <label class="field-label">
+              {{ field.label }}
+              <span class="required-mark" *ngIf="field.required">*</span>
+            </label>
+            <select [(ngModel)]="mapping[field.key]">
+              <option value="">&mdash; not mapped &mdash;</option>
+              <option *ngFor="let h of headers" [value]="h">{{ h }}</option>
+            </select>
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+
+    <!-- Step: preview -->
+    <ng-container *ngIf="step === 'preview' && preview">
+      <div class="summary">
+        <span class="summary-chip ok">Valid: {{ preview.validCount }}</span>
+        <span class="summary-chip warn">Duplicates: {{ preview.duplicateCount }}</span>
+        <span class="summary-chip danger">Errors: {{ preview.invalidCount }}</span>
+        <span class="summary-chip neutral">Total: {{ preview.totalRows }}</span>
+      </div>
+
+      <div class="preview-table-wrap">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Status</th>
+              <th>Name</th>
+              <th>Standard</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of previewRows">
+              <td class="mono">{{ row.rowNumber }}</td>
+              <td>
+                <span class="status-badge"
+                      [class.ok]="row.status === 'OK'"
+                      [class.warn]="row.status === 'DUPLICATE'"
+                      [class.danger]="row.status === 'ERROR'">{{ row.status }}</span>
+              </td>
+              <td>{{ row.data?.['name'] ?? '—' }}</td>
+              <td>{{ row.data?.['standard'] ?? '—' }}</td>
+              <td class="details-cell">
+                <span *ngIf="row.status !== 'OK'" class="row-errors">{{ row.errors.join('; ') }}</span>
+                <span *ngIf="row.status === 'OK'">&mdash;</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="truncated-note" *ngIf="previewTruncated">
+        Showing first {{ MAX_PREVIEW_ROWS }} rows of {{ preview.rows.length }}.
+      </p>
+    </ng-container>
+
+  </div>
+
+  <div class="modal-footer">
+    <button class="cancel-btn" (click)="step === 'preview' ? backFromPreview() : close.emit()">
+      {{ step === 'preview' ? 'Back' : 'Cancel' }}
+    </button>
+
+    <ng-container *ngIf="step === 'mapping'">
+      <button class="cancel-btn" (click)="backToPick()">Change file</button>
+      <button class="save-btn" [disabled]="!mappingComplete || loading" (click)="validateAndPreview()">
+        Validate &amp; Preview
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="step === 'preview' && preview">
+      <button class="save-btn" [disabled]="committing || okRows.length === 0" (click)="commit()">
+        Import {{ okRows.length }} valid row(s)
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="step === 'pick'">
+      <span class="loading-note" *ngIf="loading">Parsing file...</span>
+    </ng-container>
+  </div>
+
+</app-modal>

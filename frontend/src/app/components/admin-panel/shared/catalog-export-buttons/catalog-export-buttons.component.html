@@ -1,0 +1,16 @@
+<div class="export-btn-wrap">
+  <button class="icon-btn label-btn" [disabled]="exporting" (click)="openMenu($event)" title="Export catalog">
+    <app-icon name="download" [size]="14"></app-icon>
+  </button>
+
+  <div class="export-menu" *ngIf="menuOpen">
+    <button class="menu-item" (click)="exportTo('json')">
+      <app-icon name="download" [size]="14"></app-icon>
+      <span>Export to JSON</span>
+    </button>
+    <button class="menu-item" (click)="exportTo('excel')">
+      <app-icon name="file-down" [size]="14"></app-icon>
+      <span>Export to Excel</span>
+    </button>
+  </div>
+</div>

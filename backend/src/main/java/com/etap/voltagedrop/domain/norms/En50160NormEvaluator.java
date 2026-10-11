@@ -21,4 +21,9 @@ public class En50160NormEvaluator implements NormEvaluator {
     public String getStandardName() {
         return "EN 50160";
     }
+
+    @Override
+    public double getMinVoltagePu() {
+        return props.getNorms().getEn50160().getMinVoltagePu();
+    }
 }

@@ -1,0 +1,29 @@
+<div class="admin-panel">
+  <app-page-header title="Admin Panel"></app-page-header>
+
+  <div class="admin-body">
+    <nav class="sidebar">
+      <ng-container *ngFor="let group of groups">
+        <div class="group-label">{{ group.label }}</div>
+        <button
+          *ngFor="let item of group.items"
+          class="sidebar-item"
+          [class.active]="activeSection === item.id"
+          (click)="switchSection(item.id)">
+          <app-icon [name]="item.icon" [size]="15"></app-icon>
+          <span>{{ item.label }}</span>
+        </button>
+      </ng-container>
+    </nav>
+
+    <main class="content">
+      <app-cable-catalog-section *ngIf="activeSection === 'cables'"></app-cable-catalog-section>
+      <app-transformer-catalog-section *ngIf="activeSection === 'transformers'"></app-transformer-catalog-section>
+      <app-switch-catalog-section *ngIf="activeSection === 'switches'"></app-switch-catalog-section>
+      <app-load-presets-section *ngIf="activeSection === 'loadPresets'"></app-load-presets-section>
+      <app-users-section *ngIf="activeSection === 'users'"></app-users-section>
+      <app-standards-section *ngIf="activeSection === 'standards'"></app-standards-section>
+      <app-projects-section *ngIf="activeSection === 'projects'"></app-projects-section>
+    </main>
+  </div>
+</div>

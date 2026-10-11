@@ -1,0 +1,55 @@
+<app-modal title="Project Settings" (close)="close.emit()">
+  <div class="modal-body">
+    <ng-container *ngIf="hasProject">
+      <div class="form-group">
+        <label for="settings-name">Project Name</label>
+        <input id="settings-name" type="text" [(ngModel)]="name" placeholder="Project name" required>
+        <div class="field-error" *ngIf="nameError">{{ nameError }}</div>
+      </div>
+      <div class="form-group">
+        <label for="settings-desc">Description</label>
+        <textarea id="settings-desc" [(ngModel)]="description" placeholder="Project description..." rows="3"></textarea>
+      </div>
+      <div class="section-divider"></div>
+    </ng-container>
+
+    <div class="form-group">
+      <label for="settings-norm">Compliance Standard</label>
+      <select id="settings-norm" [(ngModel)]="selectedNormType">
+        <option *ngIf="loading" disabled>Loading...</option>
+        <option *ngFor="let s of standards" [value]="s.name">{{ s.name }}</option>
+        <option value="custom">Custom Limits</option>
+      </select>
+    </div>
+
+    <div class="custom-limits-row" *ngIf="selectedNormType === 'custom'">
+      <div class="form-group">
+        <label>Min Voltage (pu)</label>
+        <input type="number" [(ngModel)]="customMinPu" step="0.01" min="0" max="1">
+      </div>
+      <div class="form-group">
+        <label>Max Voltage (pu)</label>
+        <input type="number" [(ngModel)]="customMaxPu" step="0.01" min="1" max="2">
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="custom-limits-row">
+      <div class="form-group">
+        <label>Min Δt (s)</label>
+        <input type="number" [(ngModel)]="minDeltaTimeSeconds" step="1" min="1">
+      </div>
+      <div class="form-group">
+        <label>Max Δt (s)</label>
+        <input type="number" [(ngModel)]="maxDeltaTimeSeconds" step="1" min="1">
+      </div>
+    </div>
+    <div class="field-error" *ngIf="deltaTimeRangeError">{{ deltaTimeRangeError }}</div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="cancel-btn" (click)="close.emit()">Cancel</button>
+    <button class="save-btn" (click)="submit()">Apply</button>
+  </div>
+</app-modal>

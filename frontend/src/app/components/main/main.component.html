@@ -1,0 +1,100 @@
+<div class="app-shell">
+  <app-user-bar
+    [projects]="projects"
+    [selectedProjectId]="selectedProjectId"
+    [deleteConfirmStep]="deleteConfirmStep"
+    (projectSelected)="onProjectSelected($event)"
+    (newProject)="onNewClicked()"
+    (saveProject)="onSaveClicked()"
+    (saveAsProject)="onSaveAsClicked()"
+    (exportProject)="onExportClicked()"
+    (importProject)="onImportClicked($event)"
+    (deleteProject)="onDeleteClicked()"
+    (settingsClicked)="onSettingsClicked()">
+  </app-user-bar>
+
+  <div class="loading-overlay" *ngIf="isLoadingCatalog">
+    <div class="loading-spinner"></div>
+    <p>Loading equipment catalogs...</p>
+  </div>
+
+  <app-simulation-top-bar
+    [maxSteps]="maxSimulationSteps"
+    [durationSeconds]="durationSeconds"
+    [isSimulationLoaded]="isSimulationLoaded"
+    [isSimulating]="isSimulating"
+    [currentStep]="currentStep"
+    [isPlaying]="isPlaying"
+    [isRepeat]="isRepeat"
+    [playbackSpeed]="playbackSpeed"
+    [simulationDeltaTimeSeconds]="simulationDeltaTimeSeconds"
+    [simulationTotalTimeSeconds]="simulationTotalTimeSeconds"
+    [minDeltaTimeSeconds]="minDeltaTimeSeconds"
+    [maxDeltaTimeSeconds]="maxDeltaTimeSeconds"
+    (runClicked)="onRunClicked($event)"
+    (cancelClicked)="onCancelClicked()"
+    (editModeClicked)="onBackToEditClicked()"
+    (durationChanged)="onDurationChanged($event)"
+    (maxStepsChanged)="onMaxStepsChanged($event)"
+    (currentStepChanged)="onCurrentStepChanged($event)"
+    (playPauseClicked)="onPlayPauseClicked()"
+    (stepBackClicked)="onStepBackClicked()"
+    (stepForwardClicked)="onStepForwardClicked()"
+    (toStartClicked)="onToStartClicked()"
+    (toEndClicked)="onToEndClicked()"
+    (repeatToggled)="onRepeatToggled()"
+    (playbackSpeedChanged)="onPlaybackSpeedChanged($event)">
+  </app-simulation-top-bar>
+  
+   <div class="canvas-drop-zone"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)">
+    <app-grid-canvas 
+      *ngIf="!isLoadingCatalog"
+      [maxSimulationSteps]="maxSimulationSteps"
+      [deltaTime]="deltaTime"
+      [minLimitPu]="runMinLimitPu"
+      [maxLimitPu]="runMaxLimitPu"
+      [cableCatalogItems]="cableCatalog"
+      [transformerCatalogItems]="transformerCatalog"
+      [switchCatalogItems]="switchCatalog"
+      [loadPresets]="loadPresets"
+      [cableSuggestions]="cableSuggestions"
+      [isSuggesting]="isSuggesting"
+      (seekStep)="onSeekStep($event)"
+      (suggestClicked)="onSuggestClicked()"
+      (cableApplied)="onCableApplied($event)">
+    </app-grid-canvas>
+    <div class="drop-overlay" *ngIf="isDragOver">
+      <div class="drop-overlay-content">
+        <app-icon name="upload" [size]="48"></app-icon>
+        <p>Drop JSON file to import graph</p>
+      </div>
+    </div>
+  </div>
+
+  <app-project-modal
+    *ngIf="showProjectModal"
+    [name]="modalProjectName"
+    [description]="modalProjectDescription"
+    [isEdit]="isEditModal"
+    [errorMessage]="modalError"
+    (save)="onModalSave($event)"
+    (close)="showProjectModal = false">
+  </app-project-modal>
+
+  <app-settings-modal
+    *ngIf="showSettingsModal"
+    [name]="modalProjectName"
+    [description]="modalProjectDescription"
+    [selectedNormType]="selectedNormType"
+    [customMinPu]="customMinPu"
+    [customMaxPu]="customMaxPu"
+    [minDeltaTimeSeconds]="minDeltaTimeSeconds"
+    [maxDeltaTimeSeconds]="maxDeltaTimeSeconds"
+    [hasProject]="selectedProjectId !== null"
+    (settingsChange)="onSettingsApplied($event)"
+    (close)="showSettingsModal = false">
+  </app-settings-modal>
+</div>

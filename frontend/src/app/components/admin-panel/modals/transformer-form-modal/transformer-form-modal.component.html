@@ -1,0 +1,42 @@
+<app-modal [title]="title" (close)="close.emit()">
+  <div class="modal-body">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name</label>
+        <input [(ngModel)]="model.name" placeholder="e.g. MV/LV 630kVA">
+      </div>
+      <div class="form-group">
+        <label>Standard</label>
+        <input [(ngModel)]="model.standard" placeholder="e.g. IEC 60076">
+      </div>
+      <div class="form-group">
+        <label>Rated Power (kVA)</label>
+        <input type="number" [(ngModel)]="model.electrical!.ratedPowerKva">
+      </div>
+      <div class="form-group">
+        <label>Primary Voltage (V)</label>
+        <input type="number" [(ngModel)]="model.electrical!.primaryVoltageV">
+      </div>
+      <div class="form-group">
+        <label>Secondary Voltage (V)</label>
+        <input type="number" [(ngModel)]="model.electrical!.secondaryVoltageV">
+      </div>
+      <div class="form-group">
+        <label>Impedance (%)</label>
+        <input type="number" [(ngModel)]="model.electrical!.impedancePercent" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>No-load Loss (W)</label>
+        <input type="number" [(ngModel)]="model.electrical!.noLoadLossW">
+      </div>
+      <div class="form-group">
+        <label>Load Loss (W)</label>
+        <input type="number" [(ngModel)]="model.electrical!.loadLossW">
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="cancel-btn" (click)="close.emit()">Cancel</button>
+    <button class="save-btn" (click)="submit()">{{ submitLabel }}</button>
+  </div>
+</app-modal>

@@ -1,0 +1,5 @@
+<app-modal [title]="'Voltage Profile: ' + nodeName" width="800px" (close)="close.emit()">
+  <div class="chart-container">
+    <canvas #chartCanvas></canvas>
+  </div>
+</app-modal>

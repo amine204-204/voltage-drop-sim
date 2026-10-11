@@ -1,0 +1,74 @@
+<div class="report-panel">
+
+  <div class="report-header">
+    <span class="report-title">Power Quality Report</span>
+    <button class="report-close" (click)="close.emit()" title="Close report">
+      <app-icon name="close" [size]="14"></app-icon>
+    </button>
+  </div>
+
+  <div class="report-stale" *ngIf="stale">
+    Results from last run
+  </div>
+
+  <div class="report-empty" *ngIf="issues.length === 0">
+    No violations
+  </div>
+
+  <div class="report-list" *ngIf="issues.length > 0">
+    <button class="report-item" *ngFor="let issue of issues" (click)="issueClicked.emit(issue)">
+      <span class="sev-dot" [class.sev-severe]="isSevere(issue.classification)"></span>
+      <span class="report-main">
+        <span class="report-label">{{ labelFor(issue.classification) }}</span>
+        <span class="report-path">{{ issue.nodeName }}</span>
+        <span class="report-path">{{ pathLabel(issue) }}</span>
+      </span>
+      <span class="report-meta">
+        <span class="report-mag mono">−{{ magnitudePercent(issue) }}%</span>
+        <span class="report-time mono">{{ timeRangeSeconds(issue) }}</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="suggest-section" *ngIf="issues.length > 0">
+    <button class="suggest-button" (click)="suggestClicked.emit()" [disabled]="suggesting"
+      title="Analyze path contributions and suggest catalog cable upsizing">
+      <span class="suggest-spinner" *ngIf="suggesting"></span>
+      <app-icon name="cable" [size]="12"></app-icon>
+      {{ suggesting ? 'Analyzing paths…' : 'Suggest cable upsizing' }}
+    </button>
+
+    <div class="suggest-list" *ngIf="cableSuggestions.length > 0">
+      <div class="suggest-card" *ngFor="let s of cableSuggestions">
+        <div class="suggest-card-body" (click)="suggestionClicked.emit(s)">
+          <span class="suggest-branch">{{ branchLabel(s) }}</span>
+          <span class="suggest-change mono">{{ s.currentCrossSection }} {{ s.currentMaterial }} → {{ targetLabel(s) }} {{ s.currentMaterial }}</span>
+          <span class="suggest-impact" *ngIf="referenceNode(s) as ref">
+            contributes {{ formatNum(s.contributionPercent) }}% of {{ formatNum(ref.totalDropPercent) }}% drop
+            → ≈{{ formatNum(ref.predictedTotalDropPercent) }}% after
+          </span>
+          <span class="suggest-nodes" *ngIf="affectedLabel(s)">affects {{ affectedLabel(s) }}</span>
+
+          <div class="suggest-options" *ngIf="options(s).length > 1">
+            <label class="suggest-option" *ngFor="let o of options(s)"
+              [class.selected]="selectedCatalogId(s) === o.catalogId"
+              (click)="$event.stopPropagation()">
+              <input type="radio" name="sizing-{{ s.branchId }}"
+                [checked]="selectedCatalogId(s) === o.catalogId"
+                (change)="selectOption(s, o.catalogId)">
+              <span class="mono">{{ o.crossSection }}</span>
+              <span class="suggest-option-pred mono">≈{{ formatNum(o.predictedTotalDropPercent) }}%</span>
+              <span class="suggest-option-tag" *ngIf="o.isRecommended">recommended</span>
+            </label>
+          </div>
+        </div>
+        <button class="apply-btn" [class.applied]="isApplied(s)"
+          [disabled]="isApplied(s)" (click)="emitApply(s)"
+          title="Apply cable upsizing">
+          <app-icon name="success" [size]="12"></app-icon> {{ isApplied(s) ? 'Applied' : 'Apply' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

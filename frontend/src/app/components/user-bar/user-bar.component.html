@@ -1,0 +1,61 @@
+<div class="user-bar">
+  <div class="left-section">
+    <app-logo class="app-logo" [size]="22"></app-logo>
+    <span class="app-name"><strong>Delta</strong>Grid</span>
+
+    <div class="project-section">
+    <label>Project:</label>
+    <select [ngModel]="selectedProjectId" (ngModelChange)="onProjectSelected($event)">
+      <option [value]="null">-- Scratchpad --</option>
+      <option *ngFor="let p of projects" [value]="p.id">{{ p.name }}</option>
+    </select>
+
+    <div class="project-actions">
+      <button class="icon-btn" (click)="newProject.emit()" title="New Project">
+        <app-icon name="file-plus" [size]="16"></app-icon>
+      </button>
+
+      <button class="icon-btn" (click)="saveProject.emit()" title="Save Project">
+        <app-icon name="save" [size]="16"></app-icon>
+      </button>
+
+      <button class="icon-btn" *ngIf="selectedProjectId" (click)="saveAsProject.emit()" title="Save As...">
+        <app-icon name="file-down" [size]="16"></app-icon>
+      </button>
+
+      <span class="btn-separator"></span>
+
+      <button class="icon-btn" (click)="exportProject.emit()" title="Export Graph as JSON">
+        <app-icon name="download" [size]="16"></app-icon>
+      </button>
+
+      <button class="icon-btn" (click)="fileInput.click()" title="Import Graph from JSON">
+        <app-icon name="upload" [size]="16"></app-icon>
+      </button>
+      <input #fileInput type="file" accept=".json" (change)="onImportFileSelected($event)" style="display:none">
+
+      <span class="btn-separator"></span>
+
+      <button class="icon-btn" (click)="settingsClicked.emit()" title="Project Settings">
+        <app-icon name="gear" [size]="16"></app-icon>
+      </button>
+
+      <button class="icon-btn delete-btn" *ngIf="selectedProjectId" (click)="deleteProject.emit()" [class.confirm-delete]="deleteConfirmStep" [title]="deleteConfirmStep ? 'Click again to confirm' : 'Delete Project'">
+        <app-icon name="trash" [size]="16"></app-icon>
+      </button>
+    </div>
+  </div>
+  </div>
+
+  <div class="user-section">
+    <span class="username profile-link" (click)="goToProfile()" title="My Profile">{{ username }}</span>
+    <button class="admin-btn" *ngIf="isAdmin" (click)="goToAdmin()" title="Admin Panel">
+      <app-icon name="gear" [size]="14"></app-icon>
+      Admin
+    </button>
+    <button class="theme-btn" (click)="themeService.toggle()" [attr.title]="themeService.isLight() ? 'Switch to dark mode' : 'Switch to light mode'">
+      <app-icon [name]="themeService.isLight() ? 'moon' : 'sun'" [size]="16"></app-icon>
+    </button>
+    <button class="logout-btn" (click)="logout()">Logout</button>
+  </div>
+</div>

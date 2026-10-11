@@ -1,0 +1,7 @@
+@use '../../shared/admin-section.scss';
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
