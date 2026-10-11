@@ -1,0 +1,608 @@
+apiVersion: v1
+data:
+  mongo-seed.js: |
+    db = db.getSiblingDB('grid_catalogs');
+    db.cables.insertMany([
+      {
+        _id: "CU-1.5-001",
+        name: "H07RN-F 3G1.5mm² Cu",
+        standard: "NF C 32-102",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 12.1,
+          reactancePerKm: 0.09,
+          ampacityFreeAirA: 19,
+          ampacityBuriedA: 15,
+          voltageDropPerAKm: 0.42
+        },
+        physical: {
+          crossSection: "1.5",
+          conductorMaterial: "CU",
+          insulationMaterial: "EPR",
+          outerDiameterMm: 8.2
+        },
+        thermal: { ratedTempC: 90, maxShortCircuitTempC: 250 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 12.1, xOhmKm: 0.09 },
+          { tempC: 30, rOhmKm: 12.5, xOhmKm: 0.09 },
+          { tempC: 60, rOhmKm: 13.5, xOhmKm: 0.09 },
+          { tempC: 90, rOhmKm: 14.6, xOhmKm: 0.09 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-2.5-001",
+        name: "H07RN-F 3G2.5mm² Cu",
+        standard: "NF C 32-102",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 7.41,
+          reactancePerKm: 0.087,
+          ampacityFreeAirA: 26,
+          ampacityBuriedA: 21,
+          voltageDropPerAKm: 0.26
+        },
+        physical: {
+          crossSection: "2.5",
+          conductorMaterial: "CU",
+          insulationMaterial: "EPR",
+          outerDiameterMm: 9.4
+        },
+        thermal: { ratedTempC: 90, maxShortCircuitTempC: 250 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 7.41, xOhmKm: 0.087 },
+          { tempC: 30, rOhmKm: 7.66, xOhmKm: 0.087 },
+          { tempC: 60, rOhmKm: 8.28, xOhmKm: 0.087 },
+          { tempC: 90, rOhmKm: 8.96, xOhmKm: 0.087 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-4-001",
+        name: "NYY-J 4x4mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 4.61,
+          reactancePerKm: 0.085,
+          ampacityFreeAirA: 34,
+          ampacityBuriedA: 27,
+          voltageDropPerAKm: 0.16
+        },
+        physical: {
+          crossSection: "4",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 11.5
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 4.61, xOhmKm: 0.085 },
+          { tempC: 30, rOhmKm: 4.77, xOhmKm: 0.085 },
+          { tempC: 50, rOhmKm: 5.14, xOhmKm: 0.085 },
+          { tempC: 70, rOhmKm: 5.52, xOhmKm: 0.085 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-6-001",
+        name: "NYY-J 4x6mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 3.08,
+          reactancePerKm: 0.083,
+          ampacityFreeAirA: 43,
+          ampacityBuriedA: 35,
+          voltageDropPerAKm: 0.11
+        },
+        physical: {
+          crossSection: "6",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 12.8
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 3.08, xOhmKm: 0.083 },
+          { tempC: 30, rOhmKm: 3.19, xOhmKm: 0.083 },
+          { tempC: 50, rOhmKm: 3.44, xOhmKm: 0.083 },
+          { tempC: 70, rOhmKm: 3.69, xOhmKm: 0.083 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-10-001",
+        name: "NYY-J 4x10mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 1.83,
+          reactancePerKm: 0.082,
+          ampacityFreeAirA: 60,
+          ampacityBuriedA: 48,
+          voltageDropPerAKm: 0.065
+        },
+        physical: {
+          crossSection: "10",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 15.2
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 1.83, xOhmKm: 0.082 },
+          { tempC: 30, rOhmKm: 1.89, xOhmKm: 0.082 },
+          { tempC: 50, rOhmKm: 2.04, xOhmKm: 0.082 },
+          { tempC: 70, rOhmKm: 2.19, xOhmKm: 0.082 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-16-001",
+        name: "NYY-J 4x16mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 1.15,
+          reactancePerKm: 0.08,
+          ampacityFreeAirA: 85,
+          ampacityBuriedA: 70,
+          voltageDropPerAKm: 0.018
+        },
+        physical: {
+          crossSection: "16",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 19.2
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 1.15, xOhmKm: 0.08 },
+          { tempC: 30, rOhmKm: 1.19, xOhmKm: 0.08 },
+          { tempC: 50, rOhmKm: 1.28, xOhmKm: 0.08 },
+          { tempC: 70, rOhmKm: 1.32, xOhmKm: 0.08 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-25-001",
+        name: "NYY-J 4x25mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 0.727,
+          reactancePerKm: 0.077,
+          ampacityFreeAirA: 110,
+          ampacityBuriedA: 90,
+          voltageDropPerAKm: 0.0115
+        },
+        physical: {
+          crossSection: "25",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 22.4
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 0.727, xOhmKm: 0.077 },
+          { tempC: 30, rOhmKm: 0.754, xOhmKm: 0.077 },
+          { tempC: 50, rOhmKm: 0.792, xOhmKm: 0.077 },
+          { tempC: 70, rOhmKm: 0.834, xOhmKm: 0.077 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-35-001",
+        name: "NYY-J 4x35mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 0.524,
+          reactancePerKm: 0.076,
+          ampacityFreeAirA: 135,
+          ampacityBuriedA: 110,
+          voltageDropPerAKm: 0.0083
+        },
+        physical: {
+          crossSection: "35",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 25.6
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 0.524, xOhmKm: 0.076 },
+          { tempC: 30, rOhmKm: 0.543, xOhmKm: 0.076 },
+          { tempC: 50, rOhmKm: 0.570, xOhmKm: 0.076 },
+          { tempC: 70, rOhmKm: 0.601, xOhmKm: 0.076 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-50-001",
+        name: "NYY-J 4x50mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 0.387,
+          reactancePerKm: 0.075,
+          ampacityFreeAirA: 165,
+          ampacityBuriedA: 135,
+          voltageDropPerAKm: 0.0062
+        },
+        physical: {
+          crossSection: "50",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 29.0
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 0.387, xOhmKm: 0.075 },
+          { tempC: 30, rOhmKm: 0.401, xOhmKm: 0.075 },
+          { tempC: 50, rOhmKm: 0.421, xOhmKm: 0.075 },
+          { tempC: 70, rOhmKm: 0.444, xOhmKm: 0.075 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-70-001",
+        name: "NYY-J 4x70mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 0.268,
+          reactancePerKm: 0.074,
+          ampacityFreeAirA: 205,
+          ampacityBuriedA: 170,
+          voltageDropPerAKm: 0.0043
+        },
+        physical: {
+          crossSection: "70",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 33.5
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 0.268, xOhmKm: 0.074 },
+          { tempC: 30, rOhmKm: 0.278, xOhmKm: 0.074 },
+          { tempC: 50, rOhmKm: 0.292, xOhmKm: 0.074 },
+          { tempC: 70, rOhmKm: 0.308, xOhmKm: 0.074 }
+        ],
+        active: true
+      },
+      {
+        _id: "CU-95-001",
+        name: "NYY-J 4x95mm² Cu",
+        standard: "IEC 60502",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 0.193,
+          reactancePerKm: 0.073,
+          ampacityFreeAirA: 250,
+          ampacityBuriedA: 205,
+          voltageDropPerAKm: 0.0031
+        },
+        physical: {
+          crossSection: "95",
+          conductorMaterial: "CU",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 38.2
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 0.193, xOhmKm: 0.073 },
+          { tempC: 30, rOhmKm: 0.200, xOhmKm: 0.073 },
+          { tempC: 50, rOhmKm: 0.210, xOhmKm: 0.073 },
+          { tempC: 70, rOhmKm: 0.222, xOhmKm: 0.073 }
+        ],
+        active: true
+      },
+      {
+        _id: "AL-16-001",
+        name: "NAYY 4x16mm² Al",
+        standard: "DIN VDE 0276",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 1.91,
+          reactancePerKm: 0.08,
+          ampacityFreeAirA: 70,
+          ampacityBuriedA: 55,
+          voltageDropPerAKm: 0.031
+        },
+        physical: {
+          crossSection: "16",
+          conductorMaterial: "AL",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 19.5
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 1.91, xOhmKm: 0.08 },
+          { tempC: 30, rOhmKm: 1.97, xOhmKm: 0.08 },
+          { tempC: 50, rOhmKm: 2.08, xOhmKm: 0.08 },
+          { tempC: 70, rOhmKm: 2.20, xOhmKm: 0.08 }
+        ],
+        active: true
+      },
+      {
+        _id: "AL-25-001",
+        name: "NAYY 4x25mm² Al",
+        standard: "DIN VDE 0276",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 1.20,
+          reactancePerKm: 0.078,
+          ampacityFreeAirA: 90,
+          ampacityBuriedA: 75,
+          voltageDropPerAKm: 0.019
+        },
+        physical: {
+          crossSection: "25",
+          conductorMaterial: "AL",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 22.0
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 1.20, xOhmKm: 0.078 },
+          { tempC: 30, rOhmKm: 1.24, xOhmKm: 0.078 },
+          { tempC: 50, rOhmKm: 1.31, xOhmKm: 0.078 },
+          { tempC: 70, rOhmKm: 1.38, xOhmKm: 0.078 }
+        ],
+        active: true
+      },
+      {
+        _id: "AL-35-001",
+        name: "NAYY 4x35mm² Al",
+        standard: "DIN VDE 0276",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 0.868,
+          reactancePerKm: 0.077,
+          ampacityFreeAirA: 110,
+          ampacityBuriedA: 90,
+          voltageDropPerAKm: 0.014
+        },
+        physical: {
+          crossSection: "35",
+          conductorMaterial: "AL",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 25.0
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 0.868, xOhmKm: 0.077 },
+          { tempC: 30, rOhmKm: 0.897, xOhmKm: 0.077 },
+          { tempC: 50, rOhmKm: 0.947, xOhmKm: 0.077 },
+          { tempC: 70, rOhmKm: 1.00, xOhmKm: 0.077 }
+        ],
+        active: true
+      },
+      {
+        _id: "AL-50-001",
+        name: "NAYY 4x50mm² Al",
+        standard: "DIN VDE 0276",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 0.641,
+          reactancePerKm: 0.076,
+          ampacityFreeAirA: 135,
+          ampacityBuriedA: 110,
+          voltageDropPerAKm: 0.010
+        },
+        physical: {
+          crossSection: "50",
+          conductorMaterial: "AL",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 28.5
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 0.641, xOhmKm: 0.076 },
+          { tempC: 30, rOhmKm: 0.663, xOhmKm: 0.076 },
+          { tempC: 50, rOhmKm: 0.700, xOhmKm: 0.076 },
+          { tempC: 70, rOhmKm: 0.739, xOhmKm: 0.076 }
+        ],
+        active: true
+      },
+      {
+        _id: "AL-70-001",
+        name: "NAYY 4x70mm² Al",
+        standard: "DIN VDE 0276",
+        category: "low_voltage",
+        electrical: {
+          resistancePerKm: 0.443,
+          reactancePerKm: 0.075,
+          ampacityFreeAirA: 170,
+          ampacityBuriedA: 140,
+          voltageDropPerAKm: 0.0071
+        },
+        physical: {
+          crossSection: "70",
+          conductorMaterial: "AL",
+          insulationMaterial: "PVC",
+          outerDiameterMm: 33.0
+        },
+        thermal: { ratedTempC: 70, maxShortCircuitTempC: 160 },
+        impedanceTable: [
+          { tempC: 20, rOhmKm: 0.443, xOhmKm: 0.075 },
+          { tempC: 30, rOhmKm: 0.458, xOhmKm: 0.075 },
+          { tempC: 50, rOhmKm: 0.484, xOhmKm: 0.075 },
+          { tempC: 70, rOhmKm: 0.511, xOhmKm: 0.075 }
+        ],
+        active: true
+      }
+    ]);
+
+    db.transformers.insertMany([
+      {
+        _id: "TR-25",
+        name: "Oil-Immersed Distribution Transformer 25kVA",
+        standard: "IEC 60076",
+        category: "distribution",
+        electrical: {
+          ratedPowerKva: 25,
+          primaryVoltageV: 20000,
+          secondaryVoltageV: 400,
+          impedancePercent: 4.0,
+          noLoadLossW: 120,
+          loadLossW: 700
+        },
+        tapChanger: { steps: 5, stepVoltagePercent: 2.5 },
+        active: true
+      },
+      {
+        _id: "TR-50",
+        name: "Oil-Immersed Distribution Transformer 50kVA",
+        standard: "IEC 60076",
+        category: "distribution",
+        electrical: {
+          ratedPowerKva: 50,
+          primaryVoltageV: 20000,
+          secondaryVoltageV: 400,
+          impedancePercent: 4.0,
+          noLoadLossW: 170,
+          loadLossW: 1100
+        },
+        tapChanger: { steps: 5, stepVoltagePercent: 2.5 },
+        active: true
+      },
+      {
+        _id: "TR-100",
+        name: "Oil-Immersed Distribution Transformer 100kVA",
+        standard: "IEC 60076",
+        category: "distribution",
+        electrical: {
+          ratedPowerKva: 100,
+          primaryVoltageV: 20000,
+          secondaryVoltageV: 400,
+          impedancePercent: 4.0,
+          noLoadLossW: 290,
+          loadLossW: 1750
+        },
+        tapChanger: { steps: 5, stepVoltagePercent: 2.5 },
+        active: true
+      },
+      {
+        _id: "TR-160",
+        name: "Oil-Immersed Distribution Transformer 160kVA",
+        standard: "IEC 60076",
+        category: "distribution",
+        electrical: {
+          ratedPowerKva: 160,
+          primaryVoltageV: 20000,
+          secondaryVoltageV: 400,
+          impedancePercent: 4.0,
+          noLoadLossW: 400,
+          loadLossW: 2350
+        },
+        tapChanger: { steps: 5, stepVoltagePercent: 2.5 },
+        active: true
+      },
+      {
+        _id: "TR-250",
+        name: "Oil-Immersed Distribution Transformer 250kVA",
+        standard: "IEC 60076",
+        category: "distribution",
+        electrical: {
+          ratedPowerKva: 250,
+          primaryVoltageV: 20000,
+          secondaryVoltageV: 400,
+          impedancePercent: 4.0,
+          noLoadLossW: 560,
+          loadLossW: 3250
+        },
+        tapChanger: { steps: 5, stepVoltagePercent: 2.5 },
+        active: true
+      }
+    ]);
+
+    db.switches.insertMany([
+      {
+        _id: "SW-MCB-100",
+        name: "Miniature Circuit Breaker 100A",
+        standard: "IEC 60898",
+        category: "protection",
+        electrical: {
+          ratedCurrentA: 100,
+          breakingCapacity: "10 kA"
+        },
+        active: true
+      },
+      {
+        _id: "SW-MCB-63",
+        name: "Miniature Circuit Breaker 63A",
+        standard: "IEC 60898",
+        category: "protection",
+        electrical: {
+          ratedCurrentA: 63,
+          breakingCapacity: "10 kA"
+        },
+        active: true
+      }
+    ]);
+
+    db.load_presets.insertMany([
+      {
+        _id: "residential-constant-current",
+        name: "Residential Load (CC)",
+        description: "Typical residential current profile with morning and evening peaks",
+        loadType: "CONSTANT_CURRENT",
+        cosPhi: 0.9,
+        unit: "A",
+        defaultProfile: [
+          { time: 0, value: 5 },
+          { time: 3, value: 8 },
+          { time: 6, value: 25 },
+          { time: 9, value: 15 },
+          { time: 12, value: 10 },
+          { time: 18, value: 30 },
+          { time: 22, value: 12 },
+          { time: 24, value: 5 }
+        ],
+        active: true
+      },
+      {
+        _id: "industrial-constant-power",
+        name: "Industrial Motor (CP)",
+        description: "Constant power load with startup inrush",
+        loadType: "CONSTANT_POWER",
+        cosPhi: 0.85,
+        unit: "W",
+        defaultProfile: [
+          { time: 0, value: 0 },
+          { time: 1, value: 5000 },
+          { time: 2, value: 8000 },
+          { time: 3, value: 10000 },
+          { time: 20, value: 10000 },
+          { time: 21, value: 5000 },
+          { time: 22, value: 0 },
+          { time: 24, value: 0 }
+        ],
+        active: true
+      },
+      {
+        _id: "street-lighting",
+        name: "Street Lighting",
+        description: "On at dusk, off at dawn",
+        loadType: "CONSTANT_CURRENT",
+        cosPhi: 0.95,
+        unit: "A",
+        defaultProfile: [
+          { time: 0, value: 20 },
+          { time: 5, value: 20 },
+          { time: 6, value: 0 },
+          { time: 18, value: 0 },
+          { time: 19, value: 20 },
+          { time: 24, value: 20 }
+        ],
+        active: true
+      }
+    ]);
+kind: ConfigMap
+metadata:
+  name: mongo-seed
+  namespace: vds
