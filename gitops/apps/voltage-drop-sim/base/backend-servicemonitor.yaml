@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend
+  # Lives with the app; Prometheus discovers it cluster-wide thanks to the
+  # serviceMonitorNamespaceSelector set on the kube-prometheus-stack release.
+  namespace: vds
+  labels:
+    app: backend
+spec:
+  # Only look at Services in the app namespace.
+  namespaceSelector:
+    matchNames:
+      - vds
+  # Which Service to scrape: the backend Service (label app=backend).
+  selector:
+    matchLabels:
+      app: backend
+  endpoints:
+    # "http" is the named port on the backend Service (not the number).
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
