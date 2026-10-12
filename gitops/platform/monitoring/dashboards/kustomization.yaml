@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Turn the dashboard JSON file into a ConfigMap that the Grafana sidecar
+# auto-imports (sidecar label "grafana_dashboard" is enabled by kube-prometheus-stack).
+configMapGenerator:
+  - name: backend-dashboard
+    files:
+      - backend.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+
+generatorOptions:
+  # Stable ConfigMap name (no content-hash suffix) so repeated syncs don't
+  # leave stale dashboard ConfigMaps behind.
+  disableNameSuffixHash: true
