@@ -75,3 +75,62 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # Continuous delivery write-back.
+  #
+  # After the image is pushed to GHCR, pin the freshly built tag in the Git
+  # overlay so ArgoCD reconciles it. Git stays the single source of truth; this
+  # job is the only thing that edits the overlay, and only this image's line.
+  #
+  # No infinite loop: commits pushed with the default GITHUB_TOKEN do not
+  # trigger workflows, and this commit only touches gitops/** which is not in
+  # any workflow's `paths` trigger besides the app images they build.
+  # ---------------------------------------------------------------------------
+  update-tag:
+    needs: build
+    # Real pushes to main only (PRs never push an image; manual runs are excluded).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Job-level permissions REPLACE the workflow-level set for this job only,
+    # so we drop packages:write and gain the contents:write needed to push.
+    permissions:
+      contents: write
+    # Same group name as the frontend workflow => the two write-backs serialize
+    # instead of racing on the shared overlay file. Queue, do not cancel.
+    concurrency:
+      group: gitops-writeback
+      cancel-in-progress: false
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Bump backend tag in the kind overlay
+        run: |
+          # Matches metadata-action's `type=sha,format=short` output (7 chars).
+          TAG="sha-${GITHUB_SHA:0:7}"
+          python3 gitops/scripts/bump-image-tag.py \
+            gitops/apps/voltage-drop-sim/overlays/kind/kustomization.yaml \
+            "${IMAGE}" "$TAG"
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gitops/apps/voltage-drop-sim/overlays/kind/kustomization.yaml
+          # Re-runs and idempotent pushes produce no diff -> succeed, no empty commit.
+          if git diff --cached --quiet; then
+            echo "Image tag already up to date; nothing to commit."
+            exit 0
+          fi
+          git commit -m "cd(backend): pin image to ${GITHUB_SHA:0:7}"
+          # Retry on a rebase in case another commit (e.g. the frontend
+          # write-back) landed between our checkout and this push.
+          for attempt in 1 2 3; do
+            git pull --rebase --autostash
+            git push && exit 0
+            echo "push rejected, retrying ($attempt/3)"; sleep 5
+          done
+          echo "::error::failed to push the backend tag bump after 3 attempts"; exit 1
