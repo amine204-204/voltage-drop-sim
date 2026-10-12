@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/amine204-204/voltage-drop-sim.git
+    targetRevision: main
+    # Directory of plain manifests (no kustomization needed); ArgoCD applies
+    # every top-level *.yaml it finds there.
+    path: gitops/platform/argocd
+  destination:
+    server: https://kubernetes.default.svc
+    # The Ingress object must land next to ArgoCD's own server.
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

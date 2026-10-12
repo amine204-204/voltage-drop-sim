@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # The ONLY Application ever applied by hand:
+  #   kubectl apply -f gitops/bootstrap/root.yaml
+  # Everything else is created and kept in sync from Git by this one.
+  name: root
+  namespace: argocd
+  # Deleting the root cascades to every child Application it owns.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/amine204-204/voltage-drop-sim.git
+    targetRevision: main
+    # A directory full of Application manifests ("app of apps"). ArgoCD applies
+    # each top-level *.yaml, which in turn spawns the real Applications. The root
+    # lives OUTSIDE this directory so it never manages itself.
+    path: gitops/argo-apps
+  destination:
+    server: https://kubernetes.default.svc
+    # Child Application objects are namespaced resources -> they belong in argocd.
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
