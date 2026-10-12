@@ -34,6 +34,13 @@ spec:
         grafana:
           admin:
             existingSecret: grafana-admin      # Secret created manually (never in Git)
+          # Loki is added as a datasource so Grafana shows metrics AND logs.
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki-gateway.monitoring.svc.cluster.local
+              access: proxy
+              isDefault: false
           ingress:
             enabled: true
             ingressClassName: nginx

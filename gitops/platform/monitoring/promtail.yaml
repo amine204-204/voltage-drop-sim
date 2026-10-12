@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: promtail
+  namespace: argocd
+  # Deleting this Application removes the DaemonSet + its RBAC.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    # Promtail ships pod logs from every node to Loki.
+    repoURL: https://grafana.github.io/helm-charts
+    chart: promtail
+    targetRevision: 6.17.1
+    helm:
+      releaseName: promtail
+      values: |
+        config:
+          clients:
+            # Push to the Loki gateway (the chart's designed entrypoint).
+            # FQDN so it is unambiguous regardless of the pod's namespace.
+            - url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+        resources:
+          requests:
+            cpu: 20m
+            memory: 64Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      # Promtail is a DaemonSet with a ClusterRole/Binding; create the ns if absent.
+      - CreateNamespace=true

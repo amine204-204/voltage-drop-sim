@@ -1,0 +1,87 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki
+    targetRevision: 7.3.0
+    helm:
+      releaseName: loki
+      values: |
+        # --- Minimal single-binary Loki sized for a single-node kind cluster ---
+        # Default is "SimpleScalable" (read/write/backend, 3 replicas each) which
+        # is far too heavy here; SingleBinary runs everything in one pod.
+        deploymentMode: SingleBinary
+
+        loki:
+          # Single tenant: skip the multi-tenancy org-id handling entirely.
+          auth_enabled: false
+          commonConfig:
+            # Single binary => one copy of the data, no replication.
+            replication_factor: 1
+          # Store chunks/index on a PVC instead of S3 (no object store in kind).
+          storage:
+            type: filesystem
+          # TSDB schema; required because the chart ships none by default.
+          schemaConfig:
+            configs:
+              - from: "2024-04-01"
+                store: tsdb
+                object_store: filesystem
+                schema: v13
+                index:
+                  prefix: loki_index_
+                  period: 24h
+          limits_config:
+            allow_structured_metadata: true
+
+        singleBinary:
+          replicas: 1
+          persistence:
+            enabled: true
+            size: 5Gi
+
+        # These components only run in SimpleScalable mode.
+        read:
+          replicas: 0
+        write:
+          replicas: 0
+        backend:
+          replicas: 0
+
+        # The nginx gateway is the chart's designed single entrypoint:
+        # http://loki-gateway.<ns>:80  ->  Loki 3100. Keep it enabled.
+        gateway:
+          enabled: true
+
+        # Optional sub-components, disabled to keep the kind node light.
+        chunksCache:
+          enabled: false
+        resultsCache:
+          enabled: false
+        minio:
+          enabled: false
+        lokiCanary:
+          enabled: false
+        test:
+          enabled: false
+        monitoring:
+          selfMonitoring:
+            enabled: false
+          serviceMonitor:
+            enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
