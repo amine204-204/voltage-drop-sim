@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  # Deleting this Application cascades to the resources it created.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    # ArgoCD pulls the chart itself; no `helm repo add` needed on the cluster.
+    # Version is pinned so installs are reproducible.
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 92.3.0
+    helm:
+      # Prefix for generated names: kps-grafana, kps-kube-prometheus-*, ...
+      releaseName: kps
+      values: |
+        prometheus:
+          prometheusSpec:
+            # Default: Prometheus only scrapes ServiceMonitors labeled with this
+            # release. "false" => select ServiceMonitors in ALL namespaces,
+            # regardless of labels. Needed for our backend ServiceMonitor.
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            # Namespaces to look for ServiceMonitors in; {} = all. Explicit here
+            # so the intent is documented.
+            serviceMonitorNamespaceSelector: {}
+            retention: 6h
+            resources:
+              requests: { cpu: 100m, memory: 512Mi }
+        grafana:
+          admin:
+            existingSecret: grafana-admin      # Secret created manually (never in Git)
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            hosts:
+              - grafana.localhost
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests: { cpu: 50m, memory: 128Mi }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      # Prometheus Operator CRDs exceed the 262144-byte client-side-apply limit;
+      # Server-Side Apply lets the API server handle them.
+      - ServerSideApply=true
+      - CreateNamespace=true
