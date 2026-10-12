@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: vds-frontend:dev-v3
+          image: ghcr.io/amine204-204/vds-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: vds-backend:dev
+          image: ghcr.io/amine204-204/vds-backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

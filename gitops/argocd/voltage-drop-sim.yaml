@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: voltage-drop-sim
+  # Applications always live in the ArgoCD namespace.
+  namespace: argocd
+  # With this finalizer, deleting the Application cascades to its child resources.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/amine204-204/voltage-drop-sim.git
+    targetRevision: main
+    # ArgoCD renders this path with Kustomize and applies the result.
+    path: gitops/apps/voltage-drop-sim/overlays/kind
+  destination:
+    # In-cluster API server (the same cluster ArgoCD runs in).
+    server: https://kubernetes.default.svc
+    namespace: vds
+  syncPolicy:
+    # automated = reconcile on Git changes; selfHeal = revert manual drift;
+    # prune = delete resources removed from Git. Together: true GitOps.
+    automated:
+      prune: true
+      selfHeal: true
