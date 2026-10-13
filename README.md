@@ -1,8 +1,5 @@
 # Voltage Drop Simulator
 
-[![backend-ci](https://github.com/amine204-204/voltage-drop-sim/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/amine204-204/voltage-drop-sim/actions/workflows/backend-ci.yml)
-[![frontend-ci](https://github.com/amine204-204/voltage-drop-sim/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/amine204-204/voltage-drop-sim/actions/workflows/frontend-ci.yml)
-
 A web platform for electrical engineers to model **low-voltage distribution
 networks**, run **quasi-steady-state (QSS) time-series simulations**, and analyse
 power-quality violations against **EN 50160** and **IEEE 1159**.
