@@ -32,8 +32,6 @@ infrastructure and delivery pipeline around it.
 - [Observability](#observability)
 - [Running on Kubernetes (kind)](#running-on-kubernetes-kind)
 - [Operations runbook](#operations-runbook)
-- [Project status](#project-status)
-- [Development conventions](#development-conventions)
 - [Notes and limitations](#notes-and-limitations)
 
 ---
