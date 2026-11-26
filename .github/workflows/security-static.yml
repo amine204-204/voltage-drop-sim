@@ -4,6 +4,12 @@ name: security-static
 # before any image is built or published.
 on:
   workflow_call:
+    inputs:
+      scan:
+        description: 'SCA ecosystem to run: java, node, or all'
+        required: false
+        type: string
+        default: all
 
 permissions:
   contents: read
@@ -29,6 +35,7 @@ jobs:
   # SCA for both ecosystems. --severity-threshold=high fails on High + Critical.
   # Separate jobs so a Java failure never hides the Node result.
   sca-java:
+    if: inputs.scan == 'java' || inputs.scan == 'all'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -59,6 +66,7 @@ jobs:
         run: echo "::warning::Snyk skipped - secrets are unavailable on fork pull requests"
 
   sca-node:
+    if: inputs.scan == 'node' || inputs.scan == 'all'
     runs-on: ubuntu-latest
     permissions:
       contents: read

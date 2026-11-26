@@ -20,6 +20,7 @@
 		<jjwt.version>0.13.0</jjwt.version>
 
 		<!-- Snyk overrides: versions above the ones managed by Boot 3.5.16. -->
+		<commons-lang3.version>3.18.0</commons-lang3.version>
 		<jackson-bom.version>2.21.8</jackson-bom.version>
 		<logback.version>1.5.38</logback.version>
 		<micrometer.version>1.16.7</micrometer.version>

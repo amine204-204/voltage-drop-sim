@@ -32,6 +32,8 @@ jobs:
   # Shift-left gate: static scans must pass before any image is built or pushed.
   security-static:
     uses: ./.github/workflows/security-static.yml
+    with:
+      scan: java
     secrets: inherit
 
   build:
