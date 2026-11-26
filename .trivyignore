@@ -1,0 +1,5 @@
+# Temporary, time-boxed accepted-risk exceptions.
+# Both findings affect Spring Framework 6.2.x and are only fixed in 7.0.9,
+# which requires the Spring Boot 4.x major upgrade. Revisit before 2026-12-31.
+CVE-2026-47884 #exp:2026-12-31
+CVE-2026-47890 #exp:2026-12-31

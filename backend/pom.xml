@@ -25,6 +25,7 @@
 		<logback.version>1.5.38</logback.version>
 		<micrometer.version>1.16.7</micrometer.version>
 		<postgresql.version>42.7.15</postgresql.version>
+		<tomcat.version>10.1.59</tomcat.version>
 	</properties>
 
 	<dependencies>
