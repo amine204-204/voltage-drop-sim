@@ -6,9 +6,12 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
+      - '.github/workflows/security-static.yml'
   pull_request:
     paths:
       - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+      - '.github/workflows/security-static.yml'
   workflow_dispatch:
 
 permissions:
@@ -23,11 +26,21 @@ env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/vds-frontend
 
 jobs:
+  # Shift-left gate: static scans must pass before any image is built or pushed.
+  security-static:
+    uses: ./.github/workflows/security-static.yml
+    secrets: inherit
+
   build:
+    needs: security-static
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Short SHA (matches metadata-action type=sha,format=short)
+        id: short
+        run: echo "sha=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node 20
         uses: actions/setup-node@v4
@@ -77,15 +90,35 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push
+      - name: Build image (do not publish yet)
         uses: docker/build-push-action@v6
         with:
           context: frontend
-          push: ${{ github.event_name != 'pull_request' }}
+          load: true
+          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trivy image gate (Critical + High)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:sha-${{ steps.short.outputs.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          scanners: vuln,secret
+          exit-code: '1'
+
+      - name: Publish to GHCR
+        if: github.event_name != 'pull_request'
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            docker push "$tag"
+          done <<< "$TAGS"
 
   # ---------------------------------------------------------------------------
   # Continuous delivery write-back (see backend-ci.yml for the full rationale).

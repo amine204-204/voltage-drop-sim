@@ -1,0 +1,12 @@
+# ZAP rules for the Voltage Drop Simulator API.
+# Format: <rule-id>	<WARN|IGNORE|FAIL|OUTOFSCOPE>	<optional comment/regex>
+# Keep this file small and justified: every IGNORE is a deliberate exception.
+
+# Low-value passive alerts that are expected for an internal JSON API.
+10015	IGNORE	(Incomplete or No Cache-control and Pragma HTTP Header Set)
+10016	IGNORE	(Web Browser XSS Protection Not Enabled)
+10019	IGNORE	(Content-Type Header Missing)
+10021	IGNORE	(X-Content-Type-Options Header Missing)
+
+# Do not fail the gate on alerts from state-changing endpoints in the ephemeral DB.
+*	OUTOFSCOPE	.*/api/(projects|admin|simulations|auth/seed-admin).*
