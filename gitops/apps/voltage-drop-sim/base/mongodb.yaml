@@ -29,9 +29,19 @@ spec:
       labels:
         app: mongodb
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
       containers:
         - name: mongodb
           image: mongo:7-jammy
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 27017
           env:
@@ -40,6 +50,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data/db
+            - name: tmp
+              mountPath: /tmp
             - name: seed
               mountPath: /docker-entrypoint-initdb.d/mongo-seed.js
               subPath: mongo-seed.js
@@ -52,6 +64,8 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: mongodb-pvc
+        - name: tmp
+          emptyDir: {}
         - name: seed
           configMap:
             name: mongo-seed

@@ -4,10 +4,12 @@ WORKDIR /app
 
 # Cache dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm ci && chown -R node:node /app
 
 # Copy the rest of the application
-COPY . .
+COPY --chown=node:node . .
+
+USER node
 
 EXPOSE 4200
 

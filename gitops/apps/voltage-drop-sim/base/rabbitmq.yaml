@@ -29,9 +29,19 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
       containers:
         - name: rabbitmq
           image: rabbitmq:3.13-management-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 5672
               name: amqp
@@ -51,6 +61,10 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq
+            - name: tmp
+              mountPath: /tmp
+            - name: logs
+              mountPath: /var/log/rabbitmq
           readinessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
@@ -60,6 +74,10 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: rabbitmq-pvc
+        - name: tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
