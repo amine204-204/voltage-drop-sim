@@ -1,0 +1,131 @@
+version: v1.25.0
+# Temporary, time-boxed accepted-risk exceptions.
+# Every entry below is an upstream finding whose fix requires a Spring Boot 4.x
+# major upgrade (Tomcat 10->11, Spring 6->7, Spring Security 6->7).
+# The expiry is deliberate: when it passes, Snyk fails the build again and forces
+# a decision. New findings are NOT ignored -- only these exact IDs are.
+ignore:
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-17732890:
+    - '*':
+        reason: 'Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-17733746:
+    - '*':
+        reason: 'Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-20302889:
+    - '*':
+        reason: 'Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-20304748:
+    - '*':
+        reason: 'Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-21246252:
+    - '*':
+        reason: 'Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-21249759:
+    - '*':
+        reason: 'Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-21715436:
+    - '*':
+        reason: 'Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-20302843:
+    - '*':
+        reason: 'Critical. Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-20552494:
+    - '*':
+        reason: 'Critical. Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-21707475:
+    - '*':
+        reason: 'Critical. Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-21707477:
+    - '*':
+        reason: 'Critical. Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGAPACHETOMCATEMBED-21716509:
+    - '*':
+        reason: 'Critical. Fix requires Tomcat 11 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGGLASSFISHJAXB-20883142:
+    - '*':
+        reason: 'Fix requires Hibernate 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-19267072:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-19267073:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-19267075:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-19267077:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-19267078:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-19267079:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-22727152:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-22727191:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-22727208:
+    - '*':
+        reason: 'Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORK-19267098:
+    - '*':
+        reason: 'Critical. Fix requires Spring Framework 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORKBOOT-22729051:
+    - '*':
+        reason: 'Fix requires Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORKBOOT-22729029:
+    - '*':
+        reason: 'Critical. Fix requires Spring Boot 4.x actuator. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORKBOOT-22756767:
+    - '*':
+        reason: 'Critical. Fix requires Spring Boot 4.x actuator. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORKBOOT-22756768:
+    - '*':
+        reason: 'Critical. Fix requires Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORKDATA-22731232:
+    - '*':
+        reason: 'Fix requires Spring Data 2025.1 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORKSECURITY-19267391:
+    - '*':
+        reason: 'Fix requires Spring Security 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORKSECURITY-19267441:
+    - '*':
+        reason: 'Fix requires Spring Security 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
+  SNYK-JAVA-ORGSPRINGFRAMEWORKSECURITY-22729313:
+    - '*':
+        reason: 'Critical. Fix requires Spring Security 7 / Spring Boot 4.x. Revisit before 2026-12-31.'
+        expires: "2026-12-31T23:59:59Z"
