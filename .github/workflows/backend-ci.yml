@@ -19,6 +19,7 @@ on:
 permissions:
   contents: read
   packages: write
+  security-events: write   # required by the Trivy SARIF upload in security-static.yml
 
 concurrency:
   group: backend-${{ github.ref }}
@@ -36,6 +37,9 @@ jobs:
   build:
     needs: security-static
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     outputs:
       short_sha: ${{ steps.short.outputs.sha }}
     steps:
