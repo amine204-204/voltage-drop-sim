@@ -1,0 +1,4 @@
+# CI-only Base64 JWT signing key placeholder added in commit 923a97b.
+# It was never a real credential and is now generated at runtime via openssl.
+# Ignore entry: <commit>:<file>:<rule>:<line>
+923a97b730ffd06202bccb62e6e973fb09aa7feb:.github/workflows/backend-ci.yml:generic-api-key:171

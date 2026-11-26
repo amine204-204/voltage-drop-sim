@@ -163,6 +163,10 @@ jobs:
           echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker pull "$IMAGE_TAG"
 
+      - name: Generate throwaway JWT key for the scan
+        # Generated at runtime: never store a credential-looking literal in the repo.
+        run: echo "JWT_SECRET=$(openssl rand -base64 48 | tr -d '\n')" >> "$GITHUB_ENV"
+
       - name: Start app from the candidate image
         env:
           IMAGE_TAG: ${{ env.IMAGE }}:sha-${{ needs.build.outputs.short_sha }}
@@ -172,7 +176,7 @@ jobs:
             -e DB_USERNAME=vds \
             -e DB_PASSWORD=vds \
             -e SPRING_DATA_MONGODB_URI=mongodb://localhost:27017/grid_catalogs \
-            -e JWT_SECRET=Y2ktb25seS1zY2FuLWtleS1ub3QtYS1yZWFsLXNlY3JldC0wMTIzNDU2Nzg5YWJjZGVm \
+            -e JWT_SECRET="$JWT_SECRET" \
             "$IMAGE_TAG"
           for i in $(seq 1 40); do
             if curl -fsS http://localhost:8080/actuator/health/readiness > /dev/null; then
