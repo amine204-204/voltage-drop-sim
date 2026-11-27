@@ -11,4 +11,4 @@ images:
   - name: ghcr.io/amine204-204/vds-backend
     newTag: sha-4e32ef0
   - name: ghcr.io/amine204-204/vds-frontend
-    newTag: sha-d03e7a5
+    newTag: sha-ef65b2b
