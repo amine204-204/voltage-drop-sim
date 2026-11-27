@@ -7,13 +7,23 @@ on:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
       - '.github/workflows/security-static.yml'
+      - '.github/CODEOWNERS'
+      - '.snyk'
+      - '.trivyignore'
+      - '.gitleaksignore'
       - '.zap/**'
+      - 'README.md'
   pull_request:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
       - '.github/workflows/security-static.yml'
+      - '.github/CODEOWNERS'
+      - '.snyk'
+      - '.trivyignore'
+      - '.gitleaksignore'
       - '.zap/**'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
@@ -53,7 +63,7 @@ jobs:
         run: echo "sha=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -180,7 +190,7 @@ jobs:
             -e SPRING_DATA_MONGODB_URI=mongodb://localhost:27017/grid_catalogs \
             -e JWT_SECRET="$JWT_SECRET" \
             "$IMAGE_TAG"
-          for i in $(seq 1 40); do
+          for _ in $(seq 1 40); do
             if curl -fsS http://localhost:8080/actuator/health/readiness > /dev/null; then
               echo "backend is ready"
               exit 0
@@ -258,29 +268,55 @@ jobs:
   # overlay so ArgoCD reconciles it. Git stays the single source of truth; this
   # job is the only thing that edits the overlay, and only this image's line.
   #
-  # No infinite loop: commits pushed with the default GITHUB_TOKEN do not
-  # trigger workflows, and this commit only touches gitops/** which is not in
-  # any workflow's `paths` trigger besides the app images they build.
+  # The protected main ruleset grants bypass to a dedicated GitHub App, never
+  # to the default GITHUB_TOKEN. The App token is short-lived, scoped to this
+  # repo, and can only write Contents. Loop safety is defence in depth:
+  # gitops/** is not a workflow path, and the App actor is skipped explicitly.
   # ---------------------------------------------------------------------------
   update-tag:
     needs: [build-backend, dast-backend]
     # Real pushes to main only (PRs never push an image; manual runs are excluded).
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # The second condition prevents a write-back commit from triggering another.
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor != format('{0}[bot]', vars.CI_APP_SLUG)
     runs-on: ubuntu-latest
-    # Job-level permissions REPLACE the workflow-level set for this job only,
-    # so we drop packages:write and gain the contents:write needed to push.
+    # Job-level permissions REPLACE the workflow-level set for this job only.
+    # The default GITHUB_TOKEN stays read-only; the App token supplies write.
     permissions:
-      contents: write
+      contents: read
     # Same group name as the frontend workflow => the two write-backs serialize
     # instead of racing on the shared overlay file. Queue, do not cancel.
     concurrency:
       group: gitops-writeback
       cancel-in-progress: false
     steps:
-      - name: Checkout main
+      - name: Create CI App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.repository }}
+          permission-contents: write
+
+      - name: Checkout main with the CI App token
         uses: actions/checkout@v4
         with:
           ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
+
+      - name: Configure git identity for the CI App
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          user_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)
+          git config user.name  "${APP_SLUG}[bot]"
+          git config user.email "${user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
 
       - name: Bump backend tag in the kind overlay
         run: |
@@ -292,8 +328,6 @@ jobs:
 
       - name: Commit and push
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add gitops/apps/voltage-drop-sim/overlays/kind/kustomization.yaml
           # Re-runs and idempotent pushes produce no diff -> succeed, no empty commit.
           if git diff --cached --quiet; then
