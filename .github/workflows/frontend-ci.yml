@@ -34,7 +34,7 @@ jobs:
       scan: node
     secrets: inherit
 
-  build:
+  build-frontend:
     needs: security-static
     runs-on: ubuntu-latest
     permissions:
@@ -131,7 +131,7 @@ jobs:
   # Pins the freshly built frontend tag in the Git overlay for ArgoCD to sync.
   # ---------------------------------------------------------------------------
   update-tag:
-    needs: build
+    needs: build-frontend
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

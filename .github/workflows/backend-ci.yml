@@ -36,7 +36,7 @@ jobs:
       scan: java
     secrets: inherit
 
-  build:
+  build-backend:
     needs: security-static
     runs-on: ubuntu-latest
     permissions:
@@ -124,7 +124,7 @@ jobs:
   # ZAP runs with --network host, so localhost:8080 reaches the app container.
   # ---------------------------------------------------------------------------
   dast-backend:
-    needs: build
+    needs: build-backend
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -160,7 +160,7 @@ jobs:
       - name: Pull candidate image from GHCR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE_TAG: ${{ env.IMAGE }}:sha-${{ needs.build.outputs.short_sha }}
+          IMAGE_TAG: ${{ env.IMAGE }}:sha-${{ needs.build-backend.outputs.short_sha }}
         run: |
           echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker pull "$IMAGE_TAG"
@@ -171,7 +171,7 @@ jobs:
 
       - name: Start app from the candidate image
         env:
-          IMAGE_TAG: ${{ env.IMAGE }}:sha-${{ needs.build.outputs.short_sha }}
+          IMAGE_TAG: ${{ env.IMAGE }}:sha-${{ needs.build-backend.outputs.short_sha }}
         run: |
           docker run -d --name vds --network host \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/vds \
@@ -263,7 +263,7 @@ jobs:
   # any workflow's `paths` trigger besides the app images they build.
   # ---------------------------------------------------------------------------
   update-tag:
-    needs: [build, dast-backend]
+    needs: [build-backend, dast-backend]
     # Real pushes to main only (PRs never push an image; manual runs are excluded).
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
