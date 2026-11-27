@@ -9,6 +9,6 @@ resources:
 
 images:
   - name: ghcr.io/amine204-204/vds-backend
-    newTag: sha-382c139
+    newTag: sha-aff3dee
   - name: ghcr.io/amine204-204/vds-frontend
     newTag: sha-aff3dee
