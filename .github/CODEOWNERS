@@ -1,0 +1,10 @@
+# Security-critical configuration requires explicit owner review.
+# Enable "Require review from Code Owners" in the protect-main ruleset.
+* @amine204-204
+/.github/workflows/ @amine204-204
+/.github/CODEOWNERS @amine204-204
+/README.md @amine204-204
+/.snyk @amine204-204
+/.trivyignore @amine204-204
+/.gitleaksignore @amine204-204
+/.zap/ @amine204-204

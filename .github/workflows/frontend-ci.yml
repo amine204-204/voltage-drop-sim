@@ -7,12 +7,20 @@ on:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
       - '.github/workflows/security-static.yml'
+      - '.github/CODEOWNERS'
+      - '.snyk'
+      - '.trivyignore'
+      - '.gitleaksignore'
       - 'README.md'
   pull_request:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
       - '.github/workflows/security-static.yml'
+      - '.github/CODEOWNERS'
+      - '.snyk'
+      - '.trivyignore'
+      - '.gitleaksignore'
       - 'README.md'
   workflow_dispatch:
 
@@ -131,23 +139,49 @@ jobs:
   # ---------------------------------------------------------------------------
   # Continuous delivery write-back (see backend-ci.yml for the full rationale).
   # Pins the freshly built frontend tag in the Git overlay for ArgoCD to sync.
+  # Uses the same narrow GitHub App token and loop guard as the backend job.
   # ---------------------------------------------------------------------------
   update-tag:
     needs: build-frontend
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor != format('{0}[bot]', vars.CI_APP_SLUG)
     runs-on: ubuntu-latest
+    # The default GITHUB_TOKEN stays read-only; the App token supplies write.
     permissions:
-      contents: write
+      contents: read
     # Shared with backend-ci.yml so the two write-backs never edit the overlay
     # file at the same time.
     concurrency:
       group: gitops-writeback
       cancel-in-progress: false
     steps:
-      - name: Checkout main
+      - name: Create CI App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.repository }}
+          permission-contents: write
+
+      - name: Checkout main with the CI App token
         uses: actions/checkout@v4
         with:
           ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
+
+      - name: Configure git identity for the CI App
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          user_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)
+          git config user.name  "${APP_SLUG}[bot]"
+          git config user.email "${user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
 
       - name: Bump frontend tag in the kind overlay
         run: |
@@ -158,8 +192,6 @@ jobs:
 
       - name: Commit and push
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add gitops/apps/voltage-drop-sim/overlays/kind/kustomization.yaml
           if git diff --cached --quiet; then
             echo "Image tag already up to date; nothing to commit."

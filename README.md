@@ -141,10 +141,12 @@ static scans before build, Trivy before publish, and ZAP before the tag pin.
 
 ```
 .
-├── .github/workflows/            # CI/CD + reusable security gate
-│   ├── security-static.yml       # Gitleaks / Snyk / Trivy (called by both workflows)
-│   ├── backend-ci.yml
-│   └── frontend-ci.yml
+├── .github/
+│   ├── CODEOWNERS                # review gate for CI/security configuration
+│   └── workflows/                # CI/CD + reusable security gate
+│       ├── security-static.yml   # Gitleaks / Snyk / Trivy (called by both workflows)
+│       ├── backend-ci.yml
+│       └── frontend-ci.yml
 ├── .snyk / .trivyignore / .gitleaksignore   # time-boxed exceptions / allowlist
 ├── .zap/rules.tsv                # ZAP gate exceptions
 ├── backend/                      # Spring Boot service
@@ -268,8 +270,8 @@ built or published.
 
 | Workflow | Trigger paths | Steps |
 | --- | --- | --- |
-| `backend-ci.yml` | `backend/**`, itself, `security-static.yml`, `.zap/**` | static gate → unit tests → local image build → Trivy image gate → publish `vds-backend` → (push) ZAP DAST → (push) tag pin |
-| `frontend-ci.yml` | `frontend/**`, itself, `security-static.yml` | static gate → `npm ci` → production build → publish `vds-frontend` → (push) tag pin |
+| `backend-ci.yml` | `backend/**`, itself, `security-static.yml`, `.github/CODEOWNERS`, exception files, `.zap/**`, `README.md` | static gate → unit tests → local image build → Trivy image gate → publish `vds-backend` → (push) ZAP DAST → (push) tag pin |
+| `frontend-ci.yml` | `frontend/**`, itself, `security-static.yml`, `.github/CODEOWNERS`, exception files, `README.md` | static gate → `npm ci` → production build → publish `vds-frontend` → (push) tag pin |
 
 Notes:
 
@@ -283,6 +285,9 @@ Notes:
   context-loading `SpringBootTest`**, which needs live Postgres/Mongo.
 - Frontend unit tests are currently **disabled** in CI (the generated specs
   need a real canvas / are stale); only the production build gates the image.
+- Changes to `README.md`, `.github/CODEOWNERS`, or the exception files run
+  **both** workflows, so a PR that touches shared security configuration still
+  produces all required checks.
 - On `pull_request`, images are built and scanned but **not pushed**; DAST and
   `update-tag` are also skipped. PRs are validated only.
 
@@ -341,9 +346,11 @@ real DAST enforcement lives here and in the tag pin, not in PR checks.
 
 ### 4. Branch protection on `main`
 
-The `protect-main` ruleset is Active for the `main` branch, requires a PR and
-up-to-date branches, blocks force pushes/deletions, and has an empty bypass
-list. Required status checks are:
+Configure the `protect-main` ruleset to be Active for the `main` branch,
+require a PR, up-to-date branches, and review from Code Owners, and block force
+pushes/deletions. Its bypass list should contain only the dedicated CI App
+described below — no human actors and no generic Actions token. The required
+status checks are:
 
 - `security-static / gitleaks`
 - `security-static / sca-java`
@@ -357,11 +364,34 @@ Keep `dast-backend` in the list even though it is skipped on PRs (GitHub treats
 skipped as passing); it gates the push-side tag pin. Do not reintroduce a
 generic `build` check.
 
-The CI write-back pushes `gitops/**` with `GITHUB_TOKEN`, which the ruleset also
-blocks. Add the GitHub Actions app (or a dedicated CI GitHub App) to the bypass
-list with direct-push permission, and leave human actors bypass-free. Without
-that narrow exception, `update-tag` fails after three push retries and the
-overlay never moves to the new image.
+The CI write-back commits `gitops/**` to `main`, and the ruleset blocks that
+push too. Do **not** add the default `GITHUB_TOKEN` or the generic
+`github-actions` actor to a bypass list — that would let any workflow push
+unreviewed code. A personal access token is also a poor substitute: it is
+long-lived and tied to a human account.
+
+Use a **dedicated CI GitHub App** instead:
+
+1. Create an App with **no webhook** and only `Contents: read/write`; install it
+   on this repository only.
+2. Add repository variable `CI_APP_ID` (the App's numeric ID), repository
+   variable `CI_APP_SLUG` (the App slug without `[bot]`), and repository secret
+   `CI_APP_PRIVATE_KEY`.
+3. Add that App alone to the ruleset bypass list with **Always allow**.
+   **For pull requests only** is not enough for a direct tag-pin push.
+4. Keep `.github/workflows/**` (plus the exception files and CODEOWNERS itself)
+   behind CODEOWNERS review. The workflow creates a one-hour App token scoped
+   to this repository with `contents: write` only inside `update-tag`; the
+   default `GITHUB_TOKEN` remains read-only.
+
+Tag-pin commits touch only `gitops/**`, which is excluded from both workflows'
+`paths`. The `update-tag` jobs also skip when `github.actor` is the App bot, so
+even a future path-filter change cannot cause a write-back loop.
+
+If you prefer no direct-push bypass at all, the alternative is an auto-merge PR
+for the tag pin. That still needs a custom App token (PRs created with
+`GITHUB_TOKEN` do not trigger checks), plus a loop guard, so it has more moving
+parts.
 
 ### Image tagging strategy
 
@@ -389,15 +419,16 @@ Design notes worth calling out:
 - **DAST-gated backend pin.** `update-tag` in `backend-ci.yml` needs both
   `build-backend` and `dast-backend`; a Medium+ ZAP alert stops the backend tag
   from being written.
-- **No infinite loop.** Pushes made with the default `GITHUB_TOKEN` do not
-  trigger further workflows; the bot commit only touches `gitops/**`, which is
-  not in any build workflow's `paths`.
+- **No infinite loop.** The commit only touches `gitops/**`, which is not in any
+  build workflow's `paths`; `update-tag` also skips when the actor is the CI App
+  bot, even if path filters change later.
 - **No races.** Both workflows share `concurrency: gitops-writeback`
   (`cancel-in-progress: false`) so the two write-backs queue instead of
   clobbering the overlay file; the push step also retries via
   `git pull --rebase --autostash`.
-- **Least privilege.** The job upgrades to `contents: write` (to push) and
-  drops `packages: write` it no longer needs.
+- **Least privilege.** `update-tag` leaves the default `GITHUB_TOKEN` at
+  `contents: read` and drops `packages: write`. Only the short-lived,
+  repo-scoped App token has `contents: write`.
 - **Not a merge check.** `update-tag` is push-only and is deliberately not a
   required PR status check; its failure stops the pin, not the merge.
 
