@@ -7,8 +7,8 @@ power-quality violations against **EN 50160** and **IEEE 1159**.
 The project is built as much around its **delivery platform** as around the
 simulator itself: every environment is described declaratively, images are built
 and versioned by CI, and the cluster is continuously reconciled from Git by
-ArgoCD. This README documents both the application and, in more depth, the
-infrastructure and delivery pipeline around it.
+ArgoCD. This README documents the application and the delivery pipeline around
+it.
 
 ---
 
@@ -258,99 +258,61 @@ Secrets are **never committed**. `.gitignore` excludes `.env` and any
 
 ## Delivery pipeline
 
-This is the core of the project. The pipeline has four moving parts:
-**CI build → image pin (write-back) → GitOps reconciliation → observation**.
+The pipeline turns a push to `main` into an immutable image, records that exact
+tag in Git, and lets ArgoCD reconcile the cluster:
+
+```text
+push → static gates → build/test → image scan → publish sha-<7>
+     → DAST (backend, push only) → GitOps tag pin → ArgoCD sync
+```
 
 ### 1. Continuous integration (GitHub Actions)
 
-Two independent workflows, each scoped so it only runs for its own component.
-Both call the reusable `security-static.yml` workflow first; `build-backend` and
-`build-frontend` depend on it, so a failed gate prevents any image from being
-built or published.
+`backend-ci.yml` and `frontend-ci.yml` are separate workflows. Both call the
+reusable `security-static.yml` gate first; `build-backend` and `build-frontend`
+depend on it, so a failed scan prevents any image from being published.
 
-| Workflow | Trigger paths | Steps |
-| --- | --- | --- |
-| `backend-ci.yml` | `backend/**`, itself, `security-static.yml`, `.github/CODEOWNERS`, exception files, `.zap/**`, `README.md` | static gate → unit tests → local image build → Trivy image gate → publish `vds-backend` → (push) ZAP DAST → (push) tag pin |
-| `frontend-ci.yml` | `frontend/**`, itself, `security-static.yml`, `.github/CODEOWNERS`, exception files, `README.md` | static gate → `npm ci` → production build → publish `vds-frontend` → (push) tag pin |
-
-Notes:
-
-- The build jobs are deliberately named **`build-backend`** and
-  **`build-frontend`**, not `build`. Duplicate check names across workflows can
-  let the wrong workflow satisfy a required status check.
-- Both workflows use `docker/setup-buildx-action` so the GitHub Actions cache
-  (`cache-from/to: type=gha,mode=max`) can be exported — the default docker
-  driver cannot.
-- The backend test step runs the JUnit suite but **excludes the
-  context-loading `SpringBootTest`**, which needs live Postgres/Mongo.
-- Frontend unit tests are currently **disabled** in CI (the generated specs
-  need a real canvas / are stale); only the production build gates the image.
-- Changes to `README.md`, `.github/CODEOWNERS`, or the exception files run
-  **both** workflows, so a PR that touches shared security configuration still
-  produces all required checks.
-- On `pull_request`, images are built and scanned but **not pushed**; DAST and
-  `update-tag` are also skipped. PRs are validated only.
+PRs are validated only: images are built and scanned, but not pushed. DAST and
+the write-back run only on `push` to `main`. The build jobs have unique names so
+one workflow cannot satisfy the other's required check.
 
 ### 2. Security gates (shift-left)
 
-`.github/workflows/security-static.yml` is a reusable `workflow_call` with a
-`scan` input (`java`, `node`, or `all`). Backend passes `java`; frontend passes
-`node`. Each job fails the workflow on any finding:
+`.github/workflows/security-static.yml` is called by both workflows and runs
+before any build:
 
-| Gate | What it checks | Failure rule |
+| Gate | Scope | Blocking rule |
 | --- | --- | --- |
-| `gitleaks` | working tree **and full git history** (`fetch-depth: 0`) | any finding fails |
-| `sca-java` / `sca-node` | `backend/pom.xml` / `frontend/package-lock.json` via `snyk test` | High + Critical (`--severity-threshold=high`) |
-| `trivy-fs` | repo filesystem: CVEs, secrets, Dockerfile/K8s misconfigurations | `CRITICAL,HIGH`, `ignore-unfixed`, SARIF to the Security tab |
-| Trivy image | the locally built candidate image, before publish | `CRITICAL,HIGH`, `ignore-unfixed`, vuln + secret scanners |
+| Gitleaks | working tree and full git history | any finding |
+| Snyk | `pom.xml` and `package-lock.json`, split by ecosystem | High + Critical |
+| Trivy (filesystem) | CVEs, secrets, Dockerfile/K8s misconfigurations | CRITICAL / HIGH, `ignore-unfixed` |
+| Trivy (image) | locally built candidate image, before publish | CRITICAL / HIGH, `ignore-unfixed` |
+| OWASP ZAP | push-only DAST against the candidate backend image | Medium + High (`riskcode >= 2`) |
 
-Implementation details:
+Snyk needs `SNYK_TOKEN`; on fork PRs it is skipped while Gitleaks and Trivy
+still run. The workflows never use `pull_request_target` with secrets.
 
-- SCA runs in separate jobs selected by `scan`; a Java failure cannot hide the
-  Node result. Snyk needs the `SNYK_TOKEN` repository secret. On fork PRs the
-  secret is unavailable, so Snyk is skipped with a warning — Gitleaks and Trivy
-  still run. The workflows intentionally do **not** use `pull_request_target`
-  with secrets.
-- The DAST JWT signing key is generated at runtime with `openssl rand`; no
-  credential-shaped literal is stored in the repository. The only Gitleaks
-  allowlist entry is one historical placeholder in `.gitleaksignore`.
-- Hardening findings were fixed properly (non-root images, absolute `WORKDIR`,
-  Kubernetes `securityContext`, read-only root filesystems with explicit
-  writable mounts) rather than suppressed.
-- Dependency upgrades cleared nearly everything: Spring Boot **3.5.16** with
-  Tomcat **10.1.59**, Apache POI **5.5.0**, and Angular **21.2.26**.
-- Remaining upstream findings are covered by **time-boxed exceptions**:
-  31 exact Snyk IDs in `.snyk` and 2 Spring CVEs in `.trivyignore`. All expire
-  **2026-12-31**; after that the gates fail again and force a Spring Boot 4.x
-  decision (Tomcat 11 / Spring 7). New findings are never ignored.
+Exceptions are time-boxed and expire **2026-12-31**: `.snyk`,
+`.trivyignore`, `.gitleaksignore`, and `.zap/rules.tsv`. New findings are never
+added to the allowlists.
 
 ### 3. Dynamic analysis (DAST)
 
-`dast-backend` runs only on `push` to `main`, after `build-backend` and before
-`update-tag`. It is an ephemeral CI job against the **exact SHA-tagged image**
-that is about to be pinned — there is no persistent staging URL to drift.
+`dast-backend` runs on `push` to `main`, between the build and the tag pin. It
+starts the exact SHA-tagged image with ephemeral Postgres/Mongo containers, then
+runs ZAP's passive baseline and an API scan from the authenticated `/v3/api-docs`
+spec. Any Medium or High alert fails the job; reports are uploaded as
+`zap-reports`.
 
-1. Pull `ghcr.io/…/vds-backend:sha-<7>` and start it with Postgres 17 and
-   MongoDB 7 service containers.
-2. Generate a throwaway JWT key and a scan-only admin, then wait for
-   `/actuator/health/readiness`.
-3. Run ZAP baseline (passive) and a ZAP API scan driven by `/v3/api-docs`.
-   That endpoint is authenticated, so the spec is fetched with the scan JWT.
-4. Gate both JSON reports on `riskcode >= 2`: any **Medium or High** alert
-   fails the job. Reports are uploaded as the `zap-reports` artifact.
-
-`.zap/rules.tsv` keeps only documented exceptions: a few low-value passive
-headers and `OUTOFSCOPE` for state-changing endpoints that operate on the
-ephemeral scan database. Skipped checks count as successful in GitHub, so the
-real DAST enforcement lives here and in the tag pin, not in PR checks.
+There is no persistent staging URL. The scan JWT key is generated at runtime, and
+`.zap/rules.tsv` contains only documented exceptions. DAST is skipped on PRs;
+GitHub counts skipped checks as passing, so the real enforcement is the
+push-side tag pin.
 
 ### 4. Branch protection on `main`
 
-Configure the `protect-main` ruleset to be Active for the `main` branch,
-require a PR, up-to-date branches, and review from Code Owners, and block force
-pushes/deletions. Its bypass list should contain only the dedicated CI App
-described below — no human actors and no generic Actions token. The required
-status checks are:
+The `protect-main` ruleset requires a PR, up-to-date branches, Code Owner
+review, and blocks force pushes/deletions. Required checks:
 
 - `security-static / gitleaks`
 - `security-static / sca-java`
@@ -360,77 +322,35 @@ status checks are:
 - `build-frontend`
 - `dast-backend`
 
-Keep `dast-backend` in the list even though it is skipped on PRs (GitHub treats
-skipped as passing); it gates the push-side tag pin. Do not reintroduce a
-generic `build` check.
+Keep `dast-backend` despite it being skipped on PRs; it gates the push-side tag
+pin.
 
-The CI write-back commits `gitops/**` to `main`, and the ruleset blocks that
-push too. Do **not** add the default `GITHUB_TOKEN` or the generic
-`github-actions` actor to a bypass list — that would let any workflow push
-unreviewed code. A personal access token is also a poor substitute: it is
-long-lived and tied to a human account.
-
-Use a **dedicated CI GitHub App** instead:
-
-1. Create an App with **no webhook** and only `Contents: read/write`; install it
-   on this repository only.
-2. Add repository variable `CI_APP_ID` (the App's numeric ID), repository
-   variable `CI_APP_SLUG` (the App slug without `[bot]`), and repository secret
-   `CI_APP_PRIVATE_KEY`.
-3. Add that App alone to the ruleset bypass list with **Always allow**.
-   **For pull requests only** is not enough for a direct tag-pin push.
-4. Keep `.github/workflows/**` (plus the exception files and CODEOWNERS itself)
-   behind CODEOWNERS review. The workflow creates a one-hour App token scoped
-   to this repository with `contents: write` only inside `update-tag`; the
-   default `GITHUB_TOKEN` remains read-only.
-
-Tag-pin commits touch only `gitops/**`, which is excluded from both workflows'
-`paths`. The `update-tag` jobs also skip when `github.actor` is the App bot, so
-even a future path-filter change cannot cause a write-back loop.
-
-If you prefer no direct-push bypass at all, the alternative is an auto-merge PR
-for the tag pin. That still needs a custom App token (PRs created with
-`GITHUB_TOKEN` do not trigger checks), plus a loop guard, so it has more moving
-parts.
+The write-back commits `gitops/**` directly to `main`, so make a dedicated CI
+GitHub App the only bypass actor, with **Always allow**. The App needs no
+webhook, only `Contents: read/write`, and should be installed on this repository
+only. Configure repository variables `CI_APP_ID` and `CI_APP_SLUG` plus the
+secret `CI_APP_PRIVATE_KEY`. `update-tag` mints a short-lived, repo-scoped App
+token just for the push; the default `GITHUB_TOKEN` stays read-only. Never add
+`GITHUB_TOKEN`, `github-actions[bot]`, or a PAT to the bypass list. `CODEOWNERS`
+protects the workflows, exception files, and itself; the `gitops/**` path
+exclusion and actor guard prevent loops, and shared concurrency serializes the
+two write-backs.
 
 ### Image tagging strategy
 
-`docker/metadata-action` produces several tags, but the one the cluster tracks
-is the **immutable short-SHA tag** `sha-<7>`. It is also the exact tag DAST
-scans before the write-back. The `latest` tag exists but is never deployed, so
-a running Pod always maps to an exact commit.
+CI publishes immutable `sha-<7>` tags; the write-back pins that exact tag and
+DAST scans the same image. `latest` exists for convenience but is never
+deployed.
 
 ### Continuous delivery (write-back)
 
-ArgoCD only reconciles **Git**, so after CI pushes an image it must also record
-the new tag. A second job (`update-tag`) in each workflow does exactly that:
+ArgoCD reconciles from Git. After the image is published, `update-tag` uses
+`gitops/scripts/bump-image-tag.py` to change only the matching `newTag` in
+`gitops/apps/voltage-drop-sim/overlays/kind/kustomization.yaml`, then commits it.
 
-```
-build-backend ──► dast-backend ──┐
-                                 ├─► update-tag ──► git commit "cd(...): pin image to <sha>"
-build-frontend ──────────────────┘        (edits only .../overlays/kind/kustomization.yaml)
-```
-
-Design notes worth calling out:
-
-- **Surgical edit.** `gitops/scripts/bump-image-tag.py` rewrites only the
-  `newTag` line of the matching image, preserving comments and formatting, and
-  fails loudly unless it finds exactly one match.
-- **DAST-gated backend pin.** `update-tag` in `backend-ci.yml` needs both
-  `build-backend` and `dast-backend`; a Medium+ ZAP alert stops the backend tag
-  from being written.
-- **No infinite loop.** The commit only touches `gitops/**`, which is not in any
-  build workflow's `paths`; `update-tag` also skips when the actor is the CI App
-  bot, even if path filters change later.
-- **No races.** Both workflows share `concurrency: gitops-writeback`
-  (`cancel-in-progress: false`) so the two write-backs queue instead of
-  clobbering the overlay file; the push step also retries via
-  `git pull --rebase --autostash`.
-- **Least privilege.** `update-tag` leaves the default `GITHUB_TOKEN` at
-  `contents: read` and drops `packages: write`. Only the short-lived,
-  repo-scoped App token has `contents: write`.
-- **Not a merge check.** `update-tag` is push-only and is deliberately not a
-  required PR status check; its failure stops the pin, not the merge.
+The backend pin waits for DAST, so a Medium+ ZAP finding blocks deployment. This
+job is push-only and is not a PR merge check; both workflows share one
+concurrency group so the two pins cannot race.
 
 ### GitOps with ArgoCD
 
