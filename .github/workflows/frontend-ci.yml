@@ -7,11 +7,13 @@ on:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
       - '.github/workflows/security-static.yml'
+      - 'README.md'
   pull_request:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
       - '.github/workflows/security-static.yml'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:

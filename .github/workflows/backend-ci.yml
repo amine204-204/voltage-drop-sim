@@ -8,12 +8,14 @@ on:
       - '.github/workflows/backend-ci.yml'
       - '.github/workflows/security-static.yml'
       - '.zap/**'
+      - 'README.md'
   pull_request:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
       - '.github/workflows/security-static.yml'
       - '.zap/**'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
@@ -53,7 +55,7 @@ jobs:
         run: echo "sha=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
